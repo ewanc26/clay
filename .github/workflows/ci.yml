@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Lint PR commits
+        if: github.event_name == 'pull_request'
+        run: ./scripts/lint_commits.sh "origin/${{ github.base_ref }}..HEAD"
+      - name: Lint pushed commits
+        if: github.event_name == 'push'
+        run: ./scripts/lint_commits.sh "${{ github.event.before }}..HEAD"
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Headless demo smoke
+        run: ./build/demo/clay_player --headless --frames 30 --dump build/garden.png

@@ -1,0 +1,57 @@
+# CLAY
+
+A bespoke game engine from scratch: **C23 core, C++23 engine, no middleware.**
+The renderer is our own software rasterizer; the only optional dependency is
+GLFW, and only as a presenter for an already-rendered frame.
+
+Clay is *reactive to everything the player does*. Every raw input event is
+pushed onto a public event bus, recorded into an append-only log, promoted
+into logical *actions*, and turned into undoable *commands*. Systems declare
+what they watch, and JSON **reaction rules** bind player input to world
+effects without any scripting-language dependency.
+
+```
+raw input ──► cl_input_state ──► event bus ──► actions ──► commands ──► ECS systems ──► raster
+   │                │                                   │                            │
+   └──► input_log (record)                replay ◄──────┘                    framebuffer → GLFW | PNG
+```
+
+## The language divide (the "clay divide")
+
+- `src/core/*.h, *.c` — **C23**. Zero C++ headers. One C ABI header,
+  `include/clay/clay.h`, compiled as `extern "C"` for the C++ side. All names
+  prefixed `cl_`; every owned object obeys the `cl_T` + `cl_T_free` contract.
+- `src/engine/*`, `demo/*`, `test/*` — **C++23**, `namespace clay`, consuming
+  only `clay.h` for the core layer. Header guards, not `#pragma once`.
+- Enforced in CMake: the core target standard is C23, the engine target is
+  C++23, and `-Wpedantic` keeps the seam honest.
+
+## Building
+
+```bash
+brew install glfw   # optional; interactive windowed app only
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build            # unit tests, all headless
+./build/demo/clay_player --help
+./build/demo/clay_player --headless --frames 120 --dump scene.png
+./build/demo/clay_player --record out/take.clayrec --frames 90
+./build/demo/clay_player --replay out/take.clayrec --dump out/replay.png
+```
+
+## What's inside
+
+- `src/core` — memory arenas, math, string-keyed maps, JSON, RNG, monotonic
+  time, input state, event bus, input recorder/replayer.
+- `src/engine` — `Runtime` orchestration, ECS (`World`, typed `Storage<T>`),
+  input→action mapping (rebindable from JSON), command log + replay,
+  reactive `SystemGraph`, data-driven `ReactionRule`s, and the rasterizer.
+- `demo` — *The Clay Garden*: a living, fully headless scene where everything
+  reacts to the player. A sculpture anchors the world; a herd of
+  cursor-magnet animals drifts toward the mouse; clicks emit ripples, space
+  blooms, scrolling embiggens the rings, and every action lands on the
+  record.
+
+## License
+
+AGPL-3.0 — see [LICENSE](LICENSE).

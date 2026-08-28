@@ -1,0 +1,31 @@
+# Build output
+build*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+Testing/
+
+# Run artifacts (mandalas, frames, recordings)
+out/
+*.ppm
+*.png
+*.clayrec
+
+# IDE configurations
+.idea/
+.vscode/
+*.iml
+
+# Local agent/worktree state
+.claude/
+.agents/
+.codex/
+.rovodev/
+.qwen/
+
+# OS
+.DS_Store
+Thumbs.db
