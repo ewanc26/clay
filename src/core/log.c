@@ -36,7 +36,7 @@ void cl_log(cl_log_level level, const char *fmt, ...) {
     int n = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     if (n < 0) return;
-    size_t len = (size_t)(n < (int)sizeof(buf) ? n : sizeof(buf) - 1);
+    size_t len = (size_t)(n < (int)sizeof(buf) ? n : (int)sizeof(buf) - 1);
     if (g_sink) {
         g_sink(level, buf, len, g_sink_user);
     } else {

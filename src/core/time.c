@@ -2,6 +2,13 @@
 
 #if defined(__APPLE__) || defined(__linux__) || defined(__unix__)
 
+/* clock_gettime and CLOCK_MONOTONIC are POSIX, not C standard. macOS
+ * exposes them from <time.h> by default, but glibc hides them until
+ * _POSIX_C_SOURCE is defined. */
+#if defined(__linux__) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 199309L
+#endif
+
 #include <time.h>
 
 double cl_time_seconds(void) {
