@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON
+        run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON -DCLAY_BUILD_INTERACTIVE=OFF
 
       - name: Build
         run: cmake --build build -j
@@ -38,4 +38,6 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
       - name: Headless demo smoke
-        run: ./build/demo/clay_player --headless --frames 30 --dump build/garden.png
+        run: |
+          mkdir -p build/smoke
+          ./build/demo/clay_player --headless --frames 30 --dump build/smoke/garden.png

@@ -62,6 +62,9 @@ if(CLAY_BUILD_INTERACTIVE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+    # Wayland requires wayland-scanner which isn't always installed on CI runners.
+    # X11 via XCB is the portable fallback on Linux.
+    set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(glfw
       GIT_REPOSITORY https://github.com/glfw/glfw.git
       GIT_TAG 3.4
