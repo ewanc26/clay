@@ -1,0 +1,213 @@
+#ifndef CLAY_ENGINE_RUNTIME_HPP
+#define CLAY_ENGINE_RUNTIME_HPP
+
+#include "action.hpp"
+#include "command.hpp"
+#include "ecs/components.hpp"
+#include "ecs/world.hpp"
+#include "event.hpp"
+#include "input_system.hpp"
+#include "replay.hpp"
+#include "render/renderer.hpp"
+#include "render/renderer_sw.hpp"
+#include "systems/reaction.hpp"
+#include "systems/system_graph.hpp"
+
+#include <clay/clay.h>
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace clay {
+
+/* The Runtime is the whole reactive machine on one desk: it owns the arena,
+ * the bus, the input state + transcript, the action/command pipeline, the
+ * ECS world, the system graph, the reaction rules, and the renderer, and it
+ * is the ONLY place — across live input, replay, and automated tests — that
+ * events enter the engine. Two Runtimes given the same seed and transcript
+ * produce identical worlds. */
+class Runtime {
+  public:
+    Runtime(int width, int height, uint64_t seed,
+            size_t arena_bytes = 4u << 20);
+    ~Runtime();
+
+    Runtime(const Runtime &) = delete;
+    Runtime &operator=(const Runtime &) = delete;
+
+    /* -------------------------------------------------------- the loop */
+    void begin_frame(double dt_seconds);
+    void update(double sim_dt_seconds);
+    void render();
+    void end_frame() {}
+    void step(double dt_seconds) {
+        begin_frame(dt_seconds);
+        update(sim_dt_);
+        render();
+    }
+
+    /* The single input path: state edge detection -> transcript -> bus ->
+     * actions -> commands. Everyone downstream sees exactly this. */
+    void feed(const cl_input_event &e);
+    void feed_press(cl_key key) {
+        feed(cl_input_event_make(CLAY_IN_PRESS, key));
+    }
+    void feed_release(cl_key key) {
+        feed(cl_input_event_make(CLAY_IN_RELEASE, key));
+    }
+    void feed_motion(double x, double y, double dx, double dy);
+
+    /* ---------------------------------------------- world mutation (reactive) */
+    Entity spawn_species(const std::string &species, float x, float y,
+                         Color color, float life);
+    Entity spawn_ripple(float x, float y, float radius, Color color);
+    void destroy_entity(Entity e); /* publishes world.destroy */
+    void flash(Color color, double duration);
+    void kill_within(float x, float y, float radius);
+
+    /* --------------------------------------------------------------- probes */
+    uint64_t frame() const {
+        return frame_;
+    }
+    double sim_time() const {
+        return sim_time_;
+    }
+    double sim_dt() const {
+        return sim_dt_;
+    }
+    int width() const {
+        return width_;
+    }
+    int height() const {
+        return height_;
+    }
+    uint64_t seed() const {
+        return seed_;
+    }
+
+    double cursor_x() const {
+        return input_state_.cursor_x;
+    }
+    double cursor_y() const {
+        return input_state_.cursor_y;
+    }
+    bool is_key_down(cl_key key) const {
+        return cl_input_down(&input_state_, key);
+    }
+    const cl_input_state &input_state() const {
+        return input_state_;
+    }
+
+    World &world() {
+        return world_;
+    }
+    Hub &hub() {
+        return hub_;
+    }
+    ActionMap &actions() {
+        return actions_;
+    }
+    const ActionMap &actions() const {
+        return actions_;
+    }
+    CommandLog &commands() {
+        return commands_;
+    }
+    const CommandLog &commands() const {
+        return commands_;
+    }
+    SystemGraph &systems() {
+        return systems_;
+    }
+    ReactionEngine &reactions() {
+        return reactions_;
+    }
+    RendererSW &renderer() {
+        return renderer_;
+    }
+    const Framebuffer &framebuffer() const {
+        return renderer_.framebuffer();
+    }
+    cl_rng &rng() {
+        return rng_;
+    }
+    cl_arena &arena() {
+        return arena_.a;
+    }
+    cl_input_log &input_log() {
+        return input_log_;
+    }
+
+    double time_scale() const {
+        return time_scale_;
+    }
+    void set_time_scale(double s) {
+        time_scale_ = s;
+    }
+
+    /* Speed-of-light replay toggle: while on, calls to feed() are the only
+     * source and begin_frame() pulls matching-frame events from the log. */
+    void set_replaying(bool on) {
+        replaying_ = on;
+    }
+    bool replaying() const {
+        return replaying_;
+    }
+
+    void log_reaction(const std::string &msg);
+
+  private:
+    int width_;
+    int height_;
+    uint64_t seed_;
+
+    cl_rng rng_;
+
+    /* The single engine arena, constructed before anything that borrows it. */
+    struct ArenaOwner {
+        std::vector<uint8_t> storage;
+        cl_arena a;
+        explicit ArenaOwner(size_t bytes)
+            : storage(bytes > 0 ? bytes : (1u << 20)) {
+            cl_arena_init(&a, storage.data(), storage.size());
+        }
+    };
+    ArenaOwner arena_;
+
+    cl_bus bus_;
+    cl_input_state input_state_;
+    cl_input_log input_log_;
+    Hub hub_;
+    ActionMap actions_;
+    InputSystem inputs_;
+    CommandLog commands_;
+    World world_;
+    SystemGraph systems_;
+    ReactionEngine reactions_;
+    RendererSW renderer_;
+
+    uint64_t frame_ = 0;
+    double sim_time_ = 0.0;
+    double sim_dt_ = 1.0 / 60.0;
+    double time_scale_ = 1.0;
+
+    bool replaying_ = false;
+    Replayer replay_;
+
+    Color flash_color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    double flash_remaining_ = 0.0;
+    double flash_duration_ = 0.0;
+
+    std::vector<Action> pending_actions_;
+
+    void publish_input_event(const cl_input_event &e);
+    void execute_action(const Action &a, bool record_command);
+    void pump_replay_events();
+    Event to_event(const cl_event &ev);
+};
+
+} // namespace clay
+
+#endif /* CLAY_ENGINE_RUNTIME_HPP */
