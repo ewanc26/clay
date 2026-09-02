@@ -35,6 +35,7 @@ struct ActionBinding {
 
 class ActionMap {
   public:
+    void clear() { bindings_.clear(); }
     void bind(const std::string &action, cl_key key);
     void bind_hold(const std::string &action, cl_key key);
 

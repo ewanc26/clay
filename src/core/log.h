@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "common.h"
+
 typedef enum cl_log_level {
     CLAY_LOG_DEBUG = 0,
     CLAY_LOG_INFO,
@@ -23,7 +25,7 @@ cl_log_level cl_log_get_level(void);
 void cl_log_set_sink(cl_log_sink sink, void *user);
 
 void cl_log(cl_log_level level, const char *fmt, ...)
-    __attribute__((format(printf, 2, 3)));
+    CLAY_PRINTF_ATTR(2, 3);
 
 #define cl_log_debug(...) cl_log(CLAY_LOG_DEBUG, __VA_ARGS__)
 #define cl_log_info(...) cl_log(CLAY_LOG_INFO, __VA_ARGS__)

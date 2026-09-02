@@ -28,6 +28,8 @@ class RendererSW final : public IRenderer {
     void draw_line(float x0, float y0, float x1, float y1, Rgba c) override;
     void fill_triangle(float x0, float y0, float x1, float y1, float x2,
                        float y2, Rgba c) override;
+    void draw_image(int x, int y, const uint32_t *src, int src_w,
+                    int src_h) override;
 
     Framebuffer &framebuffer() {
         return fb_;

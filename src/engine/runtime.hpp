@@ -9,6 +9,7 @@
 #include "input_system.hpp"
 #include "replay.hpp"
 #include "render/renderer.hpp"
+#include "render/render_system.hpp"
 #include "render/renderer_sw.hpp"
 #include "systems/reaction.hpp"
 #include "systems/system_graph.hpp"
@@ -16,6 +17,7 @@
 #include <clay/clay.h>
 
 #include <cstdint>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -63,6 +65,10 @@ class Runtime {
     Entity spawn_species(const std::string &species, float x, float y,
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
+    bool load_actions(const std::string &text);
+    cl_err save_recording(const std::string &path) const;
+    cl_err load_recording(const std::string &path);
+    bool resize(int width, int height);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
     void kill_within(float x, float y, float radius);
@@ -130,6 +136,15 @@ class Runtime {
     const Framebuffer &framebuffer() const {
         return renderer_.framebuffer();
     }
+
+    /* Install the draw pass. If none is set, the default GardenRenderSystem
+     * (the inherited vignette) is used, so existing behavior is unchanged. */
+    void set_render_system(RenderSystem *system) {
+        render_system_ = system;
+    }
+    RenderSystem *render_system() const {
+        return render_system_;
+    }
     cl_rng &rng() {
         return rng_;
     }
@@ -139,12 +154,26 @@ class Runtime {
     cl_input_log &input_log() {
         return input_log_;
     }
+    const cl_input_log &input_log() const {
+        return input_log_;
+    }
 
     double time_scale() const {
         return time_scale_;
     }
     void set_time_scale(double s) {
-        time_scale_ = s;
+        time_scale_ = std::isfinite(s) && s > 0.0 ? s : 1.0;
+    }
+
+    /* Render-time state a custom RenderSystem needs beyond the world/cursor. */
+    const Color &flash_color() const {
+        return flash_color_;
+    }
+    double flash_remaining() const {
+        return flash_remaining_;
+    }
+    double flash_duration() const {
+        return flash_duration_;
     }
 
     /* Speed-of-light replay toggle: while on, calls to feed() are the only
@@ -187,6 +216,7 @@ class Runtime {
     SystemGraph systems_;
     ReactionEngine reactions_;
     RendererSW renderer_;
+    RenderSystem *render_system_ = nullptr;
 
     uint64_t frame_ = 0;
     double sim_time_ = 0.0;

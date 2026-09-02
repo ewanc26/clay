@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose an engine or integration capability.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What should a game or host integration be able to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target
+      options:
+        - Standalone Clay
+        - Godot Mono
+        - Both
+    validations:
+      required: true

@@ -28,6 +28,7 @@ struct Options {
     std::string record_to; /* .clayrec path */
     std::string replay_from; /* .clayrec path */
     std::string rules;   /* optional reactions.json; builtin default otherwise */
+    std::string actions; /* optional input-actions.json */
 };
 
 void usage() {
@@ -42,6 +43,7 @@ void usage() {
         "  --seed N             simulation seed (default 0xCAFEBABE)\n"
         "  --dump out.png       write the final framebuffer to a PNG\n"
         "  --rules file.json    load a reaction rules table\n"
+        "  --actions file.json  load an input action map\n"
         "  --record out.clayrec append this run's input transcript\n"
         "  --replay in.clayrec  feed a recorded transcript instead of live "
         "input\n",
@@ -68,6 +70,8 @@ bool parse_options(int argc, char **argv, Options &o) {
             if (!next(o.dump)) return false;
         } else if (a == "--rules") {
             if (!next(o.rules)) return false;
+        } else if (a == "--actions") {
+            if (!next(o.actions)) return false;
         } else if (a == "--width") {
             if (!next(a)) return false;
             o.width = atoi(a.c_str());
@@ -142,8 +146,27 @@ int main(int argc, char **argv) {
     clay::Garden garden(o.width, o.height, o.seed);
     clay::Runtime &rt = garden.runtime();
 
+    if (o.record && o.replay) {
+        std::fputs("clay_player: --record and --replay are mutually exclusive\n",
+                   stderr);
+        return 1;
+    }
+
     std::string custom = o.rules.empty() ? std::string() : read_file(o.rules);
+    if (!o.rules.empty() && custom.empty()) {
+        std::fprintf(stderr, "clay_player: could not read rules file '%s'\n",
+                     o.rules.c_str());
+        return 1;
+    }
     garden.seed(custom.empty() ? clay::kGardenReactions : custom);
+    if (!o.actions.empty()) {
+        std::string actions = read_file(o.actions);
+        if (actions.empty() || !rt.load_actions(actions)) {
+            std::fprintf(stderr, "clay_player: could not read actions file '%s'\n",
+                         o.actions.c_str());
+            return 1;
+        }
+    }
     garden.plant();
 
     if (o.replay) {
@@ -170,6 +193,9 @@ int main(int argc, char **argv) {
         while (!window.should_close()) {
             rt.begin_frame(dt);
             window.poll_events();
+            if (window.canvas_width() != rt.width() ||
+                window.canvas_height() != rt.height())
+                rt.resize(window.canvas_width(), window.canvas_height());
             for (const cl_input_event &e : window.drain_events()) rt.feed(e);
             rt.update(rt.sim_dt());
             rt.render();

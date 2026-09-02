@@ -1,5 +1,22 @@
 #include "input.h"
 
+#include <math.h>
+
+bool cl_input_event_valid(const cl_input_event *e) {
+    if (e == NULL || e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS)
+        return false;
+    if ((e->mods & ~(CLAY_MOD_SHIFT | CLAY_MOD_CTRL | CLAY_MOD_ALT |
+                     CLAY_MOD_META)) != 0)
+        return false;
+    if (!isfinite(e->x) || !isfinite(e->y) || !isfinite(e->dx) ||
+        !isfinite(e->dy))
+        return false;
+    if ((e->type == CLAY_IN_PRESS || e->type == CLAY_IN_RELEASE) &&
+        (e->key <= CLAY_KEY_NONE || e->key >= CLAY_KEY_COUNT))
+        return false;
+    return true;
+}
+
 static const char *const k_key_names[CLAY_KEY_COUNT] = {
     "NONE",
     "ESCAPE", "ENTER", "TAB", "SPACE", "BACKSPACE", "DELETE", "HOME", "END",
@@ -44,6 +61,8 @@ void cl_input_state_begin(cl_input_state *s, uint32_t frame, double time) {
 }
 
 bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
+    if (s == NULL || !cl_input_event_valid(e)) return false;
+
     switch (e->type) {
     case CLAY_IN_PRESS:
         if (e->key >= CLAY_KEY_COUNT || e->key < 0) return false;
@@ -52,6 +71,8 @@ bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
         s->pressed_frame[e->key] = s->frame;
         s->press_x[e->key] = e->x;
         s->press_y[e->key] = e->y;
+        s->cursor_x = e->x;
+        s->cursor_y = e->y;
         return true;
     case CLAY_IN_RELEASE:
         if (e->key >= CLAY_KEY_COUNT || e->key < 0) return false;
@@ -67,9 +88,21 @@ bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
         return false;
     case CLAY_IN_WHEEL:
         s->wheel_accum += (double)e->wheel * CLAY_WHEEL_ACCUM_FACTOR;
+        s->cursor_x = e->x;
+        s->cursor_y = e->y;
         return false;
     case CLAY_IN_FOCUS:
         s->focus = e->focus;
+        if (!e->focus) {
+            /* A window can lose focus without delivering matching releases.
+             * Clear held inputs so a host cannot leave movement or actions
+             * latched after returning from another application. */
+            for (int key = 1; key < CLAY_KEY_COUNT; key++) {
+                if (!s->down[key]) continue;
+                s->down[key] = false;
+                s->released_frame[key] = s->frame;
+            }
+        }
         return false;
     }
     return false;

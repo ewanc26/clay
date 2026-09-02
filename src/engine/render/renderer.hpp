@@ -14,7 +14,8 @@ struct Rgba {
 };
 
 static inline uint32_t rgba_to_pixel(Rgba c) {
-    return ((uint32_t)c.r << 16) | ((uint32_t)c.g << 8) | (uint32_t)c.b;
+    return ((uint32_t)c.a << 24) | ((uint32_t)c.r << 16) |
+           ((uint32_t)c.g << 8) | (uint32_t)c.b;
 }
 
 /* A finished, engine-owned frame: RGBA8, top-left origin, row-major. This is
@@ -24,6 +25,7 @@ struct Framebuffer {
     int width = 0;
     int height = 0;
     std::vector<uint32_t> pixels;
+    mutable std::vector<uint8_t> rgba_cache;
 
     void resize(int w, int h);
     void clear(Rgba c);
@@ -49,6 +51,9 @@ class IRenderer {
     virtual void draw_line(float x0, float y0, float x1, float y1, Rgba c) = 0;
     virtual void fill_triangle(float x0, float y0, float x1, float y1,
                                float x2, float y2, Rgba c) = 0;
+    /* Composite a premultiplied source image at an integer pixel position. */
+    virtual void draw_image(int x, int y, const uint32_t *src, int src_w,
+                            int src_h) = 0;
 };
 
 } // namespace clay

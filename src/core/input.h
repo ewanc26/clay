@@ -112,6 +112,9 @@ typedef struct cl_input_event {
     bool focus;       /* meaningful for CLAY_IN_FOCUS                       */
 } cl_input_event;
 
+/* Validates the shared event shape before a host feeds it to the engine. */
+bool cl_input_event_valid(const cl_input_event *e);
+
 /* consumable value for synthetic drives (replay, autotests) */
 static inline cl_input_event cl_input_event_make(cl_input_kind type, cl_key key) {
     cl_input_event e;

@@ -8,8 +8,8 @@
 namespace clay {
 
 /* PNG encode/decode backed by stb_image / stb_image_write (vendored). The
- * framebuffer is 0x00RRGGBB packed; these helpers handle the RGB conversion
- * so the rest of the engine never thinks about formats. */
+ * framebuffer is 0xAARRGGBB packed; these helpers keep the alpha channel so
+ * the rest of the engine never thinks about formats. */
 
 std::vector<uint32_t> load_png_rgba(const std::string &path, int &out_width,
                                     int &out_height);

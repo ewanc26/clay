@@ -42,9 +42,40 @@ cl_key glfw_to_key(int key) {
     case GLFW_KEY_LEFT: return CLAY_KEY_ARROW_LEFT;
     case GLFW_KEY_RIGHT: return CLAY_KEY_ARROW_RIGHT;
     case GLFW_KEY_LEFT_SHIFT: return CLAY_KEY_LEFT_SHIFT;
+    case GLFW_KEY_RIGHT_SHIFT: return CLAY_KEY_LEFT_SHIFT;
     case GLFW_KEY_LEFT_CONTROL: return CLAY_KEY_LEFT_CTRL;
+    case GLFW_KEY_RIGHT_CONTROL: return CLAY_KEY_LEFT_CTRL;
     case GLFW_KEY_LEFT_ALT: return CLAY_KEY_LEFT_ALT;
+    case GLFW_KEY_RIGHT_ALT: return CLAY_KEY_LEFT_ALT;
     case GLFW_KEY_LEFT_SUPER: return CLAY_KEY_LEFT_META;
+    case GLFW_KEY_RIGHT_SUPER: return CLAY_KEY_LEFT_META;
+    case GLFW_KEY_APOSTROPHE: return CLAY_KEY_QUOTE;
+    case GLFW_KEY_COMMA: return CLAY_KEY_COMMA;
+    case GLFW_KEY_PERIOD: return CLAY_KEY_PERIOD;
+    case GLFW_KEY_SLASH: return CLAY_KEY_SLASH;
+    case GLFW_KEY_SEMICOLON: return CLAY_KEY_SEMICOLON;
+    case GLFW_KEY_MINUS: return CLAY_KEY_MINUS;
+    case GLFW_KEY_EQUAL: return CLAY_KEY_EQUALS;
+    case GLFW_KEY_LEFT_BRACKET: return CLAY_KEY_BRACKET_LEFT;
+    case GLFW_KEY_RIGHT_BRACKET: return CLAY_KEY_BRACKET_RIGHT;
+    case GLFW_KEY_BACKSLASH: return CLAY_KEY_BACKSLASH;
+    case GLFW_KEY_GRAVE_ACCENT: return CLAY_KEY_GRAVE;
+    case GLFW_KEY_KP_0: return CLAY_KEY_0;
+    case GLFW_KEY_KP_1: return CLAY_KEY_1;
+    case GLFW_KEY_KP_2: return CLAY_KEY_2;
+    case GLFW_KEY_KP_3: return CLAY_KEY_3;
+    case GLFW_KEY_KP_4: return CLAY_KEY_4;
+    case GLFW_KEY_KP_5: return CLAY_KEY_5;
+    case GLFW_KEY_KP_6: return CLAY_KEY_6;
+    case GLFW_KEY_KP_7: return CLAY_KEY_7;
+    case GLFW_KEY_KP_8: return CLAY_KEY_8;
+    case GLFW_KEY_KP_9: return CLAY_KEY_9;
+    case GLFW_KEY_KP_DECIMAL: return CLAY_KEY_PERIOD;
+    case GLFW_KEY_KP_DIVIDE: return CLAY_KEY_SLASH;
+    case GLFW_KEY_KP_MULTIPLY: return CLAY_KEY_NONE;
+    case GLFW_KEY_KP_SUBTRACT: return CLAY_KEY_MINUS;
+    case GLFW_KEY_KP_ADD: return CLAY_KEY_EQUALS;
+    case GLFW_KEY_KP_ENTER: return CLAY_KEY_ENTER;
     default: break;
     }
     if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
@@ -56,28 +87,107 @@ cl_key glfw_to_key(int key) {
     return CLAY_KEY_NONE;
 }
 
+int glfw_mods(int mods) {
+    int out = CLAY_MOD_NONE;
+    if (mods & GLFW_MOD_SHIFT) out |= CLAY_MOD_SHIFT;
+    if (mods & GLFW_MOD_CONTROL) out |= CLAY_MOD_CTRL;
+    if (mods & GLFW_MOD_ALT) out |= CLAY_MOD_ALT;
+    if (mods & GLFW_MOD_SUPER) out |= CLAY_MOD_META;
+    return out;
+}
+
 struct EventQueue {
     std::vector<cl_input_event> events;
     double last_cursor_x = 0.0;
     double last_cursor_y = 0.0;
+    double wheel_remainder = 0.0;
+    bool gamepad_down[GLFW_GAMEPAD_BUTTON_LAST + 1] = {};
+    bool gamepad_active = false;
+    int resize_width = 0;
+    int resize_height = 0;
 };
 
 EventQueue *queue_for(GLFWwindow *wnd) {
     return static_cast<EventQueue *>(glfwGetWindowUserPointer(wnd));
 }
 
-void key_cb(GLFWwindow *wnd, int key, int, int action, int) {
+void key_cb(GLFWwindow *wnd, int key, int, int action, int mods) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
+    if (action != GLFW_PRESS && action != GLFW_RELEASE) return;
     cl_key k = glfw_to_key(key);
     if (k == CLAY_KEY_NONE) return;
     cl_input_event e = cl_input_event_make(
         action == GLFW_PRESS ? CLAY_IN_PRESS : CLAY_IN_RELEASE, k);
+    e.mods = glfw_mods(mods);
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
 
-void mouse_button_cb(GLFWwindow *wnd, int button, int action, int) {
+void focus_cb(GLFWwindow *wnd, int focused) {
+    EventQueue *q = queue_for(wnd);
+    if (!q) return;
+    cl_input_event e = cl_input_event_make(CLAY_IN_FOCUS, CLAY_KEY_NONE);
+    e.focus = focused != 0;
+    q->events.push_back(e);
+}
+
+void window_size_cb(GLFWwindow *wnd, int width, int height) {
+    EventQueue *q = queue_for(wnd);
+    if (!q || width <= 0 || height <= 0) return;
+    q->resize_width = width;
+    q->resize_height = height;
+}
+
+cl_key gamepad_key(int button) {
+    switch (button) {
+    case GLFW_GAMEPAD_BUTTON_A: return CLAY_KEY_GP_A;
+    case GLFW_GAMEPAD_BUTTON_B: return CLAY_KEY_GP_B;
+    case GLFW_GAMEPAD_BUTTON_X: return CLAY_KEY_GP_X;
+    case GLFW_GAMEPAD_BUTTON_Y: return CLAY_KEY_GP_Y;
+    case GLFW_GAMEPAD_BUTTON_LEFT_BUMPER: return CLAY_KEY_GP_LB;
+    case GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER: return CLAY_KEY_GP_RB;
+    case GLFW_GAMEPAD_BUTTON_BACK: return CLAY_KEY_GP_BACK;
+    case GLFW_GAMEPAD_BUTTON_START: return CLAY_KEY_GP_START;
+    case GLFW_GAMEPAD_BUTTON_LEFT_THUMB: return CLAY_KEY_GP_LEFT_STICK;
+    case GLFW_GAMEPAD_BUTTON_RIGHT_THUMB: return CLAY_KEY_GP_RIGHT_STICK;
+    case GLFW_GAMEPAD_BUTTON_DPAD_UP: return CLAY_KEY_GP_DPAD_UP;
+    case GLFW_GAMEPAD_BUTTON_DPAD_DOWN: return CLAY_KEY_GP_DPAD_DOWN;
+    case GLFW_GAMEPAD_BUTTON_DPAD_LEFT: return CLAY_KEY_GP_DPAD_LEFT;
+    case GLFW_GAMEPAD_BUTTON_DPAD_RIGHT: return CLAY_KEY_GP_DPAD_RIGHT;
+    default: return CLAY_KEY_NONE;
+    }
+}
+
+void poll_gamepad(EventQueue *q) {
+    GLFWgamepadstate state;
+    const bool active = glfwJoystickIsGamepad(GLFW_JOYSTICK_1) != 0 &&
+                        glfwGetGamepadState(GLFW_JOYSTICK_1, &state) != 0;
+    if (!active) {
+        if (!q->gamepad_active) return;
+        for (int button = 0; button <= GLFW_GAMEPAD_BUTTON_LAST; button++) {
+            if (!q->gamepad_down[button]) continue;
+            cl_input_event e =
+                cl_input_event_make(CLAY_IN_RELEASE, gamepad_key(button));
+            if (e.key != CLAY_KEY_NONE) q->events.push_back(e);
+            q->gamepad_down[button] = false;
+        }
+        q->gamepad_active = false;
+        return;
+    }
+    q->gamepad_active = true;
+    for (int button = 0; button <= GLFW_GAMEPAD_BUTTON_LAST; button++) {
+        const bool down = state.buttons[button] == GLFW_PRESS;
+        if (down == q->gamepad_down[button]) continue;
+        cl_key key = gamepad_key(button);
+        q->gamepad_down[button] = down;
+        if (key == CLAY_KEY_NONE) continue;
+        q->events.push_back(cl_input_event_make(
+            down ? CLAY_IN_PRESS : CLAY_IN_RELEASE, key));
+    }
+}
+
+void mouse_button_cb(GLFWwindow *wnd, int button, int action, int mods) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
     cl_key k = CLAY_KEY_NONE;
@@ -85,10 +195,13 @@ void mouse_button_cb(GLFWwindow *wnd, int button, int action, int) {
     case GLFW_MOUSE_BUTTON_LEFT: k = CLAY_KEY_MOUSE_LEFT; break;
     case GLFW_MOUSE_BUTTON_RIGHT: k = CLAY_KEY_MOUSE_RIGHT; break;
     case GLFW_MOUSE_BUTTON_MIDDLE: k = CLAY_KEY_MOUSE_MIDDLE; break;
+    case GLFW_MOUSE_BUTTON_4: k = CLAY_KEY_MOUSE_X1; break;
+    case GLFW_MOUSE_BUTTON_5: k = CLAY_KEY_MOUSE_X2; break;
     default: return;
     }
     cl_input_event e = cl_input_event_make(
         action == GLFW_PRESS ? CLAY_IN_PRESS : CLAY_IN_RELEASE, k);
+    e.mods = glfw_mods(mods);
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
@@ -109,9 +222,12 @@ void cursor_cb(GLFWwindow *wnd, double x, double y) {
 void scroll_cb(GLFWwindow *wnd, double, double yoff) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
-    if (yoff == 0.0) return;
+    q->wheel_remainder += yoff;
+    const int clicks = (int)q->wheel_remainder;
+    q->wheel_remainder -= clicks;
+    if (clicks == 0) return;
     cl_input_event e = cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
-    e.wheel = (int)(yoff * 20.0);
+    e.wheel = clicks;
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
@@ -138,7 +254,7 @@ WindowGLFW::WindowGLFW(int canvas_width, int canvas_height, const char *title)
         return;
     }
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     impl_->window = glfwCreateWindow(canvas_width, canvas_height, title,
                                      nullptr, nullptr);
     if (!impl_->window) {
@@ -154,6 +270,11 @@ WindowGLFW::WindowGLFW(int canvas_width, int canvas_height, const char *title)
     glfwSetMouseButtonCallback(impl_->window, mouse_button_cb);
     glfwSetCursorPosCallback(impl_->window, cursor_cb);
     glfwSetScrollCallback(impl_->window, scroll_cb);
+    glfwSetWindowFocusCallback(impl_->window, focus_cb);
+    glfwSetWindowSizeCallback(impl_->window, window_size_cb);
+
+    glfwGetCursorPos(impl_->window, &impl_->queue.last_cursor_x,
+                     &impl_->queue.last_cursor_y);
 
     glfwMakeContextCurrent(impl_->window);
     glfwSwapInterval(1);
@@ -182,7 +303,16 @@ bool WindowGLFW::should_close() const {
 }
 
 void WindowGLFW::poll_events() {
-    if (impl_ && impl_->window) glfwPollEvents();
+    if (impl_ && impl_->window) {
+        glfwPollEvents();
+        if (impl_->queue.resize_width > 0 && impl_->queue.resize_height > 0) {
+            impl_->width = impl_->queue.resize_width;
+            impl_->height = impl_->queue.resize_height;
+            impl_->queue.resize_width = 0;
+            impl_->queue.resize_height = 0;
+        }
+        poll_gamepad(&impl_->queue);
+    }
 }
 
 std::vector<cl_input_event> WindowGLFW::drain_events() {
@@ -200,9 +330,22 @@ int WindowGLFW::canvas_height() const {
 }
 
 void WindowGLFW::present(const Framebuffer &fb) {
-    if (!impl_ || !impl_->window || fb.width != impl_->width ||
-        fb.height != impl_->height)
+    if (!impl_ || !impl_->window || fb.width <= 0 || fb.height <= 0)
         return;
+
+    if (fb.width != impl_->width || fb.height != impl_->height) {
+        impl_->width = fb.width;
+        impl_->height = fb.height;
+        if (impl_->texture) glDeleteTextures(1, &impl_->texture);
+        glGenTextures(1, &impl_->texture);
+        glBindTexture(GL_TEXTURE_2D, impl_->texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fb.width, fb.height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    }
 
     glBindTexture(GL_TEXTURE_2D, impl_->texture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

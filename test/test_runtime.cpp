@@ -3,6 +3,8 @@
 
 #include "runtime.hpp"
 
+#include <limits>
+
 using namespace clay;
 
 namespace {
@@ -151,6 +153,39 @@ TEST_CASE("runtime: cooldown suppresses a rapid second press") {
     CHECK(rt.reactions().fired_count() < 3);
 }
 
+TEST_CASE("runtime: malformed direct input is ignored") {
+    Runtime rt(320, 240, 8);
+    rt.begin_frame(1.0 / 60.0);
+
+    cl_input_event invalid = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_NONE);
+    rt.feed(invalid);
+
+    CHECK_EQ(rt.input_log().count, 0);
+    CHECK_EQ(rt.commands().count(), 0);
+    CHECK_EQ(rt.reactions().fired_count(), 0);
+}
+
+TEST_CASE("runtime: malformed direct timing is ignored") {
+    Runtime rt(320, 240, 9);
+    rt.begin_frame(-1.0);
+    rt.begin_frame(std::numeric_limits<double>::quiet_NaN());
+
+    CHECK_EQ(rt.frame(), 0);
+    CHECK_EQ(rt.sim_time(), 0.0);
+}
+
+TEST_CASE("runtime: resize reports invalid dimensions") {
+    Runtime rt(32, 24, 10);
+    CHECK(!rt.resize(0, 24));
+    CHECK(!rt.resize(32, -1));
+    CHECK(rt.width() == 32);
+    CHECK(rt.height() == 24);
+    CHECK(rt.resize(48, 20));
+    CHECK(rt.width() == 48);
+    CHECK(rt.height() == 20);
+    CHECK(rt.framebuffer().pixels.size() == 48u * 20u);
+}
+
 TEST_CASE("runtime: same seed, same transcript, same world") {
     uint64_t seed = 0xBEEF;
     const uint64_t frames = 60;
@@ -202,4 +237,76 @@ TEST_CASE("runtime: recorded transcript replays byte-identically") {
     CHECK(replay.world().destroys() == original.world().destroys());
     CHECK(replay.reactions().fired_count() == original.reactions().fired_count());
     CHECK(fnv1a64(replay.framebuffer()) == fnv1a64(original.framebuffer()));
+}
+
+TEST_CASE("runtime: replay applies input on its recorded frame") {
+    Runtime original(64, 64, 17);
+    original.begin_frame(1.0 / 60.0);
+    original.feed_press(CLAY_KEY_SPACE);
+    original.update(original.sim_dt());
+    original.render();
+    original.begin_frame(1.0 / 60.0);
+    original.feed_release(CLAY_KEY_SPACE);
+    original.update(original.sim_dt());
+    original.render();
+
+    const char *path = "clay_test_runtime_input_timing.clayrec";
+    REQUIRE(cl_input_log_save(&original.input_log(), path) == CLAY_OK);
+
+    Runtime replay(64, 64, 17);
+    REQUIRE(cl_input_log_load(&replay.input_log(), path) == CLAY_OK);
+    replay.set_replaying(true);
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(replay.is_key_down(CLAY_KEY_SPACE));
+    CHECK(cl_input_just_pressed(&replay.input_state(), CLAY_KEY_SPACE));
+    replay.update(replay.sim_dt());
+    replay.render();
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(!replay.is_key_down(CLAY_KEY_SPACE));
+    CHECK(cl_input_just_released(&replay.input_state(), CLAY_KEY_SPACE));
+}
+
+TEST_CASE("replayer: stale frames do not block later events") {
+    Runtime source(32, 32, 3);
+    cl_input_event stale = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_A);
+    stale.frame = 0;
+    cl_input_log_append(&source.input_log(), &stale);
+    cl_input_event current = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_B);
+    current.frame = 2;
+    cl_input_log_append(&source.input_log(), &current);
+
+    Runtime replay(32, 32, 3);
+    replay.input_log() = source.input_log();
+    replay.set_replaying(true);
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(!replay.is_key_down(CLAY_KEY_B));
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(replay.is_key_down(CLAY_KEY_B));
+}
+
+TEST_CASE("runtime: rejects unsafe framebuffer dimensions before allocation") {
+    CHECK_THROWS_AS(clay::Runtime(8193, 8193, 1), std::invalid_argument);
+    CHECK_THROWS_AS(clay::Runtime(0, 10, 1), std::invalid_argument);
+}
+
+TEST_CASE("runtime: a custom render system replaces the default draw pass") {
+    class BlankRenderSystem final : public RenderSystem {
+      public:
+        int calls = 0;
+        void render(Runtime &, IRenderer &) override {
+            calls++;
+        }
+    };
+
+    Runtime rt(64, 64, 99);
+    BlankRenderSystem blank;
+    rt.set_render_system(&blank);
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.render();
+    (void)rt.update(0.0);
+
+    CHECK(blank.calls == 1);
+    CHECK(fnv1a64(rt.framebuffer()) ==
+           fnv1a64(Runtime(64, 64, 99).framebuffer()));
 }

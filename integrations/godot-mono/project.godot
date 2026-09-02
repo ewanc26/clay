@@ -1,0 +1,23 @@
+; Minimal Godot Mono host project for the Clay integration sample.
+; The installed SDK places the native Clay library beside this project; source
+; checkouts must build/copy it as described in README.md before running.
+config_version=5
+
+[application]
+config/name="Clay Godot Mono Sample"
+run/main_scene="res://ClayDemo.tscn"
+config/features=PackedStringArray("4.5", "C#")
+
+[dotnet]
+project/assembly_name="ClayGodotSample"
+
+[display]
+window/size/viewport_width=640
+window/size/viewport_height=480
+window/size/window_width_override=640
+window/size/window_height_override=480
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

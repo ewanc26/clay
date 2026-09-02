@@ -6,10 +6,10 @@
 namespace clay::raster {
 
 /* The from-scratch software rasterizer: 32-bit RGBA pixels in a row-major
- * 4-byte/pixel buffer, (0,0) top-left, +x right, +y down. Opaque compositing
- * (src-over alpha onto the destination). Conventions and edge rules are
- * documented per primitive; none of them depend on GPU state. */
-using Pixel = uint32_t; /* 0x00RRGGBB (alpha channel reserved) */
+ * 4-byte/pixel buffer, (0,0) top-left, +x right, +y down. Src-over alpha
+ * compositing onto the destination. Conventions and edge rules are documented
+ * per primitive; none of them depend on GPU state. */
+using Pixel = uint32_t; /* 0xAARRGGBB */
 
 Pixel px(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 Pixel blend(Pixel dst, Pixel src);
@@ -34,6 +34,12 @@ void clear(void *buf, int width, int height, Pixel c);
 
 /* Deterministic raster of the whole region (for scattering updates later). */
 void blend_pixel(void *buf, int width, int height, int x, int y, Pixel c);
+
+/* Composite a source image (same Pixel layout, row-major) onto the canvas at
+ * (dst_x, dst_y), src-over. The source keeps its alpha; only the overlapping
+ * region is touched. Used by sprite/text blitting. */
+void blit(void *buf, int width, int height, int dst_x, int dst_y,
+          const Pixel *src, int src_w, int src_h);
 
 } // namespace clay::raster
 

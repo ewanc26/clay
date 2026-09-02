@@ -54,7 +54,7 @@ typedef struct cl_arena_buf {
 cl_arena_buf cl_arena_buf_make(cl_arena *a, size_t reserve);
 cl_str cl_arena_buf_deposit(cl_arena_buf *b); /* returns + releases frame */
 void cl_arena_buf_printf(cl_arena_buf *b, const char *fmt, ...)
-    __attribute__((format(printf, 2, 3)));
+    CLAY_PRINTF_ATTR(2, 3);
 void cl_arena_buf_append(cl_arena_buf *b, const char *data, size_t len);
 
 #endif /* CLAY_CORE_ARENA_H */

@@ -105,11 +105,18 @@ void ReactionEngine::load_json(cl_json_node *root) {
     }
 }
 
-void ReactionEngine::load_text(const std::string &text) {
+bool ReactionEngine::load_text(const std::string &text) {
+    /* Parse into an isolated engine so a reload is atomic: a malformed or
+     * allocation-failed replacement must not destroy the active ruleset. */
+    ReactionEngine replacement;
     cl_json_node root;
-    cl_err err = cl_json_parse(&root, &arena_, cl_str_c(text.c_str()));
-    if (err != CLAY_OK) return;
-    load_json(&root);
+    cl_err err = cl_json_parse(&root, &replacement.arena_,
+                               cl_str_c(text.c_str()));
+    if (err != CLAY_OK) return false;
+    replacement.load_json(&root);
+    rules_ = std::move(replacement.rules_);
+    fired_ = 0;
+    return true;
 }
 
 namespace {
