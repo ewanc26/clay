@@ -46,25 +46,15 @@ void World::clear() {
         if (slots_[i].used) slots_[i].generation += 1;
         slots_[i].used = false;
     }
-    transforms_.clear();
-    velocities_.clear();
-    colors_.clear();
-    lives_.clear();
-    kinds_.clear();
-    tags_.clear();
-    magnets_.clear();
-    rings_.clear();
+    for (auto &[_, storage] : storages_) {
+        storage->clear();
+    }
 }
 
 void World::erase_every_component(Entity e) {
-    transforms_.erase(e);
-    velocities_.erase(e);
-    colors_.erase(e);
-    lives_.erase(e);
-    kinds_.erase(e);
-    tags_.erase(e);
-    magnets_.erase(e);
-    rings_.erase(e);
+    for (auto &[_, storage] : storages_) {
+        storage->erase(e);
+    }
 }
 
 } // namespace clay

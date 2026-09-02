@@ -6,8 +6,9 @@
 namespace clay {
 
 /* The component vocabulary of the Garden world. All POD, trivially copyable;
- * owned by World's dense storages. Adding a component type means adding a
- * struct here and a slot in World::storage(). */
+ * owned by World's dense storages. ComponentStorage<T> is created on first
+ * world.storage<T>() access, so adding a component type no longer requires
+ * editing world.hpp — just add the struct here. */
 
 /* 2D placement in canvas pixels, top-left origin, +y down. */
 struct Transform2D {
