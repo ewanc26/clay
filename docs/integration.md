@@ -49,6 +49,9 @@ Recordings can be persisted with `cl_engine_runtime_save_recording` and
 `cl_engine_runtime_load_recording`, then driven with
 `cl_engine_runtime_set_replaying`; query the active mode with
 `cl_engine_runtime_is_replaying`.
+The `.clayrec` wire format uses an explicit little-endian encoding for its
+integers and IEEE-754 doubles rather than native struct layout, so recordings
+are portable across supported compilers and architectures.
 Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
