@@ -3,6 +3,20 @@ using System.Runtime.InteropServices;
 
 namespace Clay;
 
+/// <summary>Error codes returned by the Clay C ABI.</summary>
+public enum ClayError
+{
+    Ok = 0,
+    OutOfMemory,
+    Parse,
+    NotFound,
+    TypeMismatch,
+    InvalidArgument,
+    Io,
+    Full,
+    Overflow,
+}
+
 /// <summary>Managed owner for a native Clay runtime.</summary>
 public sealed class ClayRuntime : IDisposable
 {
@@ -154,7 +168,12 @@ public sealed class ClayRuntime : IDisposable
 
     private static void Check(int error)
     {
-        if (error != 0) throw new InvalidOperationException($"Clay error: {error}");
+        if (error != 0)
+        {
+            ClayError code = (ClayError)error;
+            throw new InvalidOperationException(
+                $"Clay error: {error} ({code}).");
+        }
     }
 
     private static class Native
