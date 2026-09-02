@@ -65,6 +65,15 @@ public sealed class ClayRuntime : IDisposable
         return pixelBuffer;
     }
 
+    public void CopyPixelsTo(uint[] destination)
+    {
+        if (destination == null) throw new ArgumentNullException(nameof(destination));
+        if (destination.Length != pixelBuffer.Length)
+            throw new ArgumentException("Destination has the wrong pixel count.",
+                                        nameof(destination));
+        CopyPixels().CopyTo(destination);
+    }
+
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)

@@ -18,7 +18,7 @@ This is the Mono/P/Invoke integration path, not a Godot GDExtension. A
 GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
 addition to a shared library; that adapter is a separate future integration.
 
-The sample allocates one managed RGBA conversion buffer per frame for clarity;
-production hosts should reuse a packed pixel buffer or upload through a native
-texture bridge. CI coverage and platform packaging are tracked in
+The sample reuses its managed pixel and RGBA conversion buffers each frame;
+production hosts can upload through a native texture bridge for further
+optimization. CI coverage and platform packaging are tracked in
 `docs/issues.md`.
