@@ -100,6 +100,17 @@ static int test_input_log(void) {
         CHECK(cl_input_log_fingerprint(&bad) == preserved_fp);
     }
 
+    CHECK(cl_input_log_save(&log, path) == CLAY_OK);
+    FILE *trailed = fopen(path, "ab");
+    CHECK(trailed != NULL);
+    if (trailed != NULL) {
+        CHECK(fputc(0xA5, trailed) != EOF);
+        fclose(trailed);
+        CHECK(cl_input_log_load(&bad, path) == CLAY_ERR_PARSE);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 1);
+        CHECK(cl_input_log_fingerprint(&bad) == preserved_fp);
+    }
+
     /* Loading a bad file must be a clean, reported failure. */
     CHECK(cl_input_log_load(&bad, "definitely/missing.clayrec") == CLAY_ERR_IO);
 
