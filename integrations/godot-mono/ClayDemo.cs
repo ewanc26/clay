@@ -95,13 +95,15 @@ public partial class ClayDemo : Node2D
                 _ => Clay.ClayKey.Space
             };
             runtime.FeedKeyAt(key, keyEvent.Pressed,
-                              runtime.CursorX, runtime.CursorY);
+                              runtime.CursorX, runtime.CursorY,
+                              ToClayModifiers(keyEvent));
         }
         else if (@event is InputEventMouseButton mouseEvent &&
                  mouseEvent.ButtonIndex == MouseButton.Left)
         {
             runtime.FeedKeyAt(Clay.ClayKey.MouseLeft, mouseEvent.Pressed,
-                              mouseEvent.Position.X, mouseEvent.Position.Y);
+                              mouseEvent.Position.X, mouseEvent.Position.Y,
+                              ToClayModifiers(mouseEvent));
         }
         else if (@event is InputEventMouseButton wheelEvent)
         {
@@ -140,6 +142,16 @@ public partial class ClayDemo : Node2D
         JoyButton.DpadRight => Clay.ClayKey.GamepadDpadRight,
         _ => null
     };
+
+    private static Clay.ClayModifiers ToClayModifiers(InputEventWithModifiers input)
+    {
+        Clay.ClayModifiers mods = Clay.ClayModifiers.None;
+        if (input.ShiftPressed) mods |= Clay.ClayModifiers.Shift;
+        if (input.CtrlPressed) mods |= Clay.ClayModifiers.Control;
+        if (input.AltPressed) mods |= Clay.ClayModifiers.Alt;
+        if (input.MetaPressed) mods |= Clay.ClayModifiers.Meta;
+        return mods;
+    }
 
     public override void _Notification(int what)
     {
