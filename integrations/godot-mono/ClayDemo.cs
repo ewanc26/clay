@@ -70,6 +70,11 @@ public partial class ClayDemo : Node2D
                 runtime.FeedWheel(wheelEvent.Position.X, wheelEvent.Position.Y,
                                   wheel);
         }
+        else if (@event is InputEventMouseMotion motionEvent)
+        {
+            runtime.FeedMotion(motionEvent.Position.X, motionEvent.Position.Y,
+                               motionEvent.Relative.X, motionEvent.Relative.Y);
+        }
     }
 
     private void ResizeSurface(int width, int height)
