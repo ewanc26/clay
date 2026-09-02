@@ -9,6 +9,12 @@
 
 namespace clay {
 
+/* Builtin mesh generators (used by the .clay `primitive` field). Windings are
+ * outward CCW so backface culling behaves. */
+void build_cube(Mesh3D &out, float half_extent);
+void build_plane(Mesh3D &out, float w, float h, unsigned nx, unsigned ny);
+void build_sphere(Mesh3D &out, float radius, unsigned rings, unsigned slices);
+
 /* CPU 3D renderer. Owns a depth buffer sized like the framebuffer and writes
  * shaded pixels directly into a 32-bit RGBA buffer (0xAARRGGBB, top-left,
  * +y down — same convention as raster.hpp). */

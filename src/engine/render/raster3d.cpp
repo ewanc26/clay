@@ -105,6 +105,79 @@ void Mesh3D::add_triangle(cl_v3 a, cl_v3 b, cl_v3 c) {
     indices.push_back(base + 2);
 }
 
+void build_cube(Mesh3D &out, float half_extent) {
+    const float s = half_extent;
+    const cl_v3 corners[8] = {
+        {-s, -s, -s}, {s, -s, -s}, {s, s, -s}, {-s, s, -s},
+        {-s, -s, s},  {s, -s, s},  {s, s, s},  {-s, s, s},
+    };
+    const unsigned faces[6][4] = {
+        {0, 3, 2, 1}, {4, 5, 6, 7}, {4, 7, 3, 0},
+        {1, 2, 6, 5}, {0, 1, 5, 4}, {3, 7, 6, 2},
+    };
+    for (auto &f : faces) {
+        out.add_triangle(corners[f[0]], corners[f[1]], corners[f[2]]);
+        out.add_triangle(corners[f[0]], corners[f[2]], corners[f[3]]);
+    }
+}
+
+void build_plane(Mesh3D &out, float w, float h, unsigned nx, unsigned ny) {
+    /* Axis-aligned, +Y up. Top-left origin, +Y from -h/2 to +h/2. */
+    if (nx < 1) nx = 1;
+    if (ny < 1) ny = 1;
+    const float x0 = -w * 0.5f;
+    const float y0 = -h * 0.5f;
+    const float dx = w / (float)nx;
+    const float dy = h / (float)ny;
+    const unsigned cols = nx + 1;
+    std::vector<cl_v3> grid((size_t)cols * (size_t)(ny + 1));
+    for (unsigned j = 0; j <= ny; j++)
+        for (unsigned i = 0; i <= nx; i++)
+            grid[(size_t)j * cols + i] =
+                cl_v3_make(x0 + (float)i * dx, 0.0f, y0 + (float)j * dy);
+    for (unsigned j = 0; j < ny; j++)
+        for (unsigned i = 0; i < nx; i++) {
+            unsigned a = j * cols + i;
+            unsigned b = j * cols + i + 1;
+            unsigned c = (j + 1) * cols + i + 1;
+            unsigned d = (j + 1) * cols + i;
+            /* CCW from +Y: a(c,d),a(d,b) is unwound here as a-b-c then a-c-d
+             * with +Y up normal after our rasterizer's winding. */
+            out.add_triangle(grid[a], grid[b], grid[c]);
+            out.add_triangle(grid[a], grid[c], grid[d]);
+        }
+}
+
+void build_sphere(Mesh3D &out, float radius, unsigned rings, unsigned slices) {
+    if (rings < 2) rings = 2;
+    if (slices < 3) slices = 3;
+    /* UV-sphere: rings sweep latitude (excluding poles), slices longitude. */
+    const unsigned lat = rings;
+    const unsigned lon = slices;
+    auto idx = [&](unsigned j, unsigned i) { return j * (lon + 1) + i; };
+    std::vector<cl_v3> grid((size_t)(lat + 1) * (size_t)(lon + 1));
+    for (unsigned j = 0; j <= lat; j++) {
+        const float phi =
+            -3.14159265f * 0.5f + 3.14159265f * (float)j / (float)lat;
+        const float y = std::sin(phi) * radius;
+        const float rr = radius * std::cos(phi);
+        for (unsigned i = 0; i <= lon; i++) {
+            const float th = 2.0f * 3.14159265f * (float)i / (float)lon;
+            grid[idx(j, i)] =
+                cl_v3_make(std::cos(th) * rr, y, std::sin(th) * rr);
+        }
+    }
+    for (unsigned j = 0; j < lat; j++)
+        for (unsigned i = 0; i < lon; i++) {
+            unsigned a = idx(j, i);
+            unsigned b = idx(j, i + 1);
+            unsigned c = idx(j + 1, i + 1);
+            unsigned d = idx(j + 1, i);
+            out.add_triangle(grid[a], grid[b], grid[c]);
+            out.add_triangle(grid[a], grid[c], grid[d]);
+        }
+}
+
 void Renderer3D::resize(int width, int height) {
     width_ = width;
     height_ = height;
