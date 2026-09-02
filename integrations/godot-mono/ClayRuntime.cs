@@ -50,6 +50,14 @@ public sealed class ClayRuntime : IDisposable
     public void FeedMotion(double x, double y, double dx, double dy) => Check(
         Native.FeedMotion(handle, x, y, dx, dy));
 
+    public void FeedWheel(double x, double y, int clicks) => Check(
+        Native.FeedWheel(handle, x, y, clicks));
+
+    public void FeedFocus(bool focused) => Check(
+        Native.FeedFocus(handle, focused));
+
+    public void SetTimeScale(double scale) => Native.SetTimeScale(handle, scale);
+
     public void Step(double deltaSeconds) => Check(
         Native.Step(handle, deltaSeconds));
 
@@ -94,6 +102,12 @@ public sealed class ClayRuntime : IDisposable
                                          [MarshalAs(UnmanagedType.I1)] bool pressed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_motion")]
         public static extern int FeedMotion(RuntimeHandle runtime, double x, double y, double dx, double dy);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_wheel")]
+        public static extern int FeedWheel(RuntimeHandle runtime, double x, double y, int wheel);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_focus")]
+        public static extern int FeedFocus(RuntimeHandle runtime, [MarshalAs(UnmanagedType.I1)] bool focused);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_time_scale")]
+        public static extern void SetTimeScale(RuntimeHandle runtime, double scale);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]

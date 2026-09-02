@@ -27,3 +27,5 @@ The host can load reaction JSON and seed a scene through the C ABI with
 Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
+Keyboard, motion, wheel, and focus events are available as dedicated helpers
+in `engine_c.h`, avoiding managed marshaling of the C event struct.
