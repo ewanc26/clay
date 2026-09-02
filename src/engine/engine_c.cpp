@@ -1,9 +1,11 @@
 #include <clay/engine_c.h>
 
+#include "imageio.hpp"
 #include "runtime.hpp"
 #include "systems/builtin.hpp"
 
 #include <new>
+#include <stdexcept>
 #include <utility>
 
 namespace {
@@ -168,4 +170,16 @@ extern "C" const uint8_t *cl_engine_runtime_pixels_rgba(
     const auto &framebuffer = runtime->impl.framebuffer();
     if (byte_count) *byte_count = framebuffer.pixels.size() * sizeof(uint32_t);
     return framebuffer.as_rgba();
+}
+
+extern "C" cl_err cl_engine_runtime_save_png(
+    const cl_engine_runtime *runtime, const char *path) {
+    if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
+    return guarded([&] {
+        const auto &framebuffer = runtime->impl.framebuffer();
+        if (!clay::save_png(path, framebuffer.width, framebuffer.height,
+                            framebuffer.pixels.data())) {
+            throw std::runtime_error("could not write PNG");
+        }
+    });
 }

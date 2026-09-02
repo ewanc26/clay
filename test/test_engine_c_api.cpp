@@ -37,6 +37,10 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     const uint8_t *rgba = cl_engine_runtime_pixels_rgba(runtime, &rgba_bytes);
     CHECK(rgba != nullptr);
     CHECK(rgba_bytes == 32u * 24u * 4u);
+    CHECK(cl_engine_runtime_save_png(runtime, "/tmp/clay-engine-c-api.png") ==
+          CLAY_OK);
+    CHECK(cl_engine_runtime_save_png(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_save_png(runtime, "") == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_frame(runtime) == 1);
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);

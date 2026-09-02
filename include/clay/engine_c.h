@@ -68,6 +68,9 @@ CLAY_API const uint32_t *cl_engine_runtime_pixels(
  * the next step or destruction of the runtime. */
 CLAY_API const uint8_t *cl_engine_runtime_pixels_rgba(
     const cl_engine_runtime *runtime, size_t *byte_count);
+/* Writes the most recently rendered frame as an RGB PNG. */
+CLAY_API cl_err cl_engine_runtime_save_png(const cl_engine_runtime *runtime,
+                                           const char *path);
 
 #ifdef __cplusplus
 }
