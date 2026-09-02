@@ -2,6 +2,7 @@
 #define CLAY_ENGINE_RENDER_RENDERER_SW_HPP
 
 #include "render/renderer.hpp"
+#include "render/raster3d.hpp"
 
 namespace clay {
 
@@ -30,6 +31,10 @@ class RendererSW final : public IRenderer {
                        float y2, Rgba c) override;
     void draw_image(int x, int y, const uint32_t *src, int src_w,
                     int src_h) override;
+    Mesh3DStats draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
+                          cl_m4 proj, Rgba color,
+                          cl_v3 light_dir = {0.3f, 0.5f, 0.8f},
+                          float ambient = 0.35f) override;
 
     Framebuffer &framebuffer() {
         return fb_;
@@ -47,6 +52,7 @@ class RendererSW final : public IRenderer {
 
   private:
     Framebuffer fb_;
+    Renderer3D r3d_;
     uint64_t touched_ = 0;
 };
 

@@ -63,13 +63,13 @@ void RendererSW::fill_circle(float cx, float cy, float radius, Rgba c) {
 }
 
 void RendererSW::draw_line(float x0, float y0, float x1, float y1, Rgba c) {
-    raster::draw_line(fb_.pixels.data(), fb_.width, fb_.height, (int)x0, (int)y0,
-                      (int)x1, (int)y1, rgba_to_pixel(c));
+    raster::draw_line(fb_.pixels.data(), fb_.width, fb_.height, (int)x0,
+                      (int)y0, (int)x1, (int)y1, rgba_to_pixel(c));
     touched_ += 8;
 }
 
-void RendererSW::fill_triangle(float x0, float y0, float x1, float y1,
-                               float x2, float y2, Rgba c) {
+void RendererSW::fill_triangle(float x0, float y0, float x1, float y1, float x2,
+                               float y2, Rgba c) {
     const float pts[6] = {x0, y0, x1, y1, x2, y2};
     raster::fill_triangle(fb_.pixels.data(), fb_.width, fb_.height, pts,
                           rgba_to_pixel(c));
@@ -82,6 +82,17 @@ void RendererSW::draw_image(int x, int y, const uint32_t *src, int src_w,
     raster::blit(fb_.pixels.data(), fb_.width, fb_.height, x, y, src, src_w,
                  src_h);
     touched_ += (uint64_t)src_w * (uint64_t)src_h;
+}
+
+Mesh3DStats RendererSW::draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
+                                  cl_m4 proj, Rgba color, cl_v3 light_dir,
+                                  float ambient) {
+    r3d_.resize(fb_.width, fb_.height);
+    r3d_.clear();
+    Mesh3DStats s = r3d_.draw_mesh(fb_.pixels.data(), fb_.width, mesh, model,
+                                   view, proj, color, light_dir, ambient);
+    touched_ += (uint64_t)s.pixels_written;
+    return s;
 }
 
 uint32_t RendererSW::pixel(int x, int y) const {
