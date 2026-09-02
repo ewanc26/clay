@@ -41,3 +41,10 @@ jobs:
         run: |
           mkdir -p build/smoke
           ./build/demo/clay_player --headless --frames 30 --dump build/smoke/garden.png
+
+  managed-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build managed host wrapper
+        run: dotnet build integrations/godot-mono/ClayRuntime.csproj --nologo
