@@ -52,8 +52,9 @@ ctest --test-dir build            # unit tests, all headless
   reactive `SystemGraph`, data-driven `ReactionRule`s, hierarchical scene
   graph (Parent/WorldTransform2D), 2D physics & collision detection,
   property tween animation with easing curves, immediate-mode UI
-  (label/button/checkbox/slider), and both the 2D garden rasterizer and a from-scratch **3D software rasterizer** (depth buffer,
-  flat shading, directional + point lights, perspective camera).
+  (label/button/checkbox/slider), and a from-scratch **3D software
+  rasterizer** (depth buffer, flat shading, directional + point lights,
+  perspective camera).
 - `demo` — *The Clay Garden*: a living, fully headless scene where everything
   reacts to the player. A sculpture anchors the world; a herd of
   cursor-magnet animals drifts toward the mouse; clicks emit ripples, space
@@ -61,7 +62,9 @@ ctest --test-dir build            # unit tests, all headless
   record. `--scene out.clay` runs a 3D scene from the JSON-based
   **.clay file format** instead.
 - `examples` — standalone C host using only the stable `engine_c.h` ABI.
-- `docs/` — design notes including the [.clay file format spec](docs/file-format.md).
+- `docs/` — design notes: [.clay file format spec](docs/file-format.md),
+  [C/C++ host integration guide](docs/integration.md), and
+  [open issues tracker](docs/issues.md).
 
 ## Host integrations
 
