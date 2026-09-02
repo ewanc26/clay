@@ -34,6 +34,22 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_ERR_IO);
     cl_engine_runtime_set_replaying(runtime, true);
     cl_engine_runtime_set_replaying(runtime, false);
+
+    cl_engine_runtime *recorded = cl_engine_runtime_create(16, 16, 42);
+    REQUIRE(recorded != nullptr);
+    CHECK(cl_engine_runtime_step(recorded, 1.0 / 60.0) == CLAY_OK);
+    CHECK(cl_engine_runtime_feed_key(recorded, CLAY_KEY_A, true) == CLAY_OK);
+    CHECK(cl_engine_runtime_save_recording(
+              recorded, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    cl_engine_runtime *replayed = cl_engine_runtime_create(16, 16, 42);
+    REQUIRE(replayed != nullptr);
+    CHECK(cl_engine_runtime_load_recording(
+              replayed, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    cl_engine_runtime_set_replaying(replayed, true);
+    CHECK(cl_engine_runtime_step(replayed, 1.0 / 60.0) == CLAY_OK);
+    CHECK(cl_engine_runtime_is_key_down(replayed, CLAY_KEY_A));
+    cl_engine_runtime_destroy(replayed);
+    cl_engine_runtime_destroy(recorded);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) == CLAY_OK);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) ==
           CLAY_ERR_INVALID_ARG);
