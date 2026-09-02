@@ -10,6 +10,10 @@ cmake --build build
 cmake --install build --prefix /path/to/clay-sdk
 ```
 
+For an offline build that explicitly disables the optional GLFW presenter, use
+`-DCLAY_BUILD_INTERACTIVE=ON -DCLAY_USE_SYSTEM_GLFW=OFF`; the build remains
+headless and does not invoke FetchContent.
+
 An external C or C++ target can then discover Clay with
 `find_package(clay CONFIG REQUIRED)` and link `clay::clay_engine`. Host engines should drive `Runtime` from
 their own update loop, feed raw `cl_input_event` values, call `update`, and
