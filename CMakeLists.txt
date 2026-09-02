@@ -150,6 +150,16 @@ target_include_directories(clay_engine PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/engine>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/clay/engine>)
 target_link_libraries(clay_engine PUBLIC clay_core clay_third_party)
+# A C host may link the static engine through the C ABI. Propagate the C++
+# runtime explicitly because CMake otherwise chooses the C linker for that
+# consumer and leaves libc++/libstdc++ symbols unresolved.
+if(NOT CLAY_BUILD_SHARED AND NOT MSVC)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(clay_engine PUBLIC stdc++)
+  else()
+    target_link_libraries(clay_engine PUBLIC c++)
+  endif()
+endif()
 
 if(CLAY_HAS_GLFW)
   target_compile_definitions(clay_engine PUBLIC CLAY_HAS_GLFW=1)
