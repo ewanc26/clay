@@ -60,6 +60,10 @@ public sealed class ClayRuntime : IDisposable
             species ?? throw new ArgumentNullException(nameof(species)), x, y,
             r, g, b, a, life));
 
+    public void SpawnRipple(float x, float y, float radius, float r, float g,
+                            float b, float a) => Check(
+        Native.SpawnRipple(handle, x, y, radius, r, g, b, a));
+
     public void FeedKey(int key, bool pressed) => Check(
         Native.FeedKey(handle, key, pressed));
 
@@ -180,6 +184,10 @@ public sealed class ClayRuntime : IDisposable
         public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
                                                float x, float y, float r, float g,
                                                float b, float a, float life);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_ripple")]
+        public static extern int SpawnRipple(RuntimeHandle runtime, float x, float y,
+                                              float radius, float r, float g,
+                                              float b, float a);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_install_builtin_systems")]
         public static extern int InstallBuiltinSystems(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_width")]
