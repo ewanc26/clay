@@ -1,6 +1,7 @@
 #include "systems/builtin.hpp"
 
 #include "runtime.hpp"
+#include "systems/collision.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -34,6 +35,12 @@ WorldTransform2D compose_transform(const Transform2D &child,
     wt.rotation = parent.rotation + child.rotation;
     wt.scale = parent.scale * child.scale;
     return wt;
+}
+
+/* Return the mass of an entity's PhysicsBody2D, or 0 if it has none. */
+float body_mass(World &world, Entity e) {
+    PhysicsBody2D *b = world.storage<PhysicsBody2D>().find(e);
+    return b ? b->mass : 0.0f;
 }
 
 } // namespace
@@ -210,6 +217,86 @@ void SceneGraphSystem::update(Runtime &rt, double dt) {
         }
 
         if (!changed) break;
+    }
+}
+
+void PhysicsSystem::update(Runtime &rt, double dt) {
+    (void)dt;
+    World &world = rt.world();
+
+    ComponentStorage<WorldTransform2D> &wts =
+        world.storage<WorldTransform2D>();
+    ComponentStorage<BoxCollider2D> &boxes =
+        world.storage<BoxCollider2D>();
+    ComponentStorage<CircleCollider2D> &circles =
+        world.storage<CircleCollider2D>();
+
+    auto resolve_pos = [&](Entity e) -> cl_v2 {
+        WorldTransform2D *wt = wts.find(e);
+        if (wt) return cl_v2_make(wt->x, wt->y);
+        Transform2D *t = world.storage<Transform2D>().find(e);
+        return t ? cl_v2_make(t->x, t->y) : cl_v2_make(0, 0);
+    };
+
+    /* Helper: publish a collision event and correct positions. */
+    auto handle_contact = [&](Entity a, Entity b, const Contact2D &c) {
+        rt.hub().publish(
+            channel(CLAY_CH_COLLISION),
+            cl_variant_str(cl_str_c("collision")));
+        float ma = body_mass(world, a);
+        float mb = body_mass(world, b);
+        float total = ma + mb;
+        if (total <= 0.0f) return;
+        float ka = mb / total; /* lighter body moves more */
+        float kb = ma / total;
+        Transform2D *ta = world.storage<Transform2D>().find(a);
+        Transform2D *tb = world.storage<Transform2D>().find(b);
+        if (ta) {
+            ta->x -= c.normal.x * c.depth * ka;
+            ta->y -= c.normal.y * c.depth * ka;
+        }
+        if (tb) {
+            tb->x += c.normal.x * c.depth * kb;
+            tb->y += c.normal.y * c.depth * kb;
+        }
+    };
+
+    /* Box vs Box. */
+    for (size_t i = 0; i < boxes.count(); i++) {
+        Entity a = boxes.owner[i];
+        for (size_t j = i + 1; j < boxes.count(); j++) {
+            Entity b = boxes.owner[j];
+            Contact2D c = aabb_aabb(
+                resolve_pos(a), boxes.dense[i].width / 2.0f,
+                boxes.dense[i].height / 2.0f, resolve_pos(b),
+                boxes.dense[j].width / 2.0f, boxes.dense[j].height / 2.0f);
+            if (c.overlap) handle_contact(a, b, c);
+        }
+    }
+
+    /* Box vs Circle. */
+    for (size_t i = 0; i < boxes.count(); i++) {
+        Entity a = boxes.owner[i];
+        for (size_t j = 0; j < circles.count(); j++) {
+            Entity b = circles.owner[j];
+            Contact2D c = aabb_circle(
+                resolve_pos(a), boxes.dense[i].width / 2.0f,
+                boxes.dense[i].height / 2.0f, resolve_pos(b),
+                circles.dense[j].radius);
+            if (c.overlap) handle_contact(a, b, c);
+        }
+    }
+
+    /* Circle vs Circle. */
+    for (size_t i = 0; i < circles.count(); i++) {
+        Entity a = circles.owner[i];
+        for (size_t j = i + 1; j < circles.count(); j++) {
+            Entity b = circles.owner[j];
+            Contact2D c = circle_circle(
+                resolve_pos(a), circles.dense[i].radius,
+                resolve_pos(b), circles.dense[j].radius);
+            if (c.overlap) handle_contact(a, b, c);
+        }
     }
 }
 
