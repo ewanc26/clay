@@ -9,6 +9,7 @@ command when network access is available.
 ## Godot Mono binding package
 
 Clay still needs generated key constants, native library packaging for each
-supported platform, and a CI smoke project. A minimal sample project and the
-managed `SafeHandle` wrapper now exist under `integrations/godot-mono/`; this
-issue remains open until those distribution pieces are covered.
+supported platform, and a CI smoke project. A minimal sample project, managed
+`SafeHandle` wrapper, and configurable shared-library build now exist under
+`integrations/godot-mono/`; this issue remains open until those distribution
+pieces are covered.

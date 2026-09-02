@@ -31,6 +31,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
 
 option(CLAY_BUILD_TESTS "Build unit tests" ON)
 option(CLAY_BUILD_INTERACTIVE "Build the interactive `clay_player` app" ON)
+option(CLAY_BUILD_SHARED "Build clay_engine as a shared library for host bindings" ON)
 
 # ------------------------------------------------------------------ third party
 # Deliberate, minimal dependency set (see third_party/README.md):
@@ -135,7 +136,11 @@ if(CLAY_HAS_GLFW)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/platform/window_glfw.cpp)
 endif()
 
-add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
+if(CLAY_BUILD_SHARED)
+  add_library(clay_engine SHARED ${CLAY_ENGINE_SOURCES})
+else()
+  add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
+endif()
 target_include_directories(clay_engine PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/engine>
@@ -164,6 +169,8 @@ add_subdirectory(demo)
 install(TARGETS clay_third_party clay_core clay_engine
   EXPORT clayTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES include/clay/clay.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)

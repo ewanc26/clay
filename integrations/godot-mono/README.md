@@ -2,8 +2,10 @@
 
 `ClayRuntime.cs` is a small managed facade over Clay's opaque C ABI. The
 directory also contains a minimal `project.godot` + `ClayDemo.cs` sample:
-copy the native `clay_engine` library in the platform's native library
-location, open the directory in a Godot Mono editor, and run the project.
+copy the shared native `clay_engine` library (`.dylib`, `.so`, or `.dll`) in
+the platform's native library location, open the directory in a Godot Mono
+editor, and run the project. Configure Clay with `-DCLAY_BUILD_SHARED=ON`
+(the default) to produce that library.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
