@@ -218,7 +218,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/clayConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/clayConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
-install(FILES LICENSE third_party/README.md
+install(FILES LICENSE third_party/README.md third_party/doctest/LICENSE.txt
   DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/clay)
 if(CLAY_INSTALL_GODOT_NATIVE AND CLAY_BUILD_SHARED)
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
