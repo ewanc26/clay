@@ -17,6 +17,8 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_resize(runtime, 32, 24) == CLAY_OK);
     CHECK(cl_engine_runtime_frame(runtime) == 0);
     CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_sim_dt(runtime) == doctest::Approx(1.0 / 60.0));
+    CHECK(cl_engine_runtime_time_scale(runtime) == doctest::Approx(1.0));
     CHECK(cl_engine_runtime_cursor_x(runtime) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_y(runtime) == doctest::Approx(0.0));
 
@@ -131,6 +133,7 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_cursor_y(runtime) == doctest::Approx(9.0));
     cl_engine_runtime_set_time_scale(
         runtime, std::numeric_limits<double>::infinity());
+    CHECK(cl_engine_runtime_time_scale(runtime) == doctest::Approx(1.0));
     CHECK(cl_engine_runtime_step(runtime, 1.0 / 60.0) == CLAY_OK);
     CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(2.0 / 60.0));
 
@@ -154,6 +157,8 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_height(nullptr) == 0);
     CHECK(cl_engine_runtime_frame(nullptr) == 0);
     CHECK(cl_engine_runtime_sim_time(nullptr) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_sim_dt(nullptr) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_time_scale(nullptr) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_x(nullptr) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_y(nullptr) == doctest::Approx(0.0));
     CHECK(!cl_engine_runtime_is_key_down(nullptr, CLAY_KEY_SPACE));

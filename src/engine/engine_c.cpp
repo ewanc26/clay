@@ -279,6 +279,16 @@ extern "C" double cl_engine_runtime_sim_time(
     return runtime ? runtime->impl.sim_time() : 0.0;
 }
 
+extern "C" double cl_engine_runtime_sim_dt(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.sim_dt() : 0.0;
+}
+
+extern "C" double cl_engine_runtime_time_scale(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.time_scale() : 0.0;
+}
+
 extern "C" double cl_engine_runtime_cursor_x(
     const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.cursor_x() : 0.0;
