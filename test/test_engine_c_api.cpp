@@ -39,6 +39,14 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_feed_focus(runtime, true) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_wheel(nullptr, 0, 0, 1) ==
           CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_NONE, true) ==
+          CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_feed_motion(
+              runtime, std::numeric_limits<double>::quiet_NaN(), 0, 0, 0) ==
+          CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_feed_wheel(
+              runtime, 0, std::numeric_limits<double>::infinity(), 1) ==
+          CLAY_ERR_INVALID_ARG);
     size_t count = 0;
     const uint32_t *pixels = cl_engine_runtime_pixels(runtime, &count);
     CHECK(pixels != nullptr);

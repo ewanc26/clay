@@ -10,6 +10,18 @@
 
 namespace {
 
+bool valid_input_event(const cl_input_event &event) {
+    if (event.type < CLAY_IN_PRESS || event.type > CLAY_IN_FOCUS)
+        return false;
+    if (!std::isfinite(event.x) || !std::isfinite(event.y) ||
+        !std::isfinite(event.dx) || !std::isfinite(event.dy))
+        return false;
+    if ((event.type == CLAY_IN_PRESS || event.type == CLAY_IN_RELEASE) &&
+        (event.key <= CLAY_KEY_NONE || event.key >= CLAY_KEY_COUNT))
+        return false;
+    return true;
+}
+
 template <typename Fn> cl_err guarded(Fn &&fn) {
     try {
         std::forward<Fn>(fn)();
@@ -53,13 +65,15 @@ extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
 
 extern "C" cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                                            const cl_input_event *event) {
-    if (!runtime || !event) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !event || !valid_input_event(*event))
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] { runtime->impl.feed(*event); });
 }
 
 extern "C" cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
                                                cl_key key, bool pressed) {
-    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || key <= CLAY_KEY_NONE || key >= CLAY_KEY_COUNT)
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] {
         runtime->impl.feed(pressed ? cl_input_event_make(CLAY_IN_PRESS, key)
                                     : cl_input_event_make(CLAY_IN_RELEASE, key));
@@ -69,14 +83,17 @@ extern "C" cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
 extern "C" cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
                                                   double x, double y, double dx,
                                                   double dy) {
-    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !std::isfinite(x) || !std::isfinite(y) ||
+        !std::isfinite(dx) || !std::isfinite(dy))
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] { runtime->impl.feed_motion(x, y, dx, dy); });
 }
 
 extern "C" cl_err cl_engine_runtime_feed_wheel(cl_engine_runtime *runtime,
                                                  double x, double y,
                                                  int wheel) {
-    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !std::isfinite(x) || !std::isfinite(y))
+        return CLAY_ERR_INVALID_ARG;
     cl_input_event event = cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
     event.x = x;
     event.y = y;
