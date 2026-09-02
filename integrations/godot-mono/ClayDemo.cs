@@ -48,7 +48,7 @@ public partial class ClayDemo : Node2D
             runtime.Resize(width, height);
         surfaceWidth = width;
         surfaceHeight = height;
-        image = Image.Create(width, height, false, Image.Format.Rgba8);
+        image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
         texture = ImageTexture.CreateFromImage(image);
         rgba = new byte[checked(width * height * 4)];
     }
