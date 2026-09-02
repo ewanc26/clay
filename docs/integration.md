@@ -33,6 +33,8 @@ pixels are packed `0x00RRGGBB` values in row-major order.
 The default C ABI constructor reserves 4 MiB for engine state; hosts with
 larger scenes can use `cl_engine_runtime_create_with_arena` to provide an
 explicit arena size in bytes. A zero-sized arena is rejected.
+The public `CLAY_ENGINE_MIN_ARENA_BYTES` constant gives the smallest safe
+value for runtime initialization; smaller values are rejected.
 Before creating a runtime, hosts may compare
 `cl_engine_runtime_abi_version()` with `CLAY_ENGINE_ABI_VERSION` to detect a
 native library/binding mismatch.
