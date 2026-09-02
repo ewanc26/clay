@@ -49,6 +49,8 @@ extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
         return new cl_engine_runtime(width, height, seed);
     } catch (const std::bad_alloc &) {
         return nullptr;
+    } catch (...) {
+        return nullptr;
     }
 }
 
