@@ -62,15 +62,16 @@ GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
 addition to a shared library; that adapter is a separate future integration.
 
 The committed `export_presets.cfg` provides a reproducible macOS export. After
-exporting, copy the platform library into the app's native search path before
-launching the bundle, for example:
+exporting, use the bundled helper to stage the platform library into the app's
+native search path:
 
 ```sh
-cp libclay_engine.dylib "ClayGodotSample.app/Contents/MacOS/"
+./scripts/godot_mono_export_macos.sh build/ClayGodotSample.app
 ```
 
 Godot currently packs arbitrary `.dylib` files as project resources; macOS
-cannot resolve a P/Invoke library from inside that resource pack.
+cannot resolve a P/Invoke library from inside that resource pack. The helper
+keeps the export and staging steps together.
 
 The sample reuses its managed pixel and RGBA conversion buffers each frame;
 production hosts can upload through a native texture bridge for further
