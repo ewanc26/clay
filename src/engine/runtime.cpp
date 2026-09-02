@@ -101,6 +101,8 @@ Event Runtime::to_event(const cl_event &ev) {
 /* -------------------------------------------------------------- input  */
 
 void Runtime::begin_frame(double dt_seconds) {
+    if (!std::isfinite(dt_seconds) || dt_seconds < 0.0) return;
+
     frame_ += 1;
     sim_dt_ = (time_scale_ > 0.0 ? time_scale_ : 1.0) * dt_seconds;
     sim_time_ += sim_dt_;

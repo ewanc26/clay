@@ -3,6 +3,8 @@
 
 #include "runtime.hpp"
 
+#include <limits>
+
 using namespace clay;
 
 namespace {
@@ -161,6 +163,15 @@ TEST_CASE("runtime: malformed direct input is ignored") {
     CHECK_EQ(rt.input_log().count, 0);
     CHECK_EQ(rt.commands().count(), 0);
     CHECK_EQ(rt.reactions().fired_count(), 0);
+}
+
+TEST_CASE("runtime: malformed direct timing is ignored") {
+    Runtime rt(320, 240, 9);
+    rt.begin_frame(-1.0);
+    rt.begin_frame(std::numeric_limits<double>::quiet_NaN());
+
+    CHECK_EQ(rt.frame(), 0);
+    CHECK_EQ(rt.sim_time(), 0.0);
 }
 
 TEST_CASE("runtime: same seed, same transcript, same world") {
