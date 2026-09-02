@@ -60,6 +60,7 @@ struct EventQueue {
     std::vector<cl_input_event> events;
     double last_cursor_x = 0.0;
     double last_cursor_y = 0.0;
+    double wheel_remainder = 0.0;
     bool gamepad_down[GLFW_GAMEPAD_BUTTON_LAST + 1] = {};
     bool gamepad_active = false;
 };
@@ -168,9 +169,12 @@ void cursor_cb(GLFWwindow *wnd, double x, double y) {
 void scroll_cb(GLFWwindow *wnd, double, double yoff) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
-    if (yoff == 0.0) return;
+    q->wheel_remainder += yoff;
+    const int clicks = (int)q->wheel_remainder;
+    q->wheel_remainder -= clicks;
+    if (clicks == 0) return;
     cl_input_event e = cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
-    e.wheel = (int)(yoff * 20.0);
+    e.wheel = clicks;
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
