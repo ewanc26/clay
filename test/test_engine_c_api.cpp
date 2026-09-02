@@ -4,9 +4,13 @@
 #include <clay/engine_c.h>
 
 #include <limits>
+#include <string>
 
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_abi_version() == CLAY_ENGINE_ABI_VERSION);
+    CHECK(std::string(cl_engine_error_string(CLAY_OK)) == "ok");
+    CHECK(std::string(cl_engine_error_string(CLAY_ERR_PARSE)) == "parse error");
+    CHECK(std::string(cl_engine_error_string((cl_err)999)) == "unknown");
     cl_engine_runtime *runtime = cl_engine_runtime_create(32, 24, 7);
     REQUIRE(runtime != nullptr);
     CHECK(cl_engine_runtime_width(runtime) == 32);
