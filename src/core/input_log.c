@@ -3,6 +3,8 @@
 #include "math.h"
 
 #include <stdio.h>
+#include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 
 /* On-disk header. Events are encoded field-by-field (never raw structs), so a
@@ -96,25 +98,38 @@ static bool encode_event(FILE *f, const cl_input_event *e) {
            write_f64(f, (double)e->wheel) && write_u32(f, e->focus ? 1u : 0u);
 }
 
-static bool decode_event(FILE *f, cl_input_event *e) {
+static bool decode_event(FILE *f, cl_input_event *e, double *wheel_value) {
     uint32_t type = 0;
     uint32_t key = 0;
     uint32_t mods = 0;
     uint32_t focus = 0;
-    double wheel_value = 0.0;
+    double decoded_wheel = 0.0;
     *e = (cl_input_event){0};
     if (!read_u32(f, &e->frame) || !read_f64(f, &e->time) ||
         !read_u32(f, &type) || !read_u32(f, &key) ||
         !read_u32(f, &mods) || !read_f64(f, &e->x) ||
         !read_f64(f, &e->y) || !read_f64(f, &e->dx) ||
-        !read_f64(f, &e->dy) || !read_f64(f, &wheel_value) ||
+        !read_f64(f, &e->dy) || !read_f64(f, &decoded_wheel) ||
         !read_u32(f, &focus))
         return false;
     e->type = (cl_input_kind)type;
     e->key = (cl_key)key;
     e->mods = (int)mods;
-    e->wheel = (int)wheel_value;
+    *wheel_value = decoded_wheel;
+    e->wheel = 0;
     e->focus = focus != 0;
+    return true;
+}
+
+static bool valid_decoded_event(const cl_input_event *e, double wheel_value) {
+    if (e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS) return false;
+    if (e->key < CLAY_KEY_NONE || e->key >= CLAY_KEY_COUNT) return false;
+    if (!isfinite(e->time) || !isfinite(e->x) || !isfinite(e->y) ||
+        !isfinite(e->dx) || !isfinite(e->dy) || !isfinite(wheel_value))
+        return false;
+    if (wheel_value < (double)INT_MIN || wheel_value > (double)INT_MAX ||
+        wheel_value != trunc(wheel_value))
+        return false;
     return true;
 }
 
@@ -165,11 +180,22 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         _Alignof(cl_input_event));
     uint64_t loaded_fingerprint = 0x9E3779B97F4A7C15ULL;
     for (uint64_t i = 0; i < count; i++) {
-        if (!decode_event(f, &items[i])) {
+        double wheel_value = 0.0;
+        /* Decode once more through a temporary so the on-disk floating-point
+         * wheel value can be range-checked before its int conversion. */
+        cl_input_event decoded;
+        if (!decode_event(f, &decoded, &wheel_value)) {
             fclose(f);
             cl_arena_return(scratch);
             return CLAY_ERR_PARSE;
         }
+        if (!valid_decoded_event(&decoded, wheel_value)) {
+            fclose(f);
+            cl_arena_return(scratch);
+            return CLAY_ERR_PARSE;
+        }
+        decoded.wheel = (int)wheel_value;
+        items[i] = decoded;
         loaded_fingerprint = fingerprint_event(&items[i], loaded_fingerprint);
     }
     fclose(f);
