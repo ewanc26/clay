@@ -68,6 +68,18 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_OK);
     CHECK(cl_engine_runtime_spawn_ripple(runtime, 8, 9, 20, 1, 0.5f, 0.2f,
                                          1) == CLAY_OK);
+    CHECK(cl_engine_runtime_spawn_species(
+              runtime, "animal", std::numeric_limits<float>::quiet_NaN(), 9,
+              0.7f, 0.8f, 0.5f, 1.0f, 10.0f) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_spawn_species(
+              runtime, "animal", 8, 9, 0.7f, 0.8f, 0.5f, 1.0f,
+              std::numeric_limits<float>::infinity()) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_spawn_ripple(
+              runtime, 8, 9, std::numeric_limits<float>::infinity(), 1,
+              0.5f, 0.2f, 1) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_spawn_ripple(
+              runtime, 8, 9, 20, 1, std::numeric_limits<float>::quiet_NaN(),
+              0.2f, 1) == CLAY_ERR_INVALID_ARG);
     CHECK(!cl_engine_runtime_is_key_down(runtime, CLAY_KEY_SPACE));
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, true) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_motion(runtime, 8, 9, 1, 2) == CLAY_OK);

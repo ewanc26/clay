@@ -22,6 +22,14 @@ bool valid_input_event(const cl_input_event &event) {
     return true;
 }
 
+bool finite(float value) {
+    return std::isfinite(value);
+}
+
+bool valid_color(float r, float g, float b, float a) {
+    return finite(r) && finite(g) && finite(b) && finite(a);
+}
+
 template <typename Fn> cl_err guarded(Fn &&fn) {
     try {
         std::forward<Fn>(fn)();
@@ -189,7 +197,9 @@ extern "C" uint64_t cl_engine_runtime_recording_fingerprint(
 extern "C" cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life) {
-    if (!runtime || !species) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !species || species[0] == '\0' || !finite(x) ||
+        !finite(y) || !valid_color(r, g, b, a) || !finite(life))
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] {
         runtime->impl.spawn_species(species, x, y, {r, g, b, a}, life);
     });
@@ -198,7 +208,9 @@ extern "C" cl_err cl_engine_runtime_spawn_species(
 extern "C" cl_err cl_engine_runtime_spawn_ripple(
     cl_engine_runtime *runtime, float x, float y, float radius, float r,
     float g, float b, float a) {
-    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !finite(x) || !finite(y) || !finite(radius) ||
+        !valid_color(r, g, b, a))
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] {
         runtime->impl.spawn_ripple(x, y, radius, {r, g, b, a});
     });
