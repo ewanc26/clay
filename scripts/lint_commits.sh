@@ -12,8 +12,7 @@
 #   ./scripts/lint_commits.sh              # $GITHUB_BASE_REF..HEAD, else HEAD~10
 #   ./scripts/lint_commits.sh RANGE        # e.g. origin/main..HEAD
 #
-# Exits nonzero when any commit in the range violates the format. Merge
-# commits are implementation-annotated (--no-ff) and skipped.
+# Exits nonzero when any non-merge commit in the range violates the format.
 set -euo pipefail
 
 PATTERN='^(feat|fix|docs|test|refactor|perf|chore|build|ci|revert)(\([a-z0-9_-]+\))?(!)?: .+'
@@ -30,15 +29,12 @@ fi
 fail=0
 while IFS= read -r line; do
   [[ -z "${line}" ]] && continue
-  if [[ "${line}" =~ ^Merge\ (branch|pull) ]]; then
-    continue
-  fi
   printf '  checking: %s\n' "${line}"
   if [[ ! "${line}" =~ ${PATTERN} ]]; then
     printf '  VIOLATION: %s\n' "${line}"
     fail=1
   fi
-done < <(git log --format=%s "${RANGE}")
+done < <(git log --no-merges --format=%s "${RANGE}")
 
 if (( fail )); then
   printf 'error: commit messages must be scoped conventional commits.\n'
