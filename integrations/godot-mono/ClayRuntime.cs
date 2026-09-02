@@ -44,6 +44,14 @@ public sealed class ClayRuntime : IDisposable
     public void LoadActions(string json) => Check(
         Native.LoadActions(handle, json ?? throw new ArgumentNullException(nameof(json))));
 
+    public void SaveRecording(string path) => Check(
+        Native.SaveRecording(handle, path ?? throw new ArgumentNullException(nameof(path))));
+
+    public void LoadRecording(string path) => Check(
+        Native.LoadRecording(handle, path ?? throw new ArgumentNullException(nameof(path))));
+
+    public void SetReplaying(bool replaying) => Native.SetReplaying(handle, replaying);
+
     public void SpawnSpecies(string species, float x, float y, float r, float g,
                              float b, float a, float life) => Check(
         Native.SpawnSpecies(handle,
@@ -142,6 +150,13 @@ public sealed class ClayRuntime : IDisposable
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_actions")]
         public static extern int LoadActions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_save_recording")]
+        public static extern int SaveRecording(RuntimeHandle runtime, string path);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_recording")]
+        public static extern int LoadRecording(RuntimeHandle runtime, string path);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_replaying")]
+        public static extern void SetReplaying(RuntimeHandle runtime,
+                                                [MarshalAs(UnmanagedType.I1)] bool replaying);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]
         public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
                                                float x, float y, float r, float g,
