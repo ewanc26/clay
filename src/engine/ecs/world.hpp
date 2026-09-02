@@ -12,24 +12,6 @@
 
 namespace clay {
 
-/* Stable identity: index + generation. An index is recycled only after its
- * slot's generation wraps (uint32), so a stale Entity can never alias a new
- * one that happens to reuse the slot. */
-struct Entity {
-    uint32_t index = 0;
-    uint32_t generation = 0;
-
-    bool operator==(const Entity &o) const {
-        return index == o.index && generation == o.generation;
-    }
-    bool operator!=(const Entity &o) const {
-        return !(*this == o);
-    }
-    explicit operator bool() const {
-        return generation != 0;
-    }
-};
-
 /* Type-erased handle to a component pool, so World can store arbitrary
  * ComponentStorage<T> instances in a single map without templating the
  * World class itself. */

@@ -45,12 +45,16 @@ void GardenRenderSystem::render(Runtime &rt, IRenderer &renderer) {
     ComponentStorage<Transform2D> &ts = rt.world().storage<Transform2D>();
     ComponentStorage<Color> &cs = rt.world().storage<Color>();
     ComponentStorage<RippleRing> &rs = rt.world().storage<RippleRing>();
+    ComponentStorage<WorldTransform2D> &wts =
+        rt.world().storage<WorldTransform2D>();
 
     renderer.fill_rect(0.0f, h - 46.0f, w, 46.0f, u8c(62, 52, 38, 255));
 
     for (size_t i = 0; i < ts.count(); i++) {
         Entity e = ts.owner[i];
-        Transform2D &t = ts.dense[i];
+        const WorldTransform2D *wt = wts.find(e);
+        float px = wt ? wt->x : ts.dense[i].x;
+        float py = wt ? wt->y : ts.dense[i].y;
         Color *c = cs.find(e);
         Rgba base = f32c(c ? c->r : 0.63f, c ? c->g : 0.63f,
                          c ? c->b : 0.63f, 1.0f);
@@ -59,30 +63,30 @@ void GardenRenderSystem::render(Runtime &rt, IRenderer &renderer) {
 
         switch (species) {
         case Species::Animal: {
-            renderer.fill_circle(t.x, t.y, 7.0f, base);
+            renderer.fill_circle(px, py, 7.0f, base);
             Rgba outline = u8c((uint32_t)(base.r / 2), (uint32_t)(base.g / 2),
                                (uint32_t)(base.b / 2), 255);
-            renderer.draw_line(t.x - 8, t.y, t.x + 8, t.y, outline);
+            renderer.draw_line(px - 8, py, px + 8, py, outline);
             Velocity *v = rt.world().storage<Velocity>().find(e);
             if (v) {
                 float len = std::sqrt(v->x * v->x + v->y * v->y);
                 if (len > 1.0f) {
                     float ux = v->x / len * 9.0f;
                     float uy = v->y / len * 9.0f;
-                    renderer.draw_line(t.x, t.y, t.x + ux, t.y + uy, outline);
+                    renderer.draw_line(px, py, px + ux, py + uy, outline);
                 }
             }
             break;
         }
         case Species::Sculpture: {
             float s = 14.0f;
-            renderer.fill_triangle(t.x, t.y - s, t.x - s, t.y + s, t.x + s,
-                                   t.y + s, base);
+            renderer.fill_triangle(px, py - s, px - s, py + s, px + s,
+                                   py + s, base);
             Rgba shade = u8c((uint32_t)(base.r / 2), (uint32_t)(base.g / 2),
                              (uint32_t)(base.b / 3), 255);
-            renderer.fill_triangle(t.x, t.y - s, t.x - s, t.y + s, t.x,
-                                   t.y + s, shade);
-            renderer.fill_circle(t.x, t.y - s, 3.0f, u8c(255, 250, 235, 255));
+            renderer.fill_triangle(px, py - s, px - s, py + s, px,
+                                   py + s, shade);
+            renderer.fill_circle(px, py - s, 3.0f, u8c(255, 250, 235, 255));
             break;
         }
         case Species::Ripple: {
@@ -90,11 +94,11 @@ void GardenRenderSystem::render(Runtime &rt, IRenderer &renderer) {
             float radius = ring ? ring->radius : 20.0f;
             float alpha = c ? c->a * 255.0f : 255.0f;
             Rgba dim = u8c(base.r, base.g, base.b, (uint32_t)alpha);
-            draw_ring(renderer, t.x, t.y, radius, dim);
+            draw_ring(renderer, px, py, radius, dim);
             break;
         }
         case Species::Pebble:
-            renderer.fill_circle(t.x, t.y, 2.2f, base);
+            renderer.fill_circle(px, py, 2.2f, base);
             break;
         default:
             break;

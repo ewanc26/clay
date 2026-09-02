@@ -2,6 +2,7 @@
 #include <doctest/doctest.h>
 
 #include "runtime.hpp"
+#include "systems/builtin.hpp"
 
 #include <limits>
 
@@ -309,4 +310,86 @@ TEST_CASE("runtime: a custom render system replaces the default draw pass") {
     CHECK(blank.calls == 1);
     CHECK(fnv1a64(rt.framebuffer()) ==
            fnv1a64(Runtime(64, 64, 99).framebuffer()));
+}
+
+TEST_CASE("runtime: scene graph resolves parent/child world transforms") {
+    Runtime rt(320, 240, 42);
+    rt.systems().add(std::make_unique<SceneGraphSystem>());
+
+    Entity parent = rt.spawn_species("sculpture", 100, 100,
+                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    /* Move the parent to a known local position. */
+    rt.world().storage<Transform2D>().set(parent, {100, 100, 0, 1});
+
+    Entity child = rt.spawn_species("animal", 110, 100,
+                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    /* Child is offset +10 x from parent in local space. */
+    rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
+    rt.world().storage<Parent>().set(child, {parent});
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+    /* SceneGraphSystem runs in update(), resolving world transforms. */
+    WorldTransform2D *wt_child =
+        rt.world().storage<WorldTransform2D>().find(child);
+    REQUIRE(wt_child != nullptr);
+    CHECK(wt_child->x == doctest::Approx(110.0f)); /* 100 + 10 */
+    CHECK(wt_child->y == doctest::Approx(100.0f));
+
+    WorldTransform2D *wt_parent =
+        rt.world().storage<WorldTransform2D>().find(parent);
+    REQUIRE(wt_parent != nullptr);
+    CHECK(wt_parent->x == doctest::Approx(100.0f));
+    CHECK(wt_parent->y == doctest::Approx(100.0f));
+}
+
+TEST_CASE("runtime: moving parent moves all descendants") {
+    Runtime rt(320, 240, 42);
+    rt.systems().add(std::make_unique<SceneGraphSystem>());
+
+    Entity parent = rt.spawn_species("sculpture", 50, 50,
+                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    Entity child = rt.spawn_species("animal", 50, 50,
+                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    rt.world().storage<Parent>().set(child, {parent});
+    rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+    float first_x = rt.world().storage<WorldTransform2D>().find(child)->x;
+    CHECK(first_x == doctest::Approx(60.0f)); /* 50 + 10 */
+
+    /* Move the parent by 20 in x; child should follow. */
+    rt.world().storage<Transform2D>().set(parent, {70, 50, 0, 1});
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+    float second_x = rt.world().storage<WorldTransform2D>().find(child)->x;
+    CHECK(second_x == doctest::Approx(80.0f)); /* 70 + 10 */
+}
+
+TEST_CASE("runtime: scene graph with rotation and scale") {
+    Runtime rt(320, 240, 42);
+    rt.systems().add(std::make_unique<SceneGraphSystem>());
+
+    Entity parent = rt.spawn_species("sculpture", 0, 0,
+                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    /* Parent at origin, rotated 90 degrees, scaled 2x. */
+    rt.world().storage<Transform2D>().set(parent,
+        {0, 0, (float)M_PI / 2.0f, 2.0f});
+
+    /* Child at local (10, 0). After 90-deg CCW rotation and 2x scale,
+     * child should be at approximately (-0, 20) = (0, 20). */
+    Entity child = rt.spawn_species("animal", 0, 0,
+                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    rt.world().storage<Parent>().set(child, {parent});
+    rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+
+    WorldTransform2D *wt =
+        rt.world().storage<WorldTransform2D>().find(child);
+    REQUIRE(wt != nullptr);
+    CHECK(wt->x == doctest::Approx(0.0f).epsilon(0.01f));
+    CHECK(wt->y == doctest::Approx(20.0f).epsilon(0.01f));
 }

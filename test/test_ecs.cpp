@@ -123,3 +123,21 @@ TEST_CASE("world: clear wipes all storages") {
     CHECK(w.storage<Transform2D>().count() == 0);
     CHECK(w.storage<CustomComponent>().count() == 0);
 }
+
+TEST_CASE("world: Parent and WorldTransform2D are runtime-registrable") {
+    World w;
+    Entity parent = w.create();
+    Entity child = w.create();
+
+    w.storage<Transform2D>().set(parent, {10, 20, 0, 1});
+    w.storage<Transform2D>().set(child, {5, 0, 0, 1});
+    w.storage<Parent>().set(child, {parent});
+
+    REQUIRE(w.storage<Parent>().find(child) != nullptr);
+    CHECK(w.storage<Parent>().find(child)->parent == parent);
+
+    /* WorldTransform2D pool is created on first access, starts empty. */
+    ComponentStorage<WorldTransform2D> &wts =
+        w.storage<WorldTransform2D>();
+    CHECK(wts.count() == 0);
+}
