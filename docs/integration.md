@@ -43,6 +43,9 @@ hosts needing a larger surface should tile or use multiple runtimes.
 Before creating a runtime, hosts may compare
 `cl_engine_runtime_abi_version()` with `CLAY_ENGINE_ABI_VERSION` to detect a
 native library/binding mismatch.
+Hosts can turn any returned `cl_err` into a stable diagnostic with
+`cl_engine_error_string`; the managed wrapper includes that text in its
+exceptions.
 For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
 The pixel accessors may be called with a null count pointer when the host only
