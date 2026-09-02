@@ -31,7 +31,7 @@ dotnet build "$stage_dir/ClayGodotSample.csproj" --nologo --ignore-failed-source
 run_log="$stage_dir/game.log"
 "$godot_bin" --headless --path "$stage_dir" --quit-after 30 \
     2>&1 | tee "$run_log"
-if grep -Eq 'Cannot instantiate C# script|Cannot load|Unable to load' "$run_log"; then
+if grep -Eq 'Cannot instantiate C# script|Cannot load|Unable to load|DllNotFoundException|EntryPointNotFoundException|Clay runtime creation failed|Clay error:' "$run_log"; then
     echo "Godot Mono smoke test reported a runtime loading error" >&2
     exit 1
 fi
