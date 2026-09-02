@@ -22,6 +22,5 @@ dotnet build "$repo_dir/integrations/godot-mono/ClayGodotSample.csproj" \
 "$godot_bin" --headless --path "$repo_dir/integrations/godot-mono" \
     --export-debug macOS "$output_path"
 
-mkdir -p "$output_path/Contents/MacOS"
-cp "$native_lib" "$output_path/Contents/MacOS/"
+"$repo_dir/scripts/godot_mono_stage_native.sh" "$output_path" "$native_lib"
 echo "Exported Clay Godot Mono sample: $output_path"

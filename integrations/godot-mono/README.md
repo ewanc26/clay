@@ -69,6 +69,10 @@ app's native search path:
 ./scripts/godot_mono_export_macos.sh build/ClayGodotSample.app
 ```
 
+The reusable `scripts/godot_mono_stage_native.sh` helper accepts an exported
+player path and native library path, placing the library beside a desktop
+executable or in `Contents/MacOS` for a macOS app bundle.
+
 Godot currently packs arbitrary `.dylib` files as project resources; macOS
 cannot resolve a P/Invoke library from inside that resource pack. The helper
 keeps the macOS export and staging steps together. Linux and Windows exported
