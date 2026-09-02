@@ -24,6 +24,8 @@ typedef struct cl_engine_runtime cl_engine_runtime;
 
 /* Increment when the host-facing ABI changes incompatibly. */
 #define CLAY_ENGINE_ABI_VERSION 1u
+/* Minimum arena needed for mandatory runtime initialization. */
+#define CLAY_ENGINE_MIN_ARENA_BYTES (64u << 10)
 
 CLAY_API uint32_t cl_engine_runtime_abi_version(void);
 

@@ -50,7 +50,9 @@ extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
 
 extern "C" cl_engine_runtime *cl_engine_runtime_create_with_arena(
     int width, int height, uint64_t seed, size_t arena_bytes) {
-    if (width <= 0 || height <= 0 || arena_bytes == 0) return nullptr;
+    if (width <= 0 || height <= 0 ||
+        arena_bytes < CLAY_ENGINE_MIN_ARENA_BYTES)
+        return nullptr;
     try {
         return new cl_engine_runtime(width, height, seed, arena_bytes);
     } catch (const std::bad_alloc &) {
