@@ -65,6 +65,10 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(1.0 / 60.0));
     CHECK(cl_engine_runtime_cursor_x(runtime) == doctest::Approx(8.0));
     CHECK(cl_engine_runtime_cursor_y(runtime) == doctest::Approx(9.0));
+    cl_engine_runtime_set_time_scale(
+        runtime, std::numeric_limits<double>::infinity());
+    CHECK(cl_engine_runtime_step(runtime, 1.0 / 60.0) == CLAY_OK);
+    CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(2.0 / 60.0));
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_step(runtime, -1.0) == CLAY_ERR_INVALID_ARG);

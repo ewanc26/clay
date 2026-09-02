@@ -16,6 +16,7 @@
 #include <clay/clay.h>
 
 #include <cstdint>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -145,7 +146,7 @@ class Runtime {
         return time_scale_;
     }
     void set_time_scale(double s) {
-        time_scale_ = s;
+        time_scale_ = std::isfinite(s) && s > 0.0 ? s : 1.0;
     }
 
     /* Speed-of-light replay toggle: while on, calls to feed() are the only
