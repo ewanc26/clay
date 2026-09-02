@@ -37,6 +37,15 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      - name: Verify installed CMake package
+        shell: bash
+        run: |
+          cmake --install build --prefix "$PWD/build/sdk"
+          cmake -S test/package-consumer -B build/package-consumer \
+            -DCMAKE_PREFIX_PATH="$PWD/build/sdk"
+          cmake --build build/package-consumer
+          ctest --test-dir build/package-consumer --output-on-failure
+
       - name: Headless demo smoke
         if: runner.os != 'Windows'
         run: |
