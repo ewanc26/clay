@@ -130,6 +130,11 @@ extern "C" bool cl_engine_runtime_is_key_down(
     return runtime->impl.is_key_down(key);
 }
 
+extern "C" bool cl_engine_runtime_is_focused(
+    const cl_engine_runtime *runtime) {
+    return runtime && runtime->impl.input_state().focus;
+}
+
 extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                      const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;

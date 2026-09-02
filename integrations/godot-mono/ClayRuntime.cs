@@ -36,6 +36,7 @@ public sealed class ClayRuntime : IDisposable
     public double CursorY => Native.CursorY(handle);
     public nuint RecordingCount => Native.RecordingCount(handle);
     public ulong RecordingFingerprint => Native.RecordingFingerprint(handle);
+    public bool IsFocused => Native.IsFocused(handle);
 
     public void InstallBuiltinSystems() => Check(
         Native.InstallBuiltinSystems(handle));
@@ -163,6 +164,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_is_key_down")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool IsKeyDown(RuntimeHandle runtime, int key);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_is_focused")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool IsFocused(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_time_scale")]
         public static extern void SetTimeScale(RuntimeHandle runtime, double scale);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]

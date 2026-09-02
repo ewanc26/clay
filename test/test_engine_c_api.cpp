@@ -81,14 +81,18 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
               runtime, 8, 9, 20, 1, std::numeric_limits<float>::quiet_NaN(),
               0.2f, 1) == CLAY_ERR_INVALID_ARG);
     CHECK(!cl_engine_runtime_is_key_down(runtime, CLAY_KEY_SPACE));
+    CHECK(!cl_engine_runtime_is_focused(runtime));
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, true) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_motion(runtime, 8, 9, 1, 2) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_wheel(runtime, 8, 9, 1) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_focus(runtime, true) == CLAY_OK);
+    CHECK(cl_engine_runtime_is_focused(runtime));
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, true) == CLAY_OK);
     CHECK(cl_engine_runtime_is_key_down(runtime, CLAY_KEY_SPACE));
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, false) == CLAY_OK);
     CHECK(!cl_engine_runtime_is_key_down(runtime, CLAY_KEY_SPACE));
+    CHECK(cl_engine_runtime_feed_focus(runtime, false) == CLAY_OK);
+    CHECK(!cl_engine_runtime_is_focused(runtime));
     CHECK(cl_engine_runtime_feed_wheel(nullptr, 0, 0, 1) ==
           CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_NONE, true) ==
@@ -145,6 +149,7 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_cursor_x(nullptr) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_y(nullptr) == doctest::Approx(0.0));
     CHECK(!cl_engine_runtime_is_key_down(nullptr, CLAY_KEY_SPACE));
+    CHECK(!cl_engine_runtime_is_focused(nullptr));
     CHECK(cl_engine_runtime_recording_count(nullptr) == 0);
     CHECK(cl_engine_runtime_recording_fingerprint(nullptr) == 0);
 }
