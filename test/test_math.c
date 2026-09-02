@@ -44,6 +44,21 @@ static int test_math(void) {
     cl_v4 s = cl_m4_mul_vec4(proj, cl_v4_make(0.5f, 0.0f, -2.0f, 1.0f));
     CHECK(s.x / s.w > 0.0f);
     CHECK(s.x / s.w < 1.0f);
+
+    /* look_at: camera at (0,0,5) looking at origin maps the origin to
+     * (0,0,-5) in camera space (forward = -Z, eye translated back). */
+    cl_m4 view = cl_m4_look_at(cl_v3_make(0, 0, 5), cl_v3_make(0, 0, 0),
+                               cl_v3_make(0, 1, 0));
+    cl_v3 origin = cl_m4_mul_vec3(view, cl_v3_make(0, 0, 0));
+    CHECK_EQ_DBL(origin.x, 0.0, 1e-4);
+    CHECK_EQ_DBL(origin.y, 0.0, 1e-4);
+    CHECK_EQ_DBL(origin.z, -5.0, 1e-4);
+
+    /* A point at (1,0,0) should map to (1,0,-5) — no rotation needed since
+     * the camera looks straight down -Z. */
+    cl_v3 side = cl_m4_mul_vec3(view, cl_v3_make(1, 0, 0));
+    CHECK_EQ_DBL(side.x, 1.0, 1e-4);
+    CHECK_EQ_DBL(side.z, -5.0, 1e-4);
     return clay_test_failures;
 }
 

@@ -107,6 +107,7 @@ cl_m4 cl_m4_scale(float x, float y, float z);
 cl_m4 cl_m4_rotate_x(float radians);
 cl_m4 cl_m4_rotate_y(float radians);
 cl_m4 cl_m4_rotate_z(float radians);
+cl_m4 cl_m4_look_at(cl_v3 eye, cl_v3 target, cl_v3 up);
 cl_v3 cl_m4_mul_vec3(cl_m4 m, cl_v3 v);
 cl_v4 cl_m4_mul_vec4(cl_m4 m, cl_v4 v);
 

@@ -90,6 +90,26 @@ cl_m4 cl_m4_rotate_y(float radians) {
     return m;
 }
 
+cl_m4 cl_m4_look_at(cl_v3 eye, cl_v3 target, cl_v3 up) {
+    /* Row-vector convention: v' = v * M. The view matrix maps world space to
+     * camera space. Camera looks down -Z (OpenGL convention), so forward is
+     * normalize(target - eye), right is cross(forward, up), and the camera
+     * basis vectors are the rows of the matrix. Translation is -eye in camera
+     * coordinates (row 3). */
+    cl_v3 f = cl_v3_normalize(cl_v3_sub(target, eye));
+    cl_v3 r = cl_v3_normalize(cl_v3_cross(f, up));
+    cl_v3 u = cl_v3_cross(r, f);
+
+    cl_m4 m = cl_m4_identity();
+    m.m[0][0] = r.x;  m.m[0][1] = u.x;  m.m[0][2] = -f.x;
+    m.m[1][0] = r.y;  m.m[1][1] = u.y;  m.m[1][2] = -f.y;
+    m.m[2][0] = r.z;  m.m[2][1] = u.z;  m.m[2][2] = -f.z;
+    m.m[3][0] = -cl_v3_dot(r, eye);
+    m.m[3][1] = -cl_v3_dot(u, eye);
+    m.m[3][2] = cl_v3_dot(f, eye);
+    return m;
+}
+
 cl_v3 cl_m4_mul_vec3(cl_m4 m, cl_v3 v) {
     cl_v4 p = {v.x, v.y, v.z, 1.0f};
     cl_v4 r = cl_m4_mul_vec4(m, p);
