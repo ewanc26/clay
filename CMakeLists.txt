@@ -113,6 +113,11 @@ target_include_directories(clay_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(clay_core PROPERTIES C_STANDARD 23 C_STANDARD_REQUIRED ON)
+# When the engine is a shared library it links the static core archive, so the
+# core objects must be position-independent or the Linux/Windows link fails.
+if(CLAY_BUILD_SHARED)
+  set_target_properties(clay_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 # On glibc, math functions (sqrtf, cosf, sinf) live in libm, not libc.
 if(NOT APPLE AND NOT MSVC)
   target_link_libraries(clay_core PUBLIC m)
