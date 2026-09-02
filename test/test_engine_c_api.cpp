@@ -33,6 +33,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_step(runtime, -1.0) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_step(nullptr, 1.0 / 60.0) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_load_reactions(runtime, nullptr) ==
+          CLAY_ERR_INVALID_ARG);
     cl_engine_runtime_destroy(runtime);
 }
 

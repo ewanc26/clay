@@ -4,6 +4,22 @@
 #include "systems/builtin.hpp"
 
 #include <new>
+#include <utility>
+
+namespace {
+
+template <typename Fn> cl_err guarded(Fn &&fn) {
+    try {
+        std::forward<Fn>(fn)();
+        return CLAY_OK;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_INVALID_ARG;
+    }
+}
+
+} // namespace
 
 struct cl_engine_runtime {
     clay::Runtime impl;
@@ -29,53 +45,60 @@ extern "C" void cl_engine_runtime_destroy(cl_engine_runtime *runtime) {
 extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
                                            double dt_seconds) {
     if (!runtime || dt_seconds < 0.0) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.step(dt_seconds);
-    return CLAY_OK;
+    return guarded([&] { runtime->impl.step(dt_seconds); });
 }
 
 extern "C" cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                                            const cl_input_event *event) {
     if (!runtime || !event) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.feed(*event);
-    return CLAY_OK;
+    return guarded([&] { runtime->impl.feed(*event); });
 }
 
 extern "C" cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
                                                cl_key key, bool pressed) {
     if (!runtime) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.feed(pressed ? cl_input_event_make(CLAY_IN_PRESS, key)
-                                : cl_input_event_make(CLAY_IN_RELEASE, key));
-    return CLAY_OK;
+    return guarded([&] {
+        runtime->impl.feed(pressed ? cl_input_event_make(CLAY_IN_PRESS, key)
+                                    : cl_input_event_make(CLAY_IN_RELEASE, key));
+    });
 }
 
 extern "C" cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
                                                   double x, double y, double dx,
                                                   double dy) {
     if (!runtime) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.feed_motion(x, y, dx, dy);
-    return CLAY_OK;
+    return guarded([&] { runtime->impl.feed_motion(x, y, dx, dy); });
 }
 
 extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                      const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
-    return runtime->impl.reactions().load_text(json) ? CLAY_OK : CLAY_ERR_PARSE;
+    try {
+        return runtime->impl.reactions().load_text(json) ? CLAY_OK
+                                                          : CLAY_ERR_PARSE;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_INVALID_ARG;
+    }
 }
 
 extern "C" cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life) {
     if (!runtime || !species) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.spawn_species(species, x, y, {r, g, b, a}, life);
-    return CLAY_OK;
+    return guarded([&] {
+        runtime->impl.spawn_species(species, x, y, {r, g, b, a}, life);
+    });
 }
 
 extern "C" cl_err cl_engine_runtime_spawn_ripple(
     cl_engine_runtime *runtime, float x, float y, float radius, float r,
     float g, float b, float a) {
     if (!runtime) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.spawn_ripple(x, y, radius, {r, g, b, a});
-    return CLAY_OK;
+    return guarded([&] {
+        runtime->impl.spawn_ripple(x, y, radius, {r, g, b, a});
+    });
 }
 
 extern "C" void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
@@ -87,12 +110,14 @@ extern "C" cl_err cl_engine_runtime_install_builtin_systems(
     cl_engine_runtime *runtime) {
     if (!runtime) return CLAY_ERR_INVALID_ARG;
     if (runtime->impl.systems().size() != 0) return CLAY_ERR_INVALID_ARG;
-    runtime->impl.systems().add(std::make_unique<clay::MovementSystem>());
-    runtime->impl.systems().add(std::make_unique<clay::CursorMagnetSystem>());
-    runtime->impl.systems().add(std::make_unique<clay::LifespanSystem>());
-    runtime->impl.systems().add(std::make_unique<clay::HueShiftSystem>());
-    runtime->impl.systems().add(std::make_unique<clay::RippleSystem>());
-    return CLAY_OK;
+    return guarded([&] {
+        runtime->impl.systems().add(std::make_unique<clay::MovementSystem>());
+        runtime->impl.systems().add(
+            std::make_unique<clay::CursorMagnetSystem>());
+        runtime->impl.systems().add(std::make_unique<clay::LifespanSystem>());
+        runtime->impl.systems().add(std::make_unique<clay::HueShiftSystem>());
+        runtime->impl.systems().add(std::make_unique<clay::RippleSystem>());
+    });
 }
 
 extern "C" int cl_engine_runtime_width(const cl_engine_runtime *runtime) {
