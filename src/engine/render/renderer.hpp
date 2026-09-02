@@ -24,6 +24,7 @@ struct Framebuffer {
     int width = 0;
     int height = 0;
     std::vector<uint32_t> pixels;
+    mutable std::vector<uint8_t> rgba_cache;
 
     void resize(int w, int h);
     void clear(Rgba c);

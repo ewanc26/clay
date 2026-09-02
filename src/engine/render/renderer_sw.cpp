@@ -12,6 +12,7 @@ void Framebuffer::resize(int w, int h) {
     width = w;
     height = h;
     pixels.assign((size_t)w * (size_t)h, 0);
+    rgba_cache.clear();
 }
 
 void Framebuffer::clear(Rgba c) {
@@ -25,7 +26,15 @@ uint32_t Framebuffer::pixel(int x, int y) const {
 }
 
 const uint8_t *Framebuffer::as_rgba() const {
-    return reinterpret_cast<const uint8_t *>(pixels.data());
+    rgba_cache.resize(pixels.size() * 4u);
+    for (size_t i = 0; i < pixels.size(); i++) {
+        const uint32_t pixel = pixels[i];
+        rgba_cache[i * 4u + 0u] = (uint8_t)(pixel >> 16);
+        rgba_cache[i * 4u + 1u] = (uint8_t)(pixel >> 8);
+        rgba_cache[i * 4u + 2u] = (uint8_t)pixel;
+        rgba_cache[i * 4u + 3u] = 255;
+    }
+    return rgba_cache.data();
 }
 
 RendererSW::RendererSW(int width, int height) {
