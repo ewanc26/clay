@@ -76,3 +76,50 @@ TEST_CASE("world: swap-and-pop keeps remaining entities valid") {
     CHECK(t1->x == doctest::Approx(1.0f));
     CHECK(t3->x == doctest::Approx(3.0f));
 }
+
+struct CustomComponent {
+    float data = 0.0f;
+};
+
+TEST_CASE("world: custom component type without editing world.hpp") {
+    World w;
+    Entity e = w.create();
+    w.storage<Transform2D>().set(e, {10, 20, 0, 1});
+    w.storage<CustomComponent>().set(e, {42.0f});
+
+    CustomComponent *cc = w.storage<CustomComponent>().find(e);
+    REQUIRE(cc != nullptr);
+    CHECK(cc->data == doctest::Approx(42.0f));
+
+    /* The pool was created on first access; a second call must return the
+     * same dense array (same data, not a fresh one). */
+    CustomComponent *cc2 = w.storage<CustomComponent>().find(e);
+    REQUIRE(cc2 == cc);
+}
+
+TEST_CASE("world: destroy erases all component pools") {
+    World w;
+    Entity e = w.create();
+    w.storage<Transform2D>().set(e, {1, 2, 0, 1});
+    w.storage<CustomComponent>().set(e, {99.0f});
+    w.storage<Color>().set(e, {1.0f, 0.0f, 0.0f, 1.0f});
+
+    w.destroy(e);
+    REQUIRE(!w.alive(e));
+    CHECK(w.storage<Transform2D>().find(e) == nullptr);
+    CHECK(w.storage<CustomComponent>().find(e) == nullptr);
+    CHECK(w.storage<Color>().find(e) == nullptr);
+}
+
+TEST_CASE("world: clear wipes all storages") {
+    World w;
+    Entity e1 = w.create();
+    Entity e2 = w.create();
+    w.storage<Transform2D>().set(e1, {1, 1, 0, 1});
+    w.storage<CustomComponent>().set(e2, {5.0f});
+
+    w.clear();
+    CHECK(w.living() == 0);
+    CHECK(w.storage<Transform2D>().count() == 0);
+    CHECK(w.storage<CustomComponent>().count() == 0);
+}

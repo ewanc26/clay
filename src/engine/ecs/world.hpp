@@ -4,7 +4,10 @@
 #include "ecs/components.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <type_traits>
+#include <typeindex>
+#include <unordered_map>
 #include <vector>
 
 namespace clay {
@@ -27,11 +30,21 @@ struct Entity {
     }
 };
 
+/* Type-erased handle to a component pool, so World can store arbitrary
+ * ComponentStorage<T> instances in a single map without templating the
+ * World class itself. */
+struct ComponentStorageBase {
+    virtual ~ComponentStorageBase() = default;
+    virtual uint32_t count() const = 0;
+    virtual bool erase(Entity e) = 0;
+    virtual void clear() = 0;
+};
+
 /* Packed (SoA-style) facade thrown transparently on top of plain vectors:
  * dense entities in insertion order, sparse lookup by entity index, swap-and-
  * pop erase with the moved entity's sparse slot fixed up. Good enough for the
  * Garden's few hundred entities, and honest — no magic. */
-template <class T> struct ComponentStorage {
+template <class T> struct ComponentStorage : ComponentStorageBase {
     std::vector<T> dense;
     std::vector<Entity> owner;   /* dense[i] -> owning entity    */
     std::vector<uint32_t> index; /* entity.index -> dense+1 (0)  */
@@ -93,9 +106,10 @@ template <class T> struct ComponentStorage {
     }
 };
 
-/* The Garden world: an Entity registry plus one ComponentStorage per known
- * component type, reached through the typed storage<T>() template. Storage is
- * process-lifetime but safely movable; components are trivially copyable. */
+/* The Garden world: an Entity registry plus type-erased component pools,
+ * reached through the typed storage<T>() template. Storage is created on
+ * first access so arbitrary component types work without editing World;
+ * components are trivially copyable, stored in compact dense arrays. */
 class World {
   public:
     World() = default;
@@ -109,16 +123,17 @@ class World {
 
     void clear();
 
+    /* Typed storage; creates the pool on first access, so a game can add
+     * arbitrary component types without editing World. The pool is compact
+     * (dense arrays + sparse lookup), created once per World. */
     template <class T> ComponentStorage<T> &storage() {
-        if constexpr (std::is_same_v<T, Transform2D>) return transforms_;
-        else if constexpr (std::is_same_v<T, Velocity>) return velocities_;
-        else if constexpr (std::is_same_v<T, Color>) return colors_;
-        else if constexpr (std::is_same_v<T, LifeSpan>) return lives_;
-        else if constexpr (std::is_same_v<T, Kind>) return kinds_;
-        else if constexpr (std::is_same_v<T, Tag>) return tags_;
-        else if constexpr (std::is_same_v<T, MagnetStrength>)
-            return magnets_;
-        else if constexpr (std::is_same_v<T, RippleRing>) return rings_;
+        auto it = storages_.find(std::type_index(typeid(T)));
+        if (it == storages_.end()) {
+            auto ptr = std::make_unique<ComponentStorage<T>>();
+            it = storages_.emplace(std::type_index(typeid(T)),
+                                   std::move(ptr)).first;
+        }
+        return *static_cast<ComponentStorage<T> *>(it->second.get());
     }
 
     /* Counters feed the "reactivity trace": how much the player perturbed
@@ -140,14 +155,8 @@ class World {
     uint64_t spawns_ = 0;
     uint64_t destroys_ = 0;
 
-    ComponentStorage<Transform2D> transforms_;
-    ComponentStorage<Velocity> velocities_;
-    ComponentStorage<Color> colors_;
-    ComponentStorage<LifeSpan> lives_;
-    ComponentStorage<Kind> kinds_;
-    ComponentStorage<Tag> tags_;
-    ComponentStorage<MagnetStrength> magnets_;
-    ComponentStorage<RippleRing> rings_;
+    std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>>
+        storages_;
 
     void erase_every_component(Entity e);
 };
