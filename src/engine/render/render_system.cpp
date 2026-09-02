@@ -123,7 +123,10 @@ void GardenRenderSystem::render(Runtime &rt, IRenderer &renderer) {
 /* ------------------------------------------------------ 3D scene frame */
 
 Scene3DRenderSystem::Scene3DRenderSystem(ClayScene &scene, float fov_y_rad)
-    : scene_(scene), fov_y_rad_(fov_y_rad) {}
+    : scene_(scene) {
+    (void)fov_y_rad; /* fov now comes from the scene camera; kept for API
+                      * compatibility with existing callers. */
+}
 
 void Scene3DRenderSystem::render(Runtime &rt, IRenderer &renderer) {
     renderer.begin_frame(u8c(24, 26, 34, 255));
@@ -135,11 +138,10 @@ void Scene3DRenderSystem::render(Runtime &rt, IRenderer &renderer) {
         return;
     }
 
-    /* Camera at z = +cam_dist looking toward the origin along -Z. */
-    const float cam_dist = 6.0f;
-    cl_m4 view = cl_m4_translate(0.0f, 0.0f, -cam_dist);
-    cl_m4 proj = cl_m4_perspective(fov_y_rad_, (float)w / (float)h, 0.1f,
-                                   100.0f);
+    /* Use the scene's camera (eye/target/up + fov) if the .clay file
+     * declares one; otherwise the ClayCamera defaults apply (z=6, origin). */
+    cl_m4 view = scene_.view_matrix();
+    cl_m4 proj = scene_.proj_matrix((float)w / (float)h);
     scene_.render(renderer, view, proj);
 
     renderer.end_frame();

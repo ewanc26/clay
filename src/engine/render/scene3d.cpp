@@ -90,6 +90,9 @@ bool ClayScene::load(cl_str text) {
     instances_.clear();
     index_.clear();
     light_ = {};
+    point_lights_.clear();
+    camera_ = {};
+    settings_ = {};
 
     cl_arena a;
     std::vector<unsigned char> storage(1 << 16);
@@ -101,6 +104,24 @@ bool ClayScene::load(cl_str text) {
 
     cl_json_node *version = cl_json_get_cstr(&root, "version");
     if (version && version->kind == CLAY_J_I64 && version->i != 1) return false;
+
+    /* --- settings --- */
+    cl_json_node *settings = cl_json_get_cstr(&root, "settings");
+    if (settings && settings->kind == CLAY_J_OBJ) {
+        cl_json_node *seed = cl_json_get_cstr(settings, "seed");
+        if (seed && seed->kind == CLAY_J_I64)
+            settings_.seed = (uint64_t)seed->i;
+        cl_json_node *fps = cl_json_get_cstr(settings, "fps");
+        if (fps && fps->kind == CLAY_J_I64)
+            settings_.fps = (int)fps->i;
+        cl_json_node *res = cl_json_get_cstr(settings, "resolution");
+        if (res && res->kind == CLAY_J_ARR && res->arr.n >= 2) {
+            if (res->arr.items[0] && res->arr.items[0]->kind == CLAY_J_I64)
+                settings_.resolution[0] = (int)res->arr.items[0]->i;
+            if (res->arr.items[1] && res->arr.items[1]->kind == CLAY_J_I64)
+                settings_.resolution[1] = (int)res->arr.items[1]->i;
+        }
+    }
 
     /* --- meshes --- */
     cl_json_node *meshes = cl_json_get_cstr(&root, "meshes");
@@ -168,6 +189,29 @@ bool ClayScene::load(cl_str text) {
                     number(cl_json_get_cstr(e, "intensity"), 1.0f);
                 continue;
             }
+            if (string_equals(comp, "camera")) {
+                camera_.eye = vec3_from(cl_json_get_cstr(e, "eye"),
+                                        cl_v3_make(0, 0, 6));
+                camera_.target = vec3_from(cl_json_get_cstr(e, "target"),
+                                           cl_v3_make(0, 0, 0));
+                camera_.up = vec3_from(cl_json_get_cstr(e, "up"),
+                                       cl_v3_make(0, 1, 0));
+                camera_.fov_y_rad =
+                    number(cl_json_get_cstr(e, "fov"), 0.9f);
+                camera_.znear = number(cl_json_get_cstr(e, "znear"), 0.1f);
+                camera_.zfar = number(cl_json_get_cstr(e, "zfar"), 100.0f);
+                continue;
+            }
+            if (string_equals(comp, "point_light")) {
+                ClayPointLight pl;
+                pl.pos = vec3_from(cl_json_get_cstr(e, "pos"),
+                                   cl_v3_make(0, 0, 0));
+                pl.intensity = number(cl_json_get_cstr(e, "intensity"), 1.0f);
+                pl.attenuation =
+                    number(cl_json_get_cstr(e, "attenuation"), 0.0f);
+                point_lights_.push_back(pl);
+                continue;
+            }
             if (!string_equals(comp, "mesh_instance")) continue;
 
             ClayInstance inst;
@@ -180,6 +224,15 @@ bool ClayScene::load(cl_str text) {
         }
     }
     return true;
+}
+
+cl_m4 ClayScene::view_matrix() const {
+    return cl_m4_look_at(camera_.eye, camera_.target, camera_.up);
+}
+
+cl_m4 ClayScene::proj_matrix(float aspect) const {
+    return cl_m4_perspective(camera_.fov_y_rad, aspect, camera_.znear,
+                             camera_.zfar);
 }
 
 void ClayScene::render(IRenderer &r, cl_m4 view, cl_m4 proj) {
@@ -201,8 +254,19 @@ void ClayScene::render(IRenderer &r, cl_m4 view, cl_m4 proj) {
         }
         if (idx >= meshes_.size()) continue;
         const ClayMesh &cm = meshes_[idx];
+
+        cl_v3 pl_pos = {0.0f, 0.0f, 0.0f};
+        float pl_int = 0.0f;
+        float pl_att = 0.0f;
+        if (!point_lights_.empty()) {
+            const ClayPointLight &pl = point_lights_[0];
+            pl_pos = pl.pos;
+            pl_int = pl.intensity;
+            pl_att = pl.attenuation;
+        }
+
         r.draw_mesh(cm.mesh, inst.model, view, proj, inst.color, light_.dir,
-                    light_.intensity);
+                    light_.intensity, pl_pos, pl_int, pl_att, 0.35f);
     }
 }
 

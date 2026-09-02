@@ -35,6 +35,30 @@ struct ClayLight {
     float intensity = 1.0f;
 };
 
+/* One point light, from the scene. */
+struct ClayPointLight {
+    cl_v3 pos{0.0f, 0.0f, 0.0f};
+    float intensity = 0.0f;
+    float attenuation = 0.0f;
+};
+
+/* Camera from the scene. Defaults look down -Z from z=6. */
+struct ClayCamera {
+    cl_v3 eye{0.0f, 0.0f, 6.0f};
+    cl_v3 target{0.0f, 0.0f, 0.0f};
+    cl_v3 up{0.0f, 1.0f, 0.0f};
+    float fov_y_rad = 0.9f;
+    float znear = 0.1f;
+    float zfar = 100.0f;
+};
+
+/* Settings from the .clay top-level block. */
+struct ClaySettings {
+    uint64_t seed = 0;
+    int fps = 60;
+    int resolution[2] = {640, 480};
+};
+
 /* A 3D scene loaded from one .clay document: a named mesh library, a list of
  * instanced meshes, and a light. Loading goes through the single C ABI
  * cl_json_parse; nothing here peeks at the 2D garden ECS. */
@@ -59,9 +83,23 @@ class ClayScene {
     const ClayLight &light() const {
         return light_;
     }
+    const std::vector<ClayPointLight> &point_lights() const {
+        return point_lights_;
+    }
+    const ClayCamera &camera() const {
+        return camera_;
+    }
+    const ClaySettings &settings() const {
+        return settings_;
+    }
 
-    /* Draw every instance into `r` using camera `view`/`proj`. Restores the
-     * depth behavior between frames by clearing the internal z-buffer. */
+    /* Build the view matrix from the scene camera (or default). */
+    cl_m4 view_matrix() const;
+
+    /* Build the projection matrix from the scene camera + aspect. */
+    cl_m4 proj_matrix(float aspect) const;
+
+    /* Draw every instance into `r` using camera `view`/`proj`. */
     void render(IRenderer &r, cl_m4 view, cl_m4 proj);
 
   private:
@@ -69,6 +107,9 @@ class ClayScene {
     std::vector<ClayMesh> meshes_;
     std::vector<ClayInstance> instances_;
     ClayLight light_;
+    std::vector<ClayPointLight> point_lights_;
+    ClayCamera camera_;
+    ClaySettings settings_;
 };
 
 } // namespace clay

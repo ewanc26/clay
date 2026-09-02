@@ -13,7 +13,7 @@ namespace {
 
 const char *kScene = R"json({
   "version": 1,
-  "settings": { "seed": 7, "fps": 60 },
+  "settings": { "seed": 7, "fps": 60, "resolution": [320, 240] },
   "meshes": [
     { "name": "cube", "primitive": "cube", "color": [180, 120, 80] },
     { "name": "ball", "uid": "ball01", "primitive": "sphere",
@@ -26,6 +26,8 @@ const char *kScene = R"json({
   "scene": [
     { "name": "sun", "component": "directional_light",
       "dir": [0.3, 0.5, 0.8], "intensity": 1.0 },
+    { "name": "cam", "component": "camera",
+      "eye": [0, 0, 6], "target": [0, 0, 0], "fov": 0.9 },
     { "name": "block", "component": "mesh_instance", "mesh": "cube",
       "transform": { "pos": [0, 0, -3], "scale": 1 }, "color": [180, 120, 80] },
     { "name": "pidge", "component": "mesh_instance", "mesh": "ball",
@@ -78,4 +80,74 @@ TEST_CASE("scene3d: unsupported version and malformed JSON are rejected") {
     CHECK(
         !sc.load(cl_str_c("{\"version\": 99, \"meshes\": [], \"scene\": []}")));
     CHECK(!sc.load(cl_str_c("{ malformed")));
+}
+
+TEST_CASE("scene3d: camera entity is parsed into view/proj matrices") {
+    ClayScene sc;
+    REQUIRE(sc.load(cl_str_c(kScene)));
+
+    const ClayCamera &cam = sc.camera();
+    CHECK(cam.eye.z == doctest::Approx(6.0f).epsilon(1e-3));
+    CHECK(cam.target.x == 0.0f);
+    CHECK(cam.fov_y_rad == doctest::Approx(0.9f).epsilon(1e-3));
+
+    /* view_matrix maps the eye to the origin in camera space. */
+    cl_m4 view = sc.view_matrix();
+    cl_v3 eye_cam = cl_m4_mul_vec3(view, cam.eye);
+    CHECK(eye_cam.x == doctest::Approx(0.0f).epsilon(1e-3));
+    CHECK(eye_cam.y == doctest::Approx(0.0f).epsilon(1e-3));
+    CHECK(eye_cam.z == doctest::Approx(0.0f).epsilon(1e-3));
+
+    /* proj_matrix produces a valid perspective with the scene's fov. */
+    cl_m4 proj = sc.proj_matrix(1.0f);
+    cl_v4 test = cl_m4_mul_vec4(proj, cl_v4_make(0, 0, -6, 1));
+    CHECK(test.w == doctest::Approx(6.0f).epsilon(1e-3));
+}
+
+TEST_CASE("scene3d: settings block is parsed") {
+    ClayScene sc;
+    REQUIRE(sc.load(cl_str_c(kScene)));
+
+    CHECK(sc.settings().seed == 7);
+    CHECK(sc.settings().fps == 60);
+    CHECK(sc.settings().resolution[0] == 320);
+    CHECK(sc.settings().resolution[1] == 240);
+}
+
+TEST_CASE("scene3d: default camera looks down -Z from z=6") {
+    const char *minimal = R"json({
+  "version": 1,
+  "meshes": [{ "name": "c", "primitive": "cube" }],
+  "scene": [{ "component": "mesh_instance", "mesh": "c" }]
+})json";
+    ClayScene sc;
+    REQUIRE(sc.load(cl_str_c(minimal)));
+
+    /* No camera entity — defaults should apply. */
+    CHECK(sc.camera().eye.z == doctest::Approx(6.0f).epsilon(1e-3));
+    CHECK(sc.camera().target.z == 0.0f);
+
+    /* Default view = translate(0,0,-6), so origin maps to z=-6. */
+    cl_m4 view = sc.view_matrix();
+    cl_v3 origin = cl_m4_mul_vec3(view, cl_v3_make(0, 0, 0));
+    CHECK(origin.z == doctest::Approx(-6.0f).epsilon(1e-3));
+}
+
+TEST_CASE("scene3d: point_light entity is parsed") {
+    const char *with_light = R"json({
+  "version": 1,
+  "meshes": [{ "name": "c", "primitive": "cube" }],
+  "scene": [
+    { "component": "point_light", "pos": [1, 2, 3],
+      "intensity": 0.7, "attenuation": 0.05 },
+    { "component": "mesh_instance", "mesh": "c" }
+  ]
+})json";
+    ClayScene sc;
+    REQUIRE(sc.load(cl_str_c(with_light)));
+    CHECK(sc.point_lights().size() == 1);
+    CHECK(sc.point_lights()[0].pos.x == doctest::Approx(1.0f).epsilon(1e-3));
+    CHECK(sc.point_lights()[0].intensity == doctest::Approx(0.7f).epsilon(1e-3));
+    CHECK(sc.point_lights()[0].attenuation ==
+          doctest::Approx(0.05f).epsilon(1e-3));
 }

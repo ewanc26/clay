@@ -38,10 +38,9 @@ class Scene3DRenderSystem final : public RenderSystem {
     explicit Scene3DRenderSystem(ClayScene &scene, float fov_y_rad = 0.9f);
     void render(Runtime &rt, IRenderer &renderer) override;
 
-  private:
-    ClayScene &scene_;
-    float fov_y_rad_;
-};
+   private:
+     ClayScene &scene_;
+ };
 
 } // namespace clay
 
