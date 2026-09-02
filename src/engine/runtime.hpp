@@ -143,6 +143,9 @@ class Runtime {
     cl_input_log &input_log() {
         return input_log_;
     }
+    const cl_input_log &input_log() const {
+        return input_log_;
+    }
 
     double time_scale() const {
         return time_scale_;

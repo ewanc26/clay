@@ -170,6 +170,16 @@ extern "C" void cl_engine_runtime_set_replaying(cl_engine_runtime *runtime,
     if (runtime) runtime->impl.set_replaying(replaying);
 }
 
+extern "C" size_t cl_engine_runtime_recording_count(
+    const cl_engine_runtime *runtime) {
+    return runtime ? cl_input_log_count(&runtime->impl.input_log()) : 0;
+}
+
+extern "C" uint64_t cl_engine_runtime_recording_fingerprint(
+    const cl_engine_runtime *runtime) {
+    return runtime ? cl_input_log_fingerprint(&runtime->impl.input_log()) : 0;
+}
+
 extern "C" cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life) {

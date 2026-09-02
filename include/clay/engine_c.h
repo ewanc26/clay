@@ -52,6 +52,10 @@ CLAY_API cl_err cl_engine_runtime_load_recording(cl_engine_runtime *runtime,
                                                 const char *path);
 CLAY_API void cl_engine_runtime_set_replaying(cl_engine_runtime *runtime,
                                               bool replaying);
+CLAY_API size_t cl_engine_runtime_recording_count(
+    const cl_engine_runtime *runtime);
+CLAY_API uint64_t cl_engine_runtime_recording_fingerprint(
+    const cl_engine_runtime *runtime);
 CLAY_API cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life);

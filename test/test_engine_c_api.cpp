@@ -41,10 +41,15 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_feed_key(recorded, CLAY_KEY_A, true) == CLAY_OK);
     CHECK(cl_engine_runtime_save_recording(
               recorded, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    CHECK(cl_engine_runtime_recording_count(recorded) == 1);
+    CHECK(cl_engine_runtime_recording_fingerprint(recorded) != 0);
     cl_engine_runtime *replayed = cl_engine_runtime_create(16, 16, 42);
     REQUIRE(replayed != nullptr);
     CHECK(cl_engine_runtime_load_recording(
               replayed, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    CHECK(cl_engine_runtime_recording_count(replayed) == 1);
+    CHECK(cl_engine_runtime_recording_fingerprint(replayed) ==
+          cl_engine_runtime_recording_fingerprint(recorded));
     cl_engine_runtime_set_replaying(replayed, true);
     CHECK(cl_engine_runtime_step(replayed, 1.0 / 60.0) == CLAY_OK);
     CHECK(cl_engine_runtime_is_key_down(replayed, CLAY_KEY_A));
@@ -123,4 +128,6 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_cursor_x(nullptr) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_y(nullptr) == doctest::Approx(0.0));
     CHECK(!cl_engine_runtime_is_key_down(nullptr, CLAY_KEY_SPACE));
+    CHECK(cl_engine_runtime_recording_count(nullptr) == 0);
+    CHECK(cl_engine_runtime_recording_fingerprint(nullptr) == 0);
 }
