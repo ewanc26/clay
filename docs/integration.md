@@ -22,6 +22,8 @@ For a managed binding, include `clay/engine_c.h` and P/Invoke the
 pixels are packed `0x00RRGGBB` values in row-major order.
 For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
+Hosts can query authoritative `frame`, `sim_time`, and cursor coordinates with
+the corresponding `cl_engine_runtime_*` probe functions.
 Headless hosts can write the latest frame directly with
 `cl_engine_runtime_save_png`; malformed arguments return `CLAY_ERR_INVALID_ARG`
 and filesystem failures return `CLAY_ERR_IO`.
