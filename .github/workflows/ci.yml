@@ -46,6 +46,7 @@ jobs:
           test -f build/sdk/integrations/godot-mono/ClayGodotSample.csproj
           test -f build/sdk/integrations/godot-mono/ClayGodotSample.sln
           test -f build/sdk/integrations/godot-mono/export_presets.cfg
+          test -x build/sdk/integrations/godot-mono/godot_mono_stage_native.sh
           test -f build/sdk/integrations/godot-mono/managed/ClayRuntime.csproj
           test -f build/sdk/integrations/godot-mono/libclay_engine.dylib || \
             test -f build/sdk/integrations/godot-mono/libclay_engine.so || \
