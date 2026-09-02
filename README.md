@@ -52,8 +52,9 @@ ctest --test-dir build            # unit tests, all headless
   reactive `SystemGraph`, data-driven `ReactionRule`s, hierarchical scene
   graph (Parent/WorldTransform2D), 2D physics & collision detection,
   property tween animation with easing curves, immediate-mode UI
-  (label/button/checkbox/slider), and both the 2D garden rasterizer and a from-scratch **3D software rasterizer** (depth buffer,
-  flat shading, directional + point lights, perspective camera).
+  (label/button/checkbox/slider), and a from-scratch **3D software
+  rasterizer** (depth buffer, flat shading, directional + point lights,
+  perspective camera).
 - `demo` — *The Clay Garden*: a living, fully headless scene where everything
   reacts to the player. A sculpture anchors the world; a herd of
   cursor-magnet animals drifts toward the mouse; clicks emit ripples, space
