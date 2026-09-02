@@ -230,6 +230,7 @@ endif()
 install(FILES
   integrations/godot-mono/ClayRuntime.cs
   integrations/godot-mono/ClayKey.cs
+  integrations/godot-mono/ClayModifiers.cs
   integrations/godot-mono/ClayGodotSample.csproj
   integrations/godot-mono/ClayDemo.cs
   integrations/godot-mono/ClayDemo.tscn

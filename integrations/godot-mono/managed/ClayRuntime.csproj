@@ -10,5 +10,6 @@
   <ItemGroup>
     <Compile Include="../ClayRuntime.cs" Link="ClayRuntime.cs" />
     <Compile Include="../ClayKey.cs" Link="ClayKey.cs" />
+    <Compile Include="../ClayModifiers.cs" Link="ClayModifiers.cs" />
   </ItemGroup>
 </Project>

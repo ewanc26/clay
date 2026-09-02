@@ -81,6 +81,10 @@ public sealed class ClayRuntime : IDisposable
                           int mods = 0) => Check(
         Native.FeedKeyAt(handle, (int)key, pressed, x, y, mods));
 
+    public void FeedKeyAt(ClayKey key, bool pressed, double x, double y,
+                          ClayModifiers mods) => FeedKeyAt(key, pressed, x, y,
+                                                           (int)mods);
+
     public bool IsKeyDown(ClayKey key) => Native.IsKeyDown(handle, (int)key);
 
     public void FeedMotion(double x, double y, double dx, double dy) => Check(
