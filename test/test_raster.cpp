@@ -22,6 +22,24 @@ TEST_CASE("raster: clear paints every pixel") {
             CHECK(r.pixel(x, y) == 0x0A141E);
 }
 
+TEST_CASE("raster: RGBA view expands packed pixels in channel order") {
+    RendererSW r(2, 1);
+    r.begin_frame(px(0, 0, 0));
+    r.fill_rect(0.0f, 0.0f, 1.0f, 1.0f, Rgba{0x12, 0x34, 0x56, 255});
+    r.end_frame();
+
+    const uint8_t *rgba = r.framebuffer().as_rgba();
+    REQUIRE(rgba != nullptr);
+    CHECK(rgba[0] == 0x12);
+    CHECK(rgba[1] == 0x34);
+    CHECK(rgba[2] == 0x56);
+    CHECK(rgba[3] == 0xFF);
+    CHECK(rgba[4] == 0x00);
+    CHECK(rgba[5] == 0x00);
+    CHECK(rgba[6] == 0x00);
+    CHECK(rgba[7] == 0xFF);
+}
+
 TEST_CASE("raster: fill_rect bounds") {
     RendererSW r(16, 16);
     r.begin_frame(px(0, 0, 0));
