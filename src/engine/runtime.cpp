@@ -95,10 +95,10 @@ void Runtime::begin_frame(double dt_seconds) {
     sim_dt_ = (time_scale_ > 0.0 ? time_scale_ : 1.0) * dt_seconds;
     sim_time_ += sim_dt_;
 
-    if (replaying_) pump_replay_events();
-
     cl_input_state_begin(&input_state_, frame_, sim_time_);
     pending_actions_.clear();
+
+    if (replaying_) pump_replay_events();
 
     /* Hold bindings become pseudo-actions each frame (no command spam). */
     for (Action &a : inputs_.poll_holds(input_state_)) {
