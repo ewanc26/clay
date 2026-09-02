@@ -193,6 +193,9 @@ int main(int argc, char **argv) {
         while (!window.should_close()) {
             rt.begin_frame(dt);
             window.poll_events();
+            if (window.canvas_width() != rt.width() ||
+                window.canvas_height() != rt.height())
+                rt.resize(window.canvas_width(), window.canvas_height());
             for (const cl_input_event &e : window.drain_events()) rt.feed(e);
             rt.update(rt.sim_dt());
             rt.render();
