@@ -48,10 +48,10 @@ values used by the deterministic simulation.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer
-when the viewport changes. It forwards Space, left mouse button, mouse motion,
-wheel, digital joypad buttons, and application focus events through the managed
-facade. Joypad A/B/X/Y, shoulders, start/back, stick buttons, and the four
-D-pad directions map to Clay's corresponding `ClayKey` values.
+when the viewport changes. It forwards the supported keyboard, mouse-button,
+mouse-motion, wheel, digital joypad, and application-focus events through the
+managed facade. Joypad A/B/X/Y, shoulders, start/back, stick buttons, and the
+four D-pad directions map to Clay's corresponding `ClayKey` values.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
@@ -62,8 +62,8 @@ GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
 addition to a shared library; that adapter is a separate future integration.
 
 The committed `export_presets.cfg` provides a reproducible macOS export. After
-exporting, use the bundled helper to stage the platform library into the app's
-native search path:
+exporting, use the bundled macOS helper to stage the platform library into the
+app's native search path:
 
 ```sh
 ./scripts/godot_mono_export_macos.sh build/ClayGodotSample.app
@@ -71,7 +71,9 @@ native search path:
 
 Godot currently packs arbitrary `.dylib` files as project resources; macOS
 cannot resolve a P/Invoke library from inside that resource pack. The helper
-keeps the export and staging steps together.
+keeps the macOS export and staging steps together. Linux and Windows exported
+players still require platform-specific validation and staging coverage; see
+`docs/issues.md`.
 
 The sample reuses its managed pixel and RGBA conversion buffers each frame;
 production hosts can upload through a native texture bridge for further
