@@ -32,9 +32,9 @@ headless game startup:
 GODOT_MONO_BIN=/path/to/godot-mono ./scripts/godot_mono_smoke.sh
 ```
 
-The script defaults to `godot-mono` on `PATH` and
-`build/libclay_engine.dylib` as the native library; set
-`CLAY_NATIVE_LIBRARY` for another platform or build directory.
+The script defaults to `godot-mono` on `PATH` and auto-detects the standard
+macOS, Linux, or Windows library in `build/`; set `CLAY_NATIVE_LIBRARY` for a
+custom platform or build directory.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
 coordinates and modifier bits for positioned key or mouse-button events.
