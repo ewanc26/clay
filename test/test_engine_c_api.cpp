@@ -43,6 +43,8 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_OK);
     CHECK(cl_engine_runtime_save_png(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_save_png(runtime, "") == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_save_png(runtime, "/no/such/directory/frame.png") ==
+          CLAY_ERR_IO);
     CHECK(cl_engine_runtime_frame(runtime) == 1);
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);

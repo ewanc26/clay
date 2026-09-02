@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <new>
-#include <stdexcept>
 #include <utility>
 
 namespace {
@@ -177,11 +176,15 @@ extern "C" const uint8_t *cl_engine_runtime_pixels_rgba(
 extern "C" cl_err cl_engine_runtime_save_png(
     const cl_engine_runtime *runtime, const char *path) {
     if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
-    return guarded([&] {
+    try {
         const auto &framebuffer = runtime->impl.framebuffer();
-        if (!clay::save_png(path, framebuffer.width, framebuffer.height,
-                            framebuffer.pixels.data())) {
-            throw std::runtime_error("could not write PNG");
-        }
-    });
+        return clay::save_png(path, framebuffer.width, framebuffer.height,
+                              framebuffer.pixels.data())
+                   ? CLAY_OK
+                   : CLAY_ERR_IO;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_IO;
+    }
 }

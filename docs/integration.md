@@ -23,7 +23,8 @@ pixels are packed `0x00RRGGBB` values in row-major order.
 For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
 Headless hosts can write the latest frame directly with
-`cl_engine_runtime_save_png`.
+`cl_engine_runtime_save_png`; malformed arguments return `CLAY_ERR_INVALID_ARG`
+and filesystem failures return `CLAY_ERR_IO`.
 
 The host can load reaction JSON and seed a scene through the C ABI with
 `cl_engine_runtime_load_reactions`, `cl_engine_runtime_spawn_species`, and
