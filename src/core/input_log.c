@@ -109,6 +109,20 @@ static bool read_f64(FILE *f, double *out) {
     return true;
 }
 
+/* Version 2 used native-endian field encodings. Keep these readers isolated
+ * so the current portable decoder cannot accidentally change legacy reads. */
+static bool read_native_u32(FILE *f, uint32_t *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
+}
+
+static bool read_native_u64(FILE *f, uint64_t *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
+}
+
+static bool read_native_f64(FILE *f, double *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
+}
+
 static bool encode_event(FILE *f, const cl_input_event *e) {
     return write_u32(f, e->frame) && write_f64(f, e->time) &&
            write_u32(f, (uint32_t)e->type) && write_u32(f, (uint32_t)e->key) &&
@@ -139,6 +153,29 @@ static bool decode_event(FILE *f, cl_input_event *e, double *wheel_value) {
     return true;
 }
 
+static bool decode_event_v2(FILE *f, cl_input_event *e, double *wheel_value) {
+    uint32_t type = 0;
+    uint32_t key = 0;
+    uint32_t mods = 0;
+    uint32_t focus = 0;
+    double decoded_wheel = 0.0;
+    *e = (cl_input_event){0};
+    if (!read_native_u32(f, &e->frame) || !read_native_f64(f, &e->time) ||
+        !read_native_u32(f, &type) || !read_native_u32(f, &key) ||
+        !read_native_u32(f, &mods) || !read_native_f64(f, &e->x) ||
+        !read_native_f64(f, &e->y) || !read_native_f64(f, &e->dx) ||
+        !read_native_f64(f, &e->dy) || !read_native_f64(f, &decoded_wheel) ||
+        !read_native_u32(f, &focus))
+        return false;
+    e->type = (cl_input_kind)type;
+    e->key = (cl_key)key;
+    e->mods = (int)mods;
+    *wheel_value = decoded_wheel;
+    e->wheel = 0;
+    e->focus = focus != 0;
+    return true;
+}
+
 static bool valid_decoded_event(const cl_input_event *e, double wheel_value) {
     if (e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS) return false;
     if (e->key < CLAY_KEY_NONE || e->key >= CLAY_KEY_COUNT) return false;
@@ -151,7 +188,7 @@ static bool valid_decoded_event(const cl_input_event *e, double wheel_value) {
     if (wheel_value < (double)INT_MIN || wheel_value > (double)INT_MAX ||
         wheel_value != trunc(wheel_value))
         return false;
-    return true;
+    return cl_input_event_valid(e);
 }
 
 cl_err cl_input_log_save(cl_input_log *log, const char *path) {
@@ -177,7 +214,7 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         fclose(f);
         return CLAY_ERR_PARSE;
     }
-    if (magic != CLAYREC_MAGIC || version != CLAYREC_VERSION) {
+    if (magic != CLAYREC_MAGIC || (version != 2u && version != CLAYREC_VERSION)) {
         fclose(f);
         return CLAY_ERR_PARSE;
     }
@@ -205,7 +242,10 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         /* Decode once more through a temporary so the on-disk floating-point
          * wheel value can be range-checked before its int conversion. */
         cl_input_event decoded;
-        if (!decode_event(f, &decoded, &wheel_value)) {
+        bool decoded_ok = version == 2u
+                              ? decode_event_v2(f, &decoded, &wheel_value)
+                              : decode_event(f, &decoded, &wheel_value);
+        if (!decoded_ok) {
             fclose(f);
             cl_arena_return(scratch);
             return CLAY_ERR_PARSE;
