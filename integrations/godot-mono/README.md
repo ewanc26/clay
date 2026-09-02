@@ -32,7 +32,8 @@ values used by the deterministic simulation.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer
-when the viewport changes.
+when the viewport changes. It forwards Space, left mouse button, mouse motion,
+wheel, and application focus events through the managed facade.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
