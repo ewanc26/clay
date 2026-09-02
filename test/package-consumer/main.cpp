@@ -1,4 +1,4 @@
-#include <clay/engine/runtime.hpp>
+#include <clay/engine.hpp>
 
 int main() {
     clay::Runtime runtime(24, 18, 42);
