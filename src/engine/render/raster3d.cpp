@@ -9,25 +9,21 @@ namespace clay {
 
 namespace {
 
-constexpr float kNearEps = 1e-6f;
-
 /* ---------- homogeneous frustum clipping (in clip space) ----------
- * Clips a convex polygon against the six frustum planes sequentially. Each
- * plane is defined by a signed distance function d(v) where inside means
- * d >= 0. The near plane uses w > kNearEps to avoid the divide-by-zero; the
- * other five planes use the standard NDC [-1,1] inequalities (x >= -w, x <= w,
- * y >= -w, y <= w, z >= -w, z <= w). */
+ * Clips a convex polygon against the six OpenGL-style clip-space planes.
+ * `cl_m4_perspective` maps z to NDC [-1,1], so visible points satisfy
+ * -w <= x,y,z <= w. The near z >= -w plane also removes geometry behind the
+ * eye before the perspective divide. */
 
 struct ClipVertex {
-    cl_v4 clip;  /* homogeneous clip-space position */
-    cl_v3 world; /* world-space for the normal basis */
+    cl_v4 clip;
+    cl_v3 world;
 };
 
 /* Clip a convex polygon (up to 9 vertices after all planes) against one
  * plane. `dist` returns the signed distance: inside when >= 0. */
 static int clip_plane(const ClipVertex *in, int n,
-                       float (*dist)(const cl_v4 &),
-                       ClipVertex *out) {
+                      float (*dist)(const cl_v4 &), ClipVertex *out) {
     int m = 0;
     for (int i = 0; i < n; i++) {
         const ClipVertex &a = in[i];
@@ -56,40 +52,33 @@ static int clip_plane(const ClipVertex *in, int n,
     return m;
 }
 
-static float dist_near(const cl_v4 &v)  { return v.w - kNearEps; }
-static float dist_left(const cl_v4 &v)  { return v.w + v.x; }
+static float dist_left(const cl_v4 &v) { return v.w + v.x; }
 static float dist_right(const cl_v4 &v) { return v.w - v.x; }
 static float dist_bottom(const cl_v4 &v) { return v.w + v.y; }
-static float dist_top(const cl_v4 &v)   { return v.w - v.y; }
-static float dist_far(const cl_v4 &v)   { return v.w + v.z; }
+static float dist_top(const cl_v4 &v) { return v.w - v.y; }
+static float dist_near(const cl_v4 &v) { return v.w + v.z; }
+static float dist_far(const cl_v4 &v) { return v.w - v.z; }
 
 /* Clip a triangle against all six frustum planes. Returns the number of
  * output triangles (0 = fully clipped) and fills out[] with triangle fans. */
 static int clip_frustum(const ClipVertex in[3], ClipVertex out[8][3]) {
     ClipVertex buf_a[9], buf_b[9];
-    int na, nb;
+    int na = 3;
 
-    /* Start with the input triangle. */
     buf_a[0] = in[0];
     buf_a[1] = in[1];
     buf_a[2] = in[2];
-    na = 3;
 
-    /* Chain through all six planes: near, left, right, bottom, top, far. */
     using DistFn = float (*)(const cl_v4 &);
-    DistFn planes[] = {dist_near, dist_left, dist_right,
-                       dist_bottom, dist_top, dist_far};
+    DistFn planes[] = {dist_left, dist_right, dist_bottom,
+                       dist_top,  dist_near,  dist_far};
 
-    for (int p = 0; p < 6; p++) {
-        na = clip_plane(buf_a, na, planes[p], buf_b);
-        /* Swap buffers: next plane reads from buf_b, writes to buf_a. */
+    for (DistFn plane : planes) {
+        na = clip_plane(buf_a, na, plane, buf_b);
         std::swap(buf_a, buf_b);
-        /* nb is unused but keeps the swap symmetric. */
-        (void)nb;
         if (na < 3) return 0;
     }
 
-    /* Fan-triangulate the convex polygon in buf_a. */
     int count = 0;
     for (int i = 1; i + 1 < na && count < 8; i++) {
         out[count][0] = buf_a[0];
@@ -101,8 +90,6 @@ static int clip_frustum(const ClipVertex in[3], ClipVertex out[8][3]) {
 }
 
 static inline int32_t round_to_screen(float ndc, int size) {
-    /* NDC [-1,1] -> pixel center. Cast to int with a floor bias for
-     * determinism; long double is overkill, float precision is fine. */
     float p = (ndc * 0.5f + 0.5f) * (float)size;
     return (int32_t)std::floor(p);
 }
@@ -144,7 +131,7 @@ void build_cube(Mesh3D &out, float half_extent) {
 }
 
 void build_plane(Mesh3D &out, float w, float h, unsigned nx, unsigned ny) {
-    /* Axis-aligned, +Y up. Top-left origin, +Y from -h/2 to +h/2. */
+    /* XZ plane centered at the origin, wound CCW when viewed from +Y. */
     if (nx < 1) nx = 1;
     if (ny < 1) ny = 1;
     const float x0 = -w * 0.5f;
@@ -163,17 +150,14 @@ void build_plane(Mesh3D &out, float w, float h, unsigned nx, unsigned ny) {
             unsigned b = j * cols + i + 1;
             unsigned c = (j + 1) * cols + i + 1;
             unsigned d = (j + 1) * cols + i;
-            /* CCW from +Y: a(c,d),a(d,b) is unwound here as a-b-c then a-c-d
-             * with +Y up normal after our rasterizer's winding. */
-            out.add_triangle(grid[a], grid[b], grid[c]);
-            out.add_triangle(grid[a], grid[c], grid[d]);
+            out.add_triangle(grid[a], grid[c], grid[b]);
+            out.add_triangle(grid[a], grid[d], grid[c]);
         }
 }
 
 void build_sphere(Mesh3D &out, float radius, unsigned rings, unsigned slices) {
     if (rings < 2) rings = 2;
     if (slices < 3) slices = 3;
-    /* UV-sphere: rings sweep latitude (excluding poles), slices longitude. */
     const unsigned lat = rings;
     const unsigned lon = slices;
     auto idx = [&](unsigned j, unsigned i) { return j * (lon + 1) + i; };
@@ -195,12 +179,19 @@ void build_sphere(Mesh3D &out, float radius, unsigned rings, unsigned slices) {
             unsigned b = idx(j, i + 1);
             unsigned c = idx(j + 1, i + 1);
             unsigned d = idx(j + 1, i);
-            out.add_triangle(grid[a], grid[b], grid[c]);
-            out.add_triangle(grid[a], grid[c], grid[d]);
+            /* Reverse the parametric theta/phi winding so normals point out. */
+            out.add_triangle(grid[a], grid[c], grid[b]);
+            out.add_triangle(grid[a], grid[d], grid[c]);
         }
 }
 
 void Renderer3D::resize(int width, int height) {
+    if (width <= 0 || height <= 0) {
+        width_ = 0;
+        height_ = 0;
+        depth_.clear();
+        return;
+    }
     width_ = width;
     height_ = height;
     depth_.assign((size_t)width * (size_t)height, 1.0f);
@@ -218,7 +209,8 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
                                   float point_light_attenuation,
                                   float ambient) {
     Mesh3DStats stats;
-    if (width_ <= 0 || height_ <= 0 || !dst) return stats;
+    if (width_ <= 0 || height_ <= 0 || !dst || dst_pitch < width_)
+        return stats;
 
     cl_m4 mvp = cl_m4_mul(cl_m4_mul(model, view), proj);
     light_dir = cl_v3_normalize(light_dir);
@@ -238,20 +230,14 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
         cl_v3 p1 = mesh.positions[i1];
         cl_v3 p2 = mesh.positions[i2];
 
-        /* World-space positions + object-space face normal for lighting. */
         cl_v3 w0 = cl_m4_mul_vec3(model, p0);
         cl_v3 w1 = cl_m4_mul_vec3(model, p1);
         cl_v3 w2 = cl_m4_mul_vec3(model, p2);
 
-        /* Normals: rotate the object-space normal into world space using the
-         * model's linear part (uniform scale is presumed for flat shading). */
-        cl_v3 normal =
-            cl_v3_normalize(cl_v3_cross(cl_v3_sub(p1, p0), cl_v3_sub(p2, p0)));
-        cl_v3 world_normal = {
-            cl_v3_dot({model.m[0][0], model.m[1][0], model.m[2][0]}, normal),
-            cl_v3_dot({model.m[0][1], model.m[1][1], model.m[2][1]}, normal),
-            cl_v3_dot({model.m[0][2], model.m[1][2], model.m[2][2]}, normal)};
-        world_normal = cl_v3_normalize(world_normal);
+        /* Recompute the face normal from transformed positions. This is the
+         * correct normal for flat shading even under non-uniform scale. */
+        cl_v3 world_normal = cl_v3_normalize(
+            cl_v3_cross(cl_v3_sub(w1, w0), cl_v3_sub(w2, w0)));
 
         ClipVertex cv[3];
         cv[0].clip = cl_m4_mul_vec4(mvp, cl_v4_make(p0.x, p0.y, p0.z, 1.0f));
@@ -270,20 +256,16 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
             cl_v4 c1 = tri[1].clip;
             cl_v4 c2 = tri[2].clip;
 
-            /* Perspective divide -> NDC. */
             float w0d = 1.0f / c0.w;
             float w1d = 1.0f / c1.w;
             float w2d = 1.0f / c2.w;
             float ndc[3][2] = {{c0.x * w0d, c0.y * w0d},
                                {c1.x * w1d, c1.y * w1d},
                                {c2.x * w2d, c2.y * w2d}};
-            /* Depth: NDC z in [-1,1] remapped to [0,1] for the depth buffer
-             * (1.0 = far). Nearer (larger w / smaller z) wins. */
             float depth[3] = {(c0.z * w0d) * 0.5f + 0.5f,
                               (c1.z * w1d) * 0.5f + 0.5f,
                               (c2.z * w2d) * 0.5f + 0.5f};
 
-            /* Viewport transform (top-left origin, +y down). */
             float sx[3] = {(float)round_to_screen(ndc[0][0], width_),
                            (float)round_to_screen(ndc[1][0], width_),
                            (float)round_to_screen(ndc[2][0], width_)};
@@ -291,12 +273,9 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
                            (float)round_to_screen(-ndc[1][1], height_),
                            (float)round_to_screen(-ndc[2][1], height_)};
 
-            /* Backface cull by screen winding. Screen y is downward, so the
-             * front-facing convention flips the naive cross-product sign. */
             float area = signed_area2(sx[0], sy[0], sx[1], sy[1], sx[2], sy[2]);
             if (area >= 0.0f) continue;
 
-            /* Flat shading: clamp diffuse by the world-space normal. */
             float diff = std::max(0.0f, cl_v3_dot(world_normal, light_dir));
             float point_contrib = 0.0f;
             if (point_light_intensity > 0.0f) {
@@ -306,8 +285,7 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
                 float dist = cl_v3_length(to_light);
                 cl_v3 pdir = dist > 1e-6f ? cl_v3_normalize(to_light)
                                            : cl_v3_make(0.0f, 0.0f, 0.0f);
-                float pdiff =
-                    std::max(0.0f, cl_v3_dot(world_normal, pdir));
+                float pdiff = std::max(0.0f, cl_v3_dot(world_normal, pdir));
                 float atten = 1.0f / (1.0f + point_light_attenuation *
                                                  dist * dist);
                 point_contrib = point_light_intensity * pdiff * atten;
@@ -318,7 +296,6 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
 
             stats.triangles_rasterized++;
 
-            /* Bounding box for the fill, clamped to the viewport. */
             int min_x = (int)std::max(
                 0.0f, std::floor(std::min({sx[0], sx[1], sx[2]})));
             int max_x =
@@ -330,18 +307,14 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
                 (int)std::min((float)height_ - 1.0f,
                               std::ceil(std::max({sy[0], sy[1], sy[2]})));
 
-            /* Shaded flat color (fully opaque). */
             uint8_t sr = (uint8_t)std::min(255.0f, (float)color.r * shade);
             uint8_t sg = (uint8_t)std::min(255.0f, (float)color.g * shade);
             uint8_t sb = (uint8_t)std::min(255.0f, (float)color.b * shade);
-            uint32_t px = ((uint32_t)255u << 24) | ((uint32_t)sr << 16) |
+            uint32_t px = ((uint32_t)color.a << 24) | ((uint32_t)sr << 16) |
                           ((uint32_t)sg << 8) | (uint32_t)sb;
 
             for (int y = min_y; y <= max_y; y++) {
                 for (int x = min_x; x <= max_x; x++) {
-                    /* Barycentric coords normalized by the (signed) triangle
-                     * area. The pixel sample (x+0.5, y+0.5) is inside when all
-                     * three barycentrics are >= 0. */
                     float l0 = signed_area2(sx[1], sy[1], sx[2], sy[2],
                                             (float)x + 0.5f, (float)y + 0.5f) /
                                area;

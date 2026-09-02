@@ -39,10 +39,14 @@ const uint8_t *Framebuffer::as_rgba() const {
 
 RendererSW::RendererSW(int width, int height) {
     fb_.resize(width, height);
+    r3d_.resize(width, height);
 }
 
 void RendererSW::begin_frame(Rgba clear_color) {
     fb_.clear(clear_color);
+    if (r3d_.width() != fb_.width || r3d_.height() != fb_.height)
+        r3d_.resize(fb_.width, fb_.height);
+    r3d_.clear();
     touched_ = 0;
 }
 
@@ -90,8 +94,6 @@ Mesh3DStats RendererSW::draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
                                   float point_light_intensity,
                                   float point_light_attenuation,
                                   float ambient) {
-    r3d_.resize(fb_.width, fb_.height);
-    r3d_.clear();
     Mesh3DStats s = r3d_.draw_mesh(fb_.pixels.data(), fb_.width, mesh, model,
                                    view, proj, color, light_dir, intensity,
                                    point_light_pos, point_light_intensity,

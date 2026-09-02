@@ -133,7 +133,7 @@ Scene3DRenderSystem::Scene3DRenderSystem(ClayScene &scene, float fov_y_rad)
 }
 
 void Scene3DRenderSystem::render(Runtime &rt, IRenderer &renderer) {
-    renderer.begin_frame(u8c(24, 26, 34, 255));
+    renderer.begin_frame(scene_.settings().clear);
 
     const int w = rt.width();
     const int h = rt.height();
@@ -142,8 +142,6 @@ void Scene3DRenderSystem::render(Runtime &rt, IRenderer &renderer) {
         return;
     }
 
-    /* Use the scene's camera (eye/target/up + fov) if the .clay file
-     * declares one; otherwise the ClayCamera defaults apply (z=6, origin). */
     cl_m4 view = scene_.view_matrix();
     cl_m4 proj = scene_.proj_matrix((float)w / (float)h);
     scene_.render(renderer, view, proj);
