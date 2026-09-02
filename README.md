@@ -34,7 +34,8 @@ cmake -S . -B build
 cmake --build build
 ctest --test-dir build            # unit tests, all headless
 ./build/demo/clay_player --help
-./build/demo/clay_player --headless --frames 120 --dump scene.png
+./build/demo/clay_player --dump out/garden.png
+./build/demo/clay_player --scene demo/scenes/tabletop.clay --dump out/scene.png
 ./build/demo/clay_player --headless --actions actions.json --frames 120
 ./build/demo/clay_player --record out/take.clayrec --frames 90
 ./build/demo/clay_player --replay out/take.clayrec --dump out/replay.png
@@ -47,13 +48,17 @@ ctest --test-dir build            # unit tests, all headless
   time, input state, event bus, input recorder/replayer.
 - `src/engine` — `Runtime` orchestration, ECS (`World`, typed `Storage<T>`),
   input→action mapping (rebindable from JSON), command log + replay,
-  reactive `SystemGraph`, data-driven `ReactionRule`s, and the rasterizer.
+  reactive `SystemGraph`, data-driven `ReactionRule`s, and both the 2D
+  garden rasterizer and a from-scratch **3D software rasterizer** (depth
+  buffer, flat shading, directional + point lights, perspective camera).
 - `demo` — *The Clay Garden*: a living, fully headless scene where everything
   reacts to the player. A sculpture anchors the world; a herd of
   cursor-magnet animals drifts toward the mouse; clicks emit ripples, space
   blooms, scrolling embiggens the rings, and every action lands on the
-  record.
+  record. `--scene out.clay` runs a 3D scene from the JSON-based
+  **.clay file format** instead.
 - `examples` — standalone C host using only the stable `engine_c.h` ABI.
+- `docs/` — design notes including the [.clay file format spec](docs/file-format.md).
 
 ## Host integrations
 
