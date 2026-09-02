@@ -35,6 +35,19 @@ static int test_input_log(void) {
     const char *path = "clay_test_input_log.clayrec";
     CHECK(cl_input_log_save(&log, path) == CLAY_OK);
 
+    FILE *wire = fopen(path, "rb");
+    CHECK(wire != NULL);
+    if (wire != NULL) {
+        unsigned char header[12] = {0};
+        CHECK(fread(header, sizeof(header), 1, wire) == 1);
+        const unsigned char expected[12] = {
+            0x01, 0x43, 0x45, 0x52, 0x59, 0x41, 0x4c, 0x43,
+            0x03, 0x00, 0x00, 0x00};
+        for (size_t i = 0; i < sizeof(expected); i++)
+            CHECK(header[i] == expected[i]);
+        fclose(wire);
+    }
+
     cl_input_log back;
     cl_input_log_init(&back, &arena, 0);
     CHECK(cl_input_log_load(&back, path) == CLAY_OK);
@@ -89,7 +102,7 @@ static int test_input_log(void) {
     CHECK(oversized != NULL);
     if (oversized != NULL) {
         uint64_t magic = UINT64_C(0x434C415952454301);
-        uint32_t version = 2;
+        uint32_t version = 3;
         uint64_t count = UINT64_MAX;
         uint64_t stamp = 0;
         fwrite(&magic, sizeof(magic), 1, oversized);
