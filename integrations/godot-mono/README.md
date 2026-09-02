@@ -21,6 +21,8 @@ available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
 requiring hosts to pass numeric ABI values.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
+`ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
+coordinates and modifier bits for positioned key or mouse-button events.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer

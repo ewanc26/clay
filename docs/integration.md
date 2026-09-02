@@ -26,6 +26,11 @@ When the host viewport changes, call `cl_engine_runtime_resize` before the next
 step; the framebuffer dimensions and pixel count then reflect the new size.
 Hosts can query authoritative `frame`, `sim_time`, and cursor coordinates with
 the corresponding `cl_engine_runtime_*` probe functions.
+Focus state is available through `cl_engine_runtime_is_focused`; losing focus
+also releases held keys so hosts cannot leave actions latched. For pointer
+buttons and other positioned key events, use
+`cl_engine_runtime_feed_key_at` to preserve canvas coordinates and modifier
+bits.
 Headless hosts can write the latest frame directly with
 `cl_engine_runtime_save_png`; malformed arguments return `CLAY_ERR_INVALID_ARG`
 and filesystem failures return `CLAY_ERR_IO`.
@@ -42,4 +47,5 @@ Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
-in `engine_c.h`, avoiding managed marshaling of the C event struct.
+in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
+Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
