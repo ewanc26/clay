@@ -34,6 +34,10 @@ class RendererSW final : public IRenderer {
     Mesh3DStats draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
                           cl_m4 proj, Rgba color,
                           cl_v3 light_dir = {0.3f, 0.5f, 0.8f},
+                          float intensity = 1.0f,
+                          cl_v3 point_light_pos = {0.0f, 0.0f, 0.0f},
+                          float point_light_intensity = 0.0f,
+                          float point_light_attenuation = 0.0f,
                           float ambient = 0.35f) override;
 
     Framebuffer &framebuffer() {

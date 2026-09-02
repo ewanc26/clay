@@ -79,10 +79,17 @@ class IRenderer {
 
     /* Rasterize a 3D mesh. `proj * view * model` maps object space to clip
      * space; lighting uses the model-transformed normals and `light_dir`
-     * (world space). Returns stats about what was actually written. */
+     * (world space). `intensity` scales the directional term; `ambient` is the
+     * minimum fraction of the base color that always shows. An optional
+     * `point_light_*` triple adds a single positional light with inverse-square
+     * attenuation. Returns stats about what was actually written. */
     virtual Mesh3DStats draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
                                   cl_m4 proj, Rgba color,
                                   cl_v3 light_dir = {0.3f, 0.5f, 0.8f},
+                                  float intensity = 1.0f,
+                                  cl_v3 point_light_pos = {0.0f, 0.0f, 0.0f},
+                                  float point_light_intensity = 0.0f,
+                                  float point_light_attenuation = 0.0f,
                                   float ambient = 0.35f) = 0;
 };
 

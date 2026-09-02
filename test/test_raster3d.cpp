@@ -173,3 +173,67 @@ TEST_CASE("raster3d: cube renders through the RendererSW surface") {
     CHECK(pixel_r(c) > 100);
     CHECK(rs.touched() > 0);
 }
+
+TEST_CASE("raster3d: light intensity scales the diffuse term") {
+    Renderer3D r3;
+    r3.resize(W, H);
+    std::vector<uint32_t> fb((size_t)W * H, 0);
+
+    cl_m4 model = cl_m4_translate(0.0f, 0.0f, -3.0f);
+    cl_v3 dark_dir = {0.0f, 0.0f, -1.0f};
+
+    r3.clear();
+    r3.draw_mesh(fb.data(), W, unit_cube(), model, identity_view(),
+                 standard_proj(), kCubeColor, dark_dir, 0.0f,
+                 cl_v3_make(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.35f);
+
+    uint32_t c = screen_at(fb.data(), W / 2, H / 2);
+    CHECK(pixel_r(c) > 50);
+    CHECK(pixel_r(c) < 150);
+}
+
+TEST_CASE("raster3d: point light adds brightness near its position") {
+    Renderer3D r3;
+    r3.resize(W, H);
+
+    cl_m4 model = cl_m4_translate(0.0f, 0.0f, -3.0f);
+    cl_v3 no_dir = {0.0f, 0.0f, 1.0f};
+
+    /* Near point light in front of the +Z face (centroid at z=-2.5, normal
+     * +Z): 2.5 units away, no attenuation → bright. */
+    std::vector<uint32_t> fb_near((size_t)W * H, 0);
+    r3.clear();
+    Mesh3DStats near_stats = r3.draw_mesh(
+        fb_near.data(), W, unit_cube(), model, identity_view(),
+        standard_proj(), kCubeColor, no_dir, 0.0f,
+        cl_v3_make(0.0f, 0.0f, 0.0f), 1.0f, 0.0f, 0.35f);
+
+    /* Far point light also in front of the face, 10.5 units away with
+     * attenuation → dimmer. */
+    std::vector<uint32_t> fb_far((size_t)W * H, 0);
+    r3.clear();
+    Mesh3DStats far_stats = r3.draw_mesh(
+        fb_far.data(), W, unit_cube(), model, identity_view(),
+        standard_proj(), kCubeColor, no_dir, 0.0f,
+        cl_v3_make(0.0f, 0.0f, 8.0f), 1.0f, 0.3f, 0.35f);
+
+    uint32_t near_c = screen_at(fb_near.data(), W / 2, H / 2);
+    uint32_t far_c = screen_at(fb_far.data(), W / 2, H / 2);
+
+    int max_x = 0, max_y = 0;
+    uint32_t max_val = 0;
+    for (int y = 0; y < H; y++) {
+        for (int x = 0; x < W; x++) {
+            uint32_t v = screen_at(fb_near.data(), x, y);
+            if (pixel_r(v) > (int)pixel_r(max_val)) {
+                max_val = v;
+                max_x = x;
+                max_y = y;
+            }
+        }
+    }
+
+    CHECK(near_stats.pixels_written > 0);
+    CHECK(pixel_r(max_val) > 0);
+    CHECK(pixel_r(near_c) > pixel_r(far_c));
+}

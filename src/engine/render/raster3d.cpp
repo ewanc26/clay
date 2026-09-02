@@ -26,8 +26,8 @@ struct ClipVertex {
 /* Clip a convex polygon (up to 9 vertices after all planes) against one
  * plane. `dist` returns the signed distance: inside when >= 0. */
 static int clip_plane(const ClipVertex *in, int n,
-                      float (*dist)(const cl_v4 &),
-                      ClipVertex *out) {
+                       float (*dist)(const cl_v4 &),
+                       ClipVertex *out) {
     int m = 0;
     for (int i = 0; i < n; i++) {
         const ClipVertex &a = in[i];
@@ -213,6 +213,9 @@ void Renderer3D::clear() {
 Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
                                   const Mesh3D &mesh, cl_m4 model, cl_m4 view,
                                   cl_m4 proj, Rgba color, cl_v3 light_dir,
+                                  float intensity, cl_v3 point_light_pos,
+                                  float point_light_intensity,
+                                  float point_light_attenuation,
                                   float ambient) {
     Mesh3DStats stats;
     if (width_ <= 0 || height_ <= 0 || !dst) return stats;
@@ -295,7 +298,22 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
 
             /* Flat shading: clamp diffuse by the world-space normal. */
             float diff = std::max(0.0f, cl_v3_dot(world_normal, light_dir));
-            float shade = ambient + (1.0f - ambient) * diff;
+            float point_contrib = 0.0f;
+            if (point_light_intensity > 0.0f) {
+                cl_v3 centroid =
+                    cl_v3_scale(cl_v3_add(cl_v3_add(w0, w1), w2), 1.0f / 3.0f);
+                cl_v3 to_light = cl_v3_sub(point_light_pos, centroid);
+                float dist = cl_v3_length(to_light);
+                cl_v3 pdir = dist > 1e-6f ? cl_v3_normalize(to_light)
+                                           : cl_v3_make(0.0f, 0.0f, 0.0f);
+                float pdiff =
+                    std::max(0.0f, cl_v3_dot(world_normal, pdir));
+                float atten = 1.0f / (1.0f + point_light_attenuation *
+                                                 dist * dist);
+                point_contrib = point_light_intensity * pdiff * atten;
+            }
+            float lit = std::min(1.0f, intensity * diff + point_contrib);
+            float shade = ambient + (1.0f - ambient) * lit;
             shade = std::min(1.0f, std::max(0.0f, shade));
 
             stats.triangles_rasterized++;

@@ -86,11 +86,16 @@ void RendererSW::draw_image(int x, int y, const uint32_t *src, int src_w,
 
 Mesh3DStats RendererSW::draw_mesh(const Mesh3D &mesh, cl_m4 model, cl_m4 view,
                                   cl_m4 proj, Rgba color, cl_v3 light_dir,
+                                  float intensity, cl_v3 point_light_pos,
+                                  float point_light_intensity,
+                                  float point_light_attenuation,
                                   float ambient) {
     r3d_.resize(fb_.width, fb_.height);
     r3d_.clear();
     Mesh3DStats s = r3d_.draw_mesh(fb_.pixels.data(), fb_.width, mesh, model,
-                                   view, proj, color, light_dir, ambient);
+                                   view, proj, color, light_dir, intensity,
+                                   point_light_pos, point_light_intensity,
+                                   point_light_attenuation, ambient);
     touched_ += (uint64_t)s.pixels_written;
     return s;
 }

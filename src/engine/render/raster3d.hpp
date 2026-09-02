@@ -37,11 +37,18 @@ class Renderer3D {
     /* Rasterize `mesh` into `dst` (0xAARRGGBB pixels, row-major, top-left).
      * `proj * view * model` maps object-space points to clip space. Normals
      * are transformed by the model (upper 3x3) then lit by `light_dir`
-     * (world space, normalized): diffuse = max(0, dot(n, l)), plus `ambient`.
-     * Winding is CCW (front) and backfaces are culled. */
+     * (world space, normalized): diffuse = max(0, dot(n, l)), scaled by
+     * `intensity`, plus `ambient`. An optional point light at `point_light_pos`
+     * with `point_light_intensity` and inverse-square `point_light_attenuation`
+     * is evaluated per-triangle centroid. Winding is CCW (front) and backfaces
+     * are culled. */
     Mesh3DStats draw_mesh(uint32_t *dst, int dst_pitch, const Mesh3D &mesh,
                           cl_m4 model, cl_m4 view, cl_m4 proj, Rgba color,
                           cl_v3 light_dir = {0.3f, 0.5f, 0.8f},
+                          float intensity = 1.0f,
+                          cl_v3 point_light_pos = {0.0f, 0.0f, 0.0f},
+                          float point_light_intensity = 0.0f,
+                          float point_light_attenuation = 0.0f,
                           float ambient = 0.35f);
 
   private:
