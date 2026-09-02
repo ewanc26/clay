@@ -77,6 +77,17 @@ public partial class ClayDemo : Node2D
         }
     }
 
+    public override void _Notification(int what)
+    {
+        if (runtime == null)
+            return;
+
+        if (what == NotificationApplicationFocusIn)
+            runtime.FeedFocus(true);
+        else if (what == NotificationApplicationFocusOut)
+            runtime.FeedFocus(false);
+    }
+
     private void ResizeSurface(int width, int height)
     {
         if (runtime != null)
