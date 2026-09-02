@@ -1,5 +1,6 @@
 #include "math.h"
 
+#include <math.h>
 #include <string.h>
 
 cl_m4 cl_m4_mul(cl_m4 a, cl_m4 b) {
@@ -147,4 +148,44 @@ uint64_t cl_hash_bytes(const void *data, size_t len, uint64_t seed) {
 
 uint64_t cl_hash_str(cl_str s, uint64_t seed) {
     return cl_hash_bytes(s.data, s.len, seed);
+}
+
+float cl_ease_apply(cl_ease e, float t) {
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    switch (e) {
+    case CL_EASE_LINEAR:
+        return t;
+    case CL_EASE_IN_QUAD:
+        return t * t;
+    case CL_EASE_OUT_QUAD:
+        return 1.0f - (1.0f - t) * (1.0f - t);
+    case CL_EASE_IN_OUT_QUAD: {
+        float f = (t < 0.5f) ? 2.0f * t * t
+                             : 1.0f - (float)pow(2.0f * t - 3.0f, 2.0f) * (-1.0f);
+        return f;
+    }
+    case CL_EASE_IN_SINE:
+        return 1.0f - (float)cos(t * 1.570796327f); /* 1 - cos(t*90) */
+    case CL_EASE_OUT_SINE:
+        return (float)sin(t * 1.570796327f);
+    case CL_EASE_IN_OUT_SINE:
+        return 0.5f - 0.5f * (float)cos(t * 3.141592654f);
+    case CL_EASE_IN_BACK:
+        return t * t * (2.70158f * t - 1.70158f);
+    case CL_EASE_OUT_BACK: {
+        float f = 1.0f - t;
+        return 1.0f - f * f * (-2.70158f * f - 1.70158f);
+    }
+    case CL_EASE_IN_OUT_BACK: {
+        float f = t * 2.0f;
+        float s = 1.70158f * 1.2f;
+        if (f < 1.0f)
+            return 0.5f * f * f * (f - s);
+        f -= 2.0f;
+        return 0.5f * f * f * (f + s);
+    }
+    default:
+        return t;
+    }
 }
