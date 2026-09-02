@@ -20,10 +20,13 @@ jobs:
         run: ./scripts/lint_commits.sh "${{ github.event.before }}..HEAD"
 
   build:
+    # Windows is documented as untested (AGENTS.md); MSVC does not yet compile
+    # the native engine (see issue #21). Validate the native build only on
+    # Linux and macOS; the dotnet wrapper jobs below still cover Windows.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
