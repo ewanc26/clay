@@ -105,11 +105,12 @@ void ReactionEngine::load_json(cl_json_node *root) {
     }
 }
 
-void ReactionEngine::load_text(const std::string &text) {
+bool ReactionEngine::load_text(const std::string &text) {
     cl_json_node root;
     cl_err err = cl_json_parse(&root, &arena_, cl_str_c(text.c_str()));
-    if (err != CLAY_OK) return;
+    if (err != CLAY_OK) return false;
     load_json(&root);
+    return true;
 }
 
 namespace {

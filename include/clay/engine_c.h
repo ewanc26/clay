@@ -1,0 +1,50 @@
+#ifndef CLAY_ENGINE_C_H
+#define CLAY_ENGINE_C_H
+
+#include <clay/clay.h>
+
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Opaque host-facing handle. This is the supported ABI boundary for managed
+ * integrations such as Godot Mono; callers must not inspect its contents. */
+typedef struct cl_engine_runtime cl_engine_runtime;
+
+cl_engine_runtime *cl_engine_runtime_create(int width, int height,
+                                             uint64_t seed);
+void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
+
+/* Advances one deterministic frame and renders the authoritative framebuffer. */
+cl_err cl_engine_runtime_step(cl_engine_runtime *runtime, double dt_seconds);
+cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
+                              const cl_input_event *event);
+cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
+                                        const char *json);
+cl_err cl_engine_runtime_spawn_species(cl_engine_runtime *runtime,
+                                       const char *species, float x, float y,
+                                       float r, float g, float b, float a,
+                                       float life);
+cl_err cl_engine_runtime_spawn_ripple(cl_engine_runtime *runtime, float x,
+                                      float y, float radius, float r, float g,
+                                      float b, float a);
+void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
+                                      double time_scale);
+
+int cl_engine_runtime_width(const cl_engine_runtime *runtime);
+int cl_engine_runtime_height(const cl_engine_runtime *runtime);
+uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
+
+/* Packed 0x00RRGGBB pixels, row-major, top-left origin. The pointer remains
+ * valid until the next step or destruction of the runtime. */
+const uint32_t *cl_engine_runtime_pixels(const cl_engine_runtime *runtime,
+                                         size_t *count);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* CLAY_ENGINE_C_H */

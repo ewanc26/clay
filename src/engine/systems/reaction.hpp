@@ -38,7 +38,7 @@ class ReactionEngine {
      * Effects: spawn (species, x, y, life, color), ripple, flash, log,
      * kill_radius. Positioning: without x/y, cursor position is used. */
     void load_json(cl_json_node *root);
-    void load_text(const std::string &text);
+    bool load_text(const std::string &text);
 
     void on_event(Runtime &rt, const Event &ev);
 
