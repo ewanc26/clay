@@ -26,6 +26,8 @@ typedef struct cl_engine_runtime cl_engine_runtime;
 #define CLAY_ENGINE_ABI_VERSION 1u
 /* Minimum arena needed for mandatory runtime initialization. */
 #define CLAY_ENGINE_MIN_ARENA_BYTES (64u << 10)
+/* Prevent accidental multi-gigabyte allocations through the C ABI. */
+#define CLAY_ENGINE_MAX_FRAMEBUFFER_PIXELS (64u << 20)
 
 CLAY_API uint32_t cl_engine_runtime_abi_version(void);
 

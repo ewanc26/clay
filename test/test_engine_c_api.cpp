@@ -180,6 +180,7 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_create(std::numeric_limits<int>::max(),
                                    std::numeric_limits<int>::max(), 1) ==
           nullptr);
+    CHECK(cl_engine_runtime_create(8193, 8193, 1) == nullptr);
     CHECK(cl_engine_runtime_width(nullptr) == 0);
     CHECK(cl_engine_runtime_height(nullptr) == 0);
     CHECK(cl_engine_runtime_frame(nullptr) == 0);

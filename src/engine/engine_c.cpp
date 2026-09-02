@@ -20,7 +20,9 @@ bool valid_color(float r, float g, float b, float a) {
 
 bool valid_dimensions(int width, int height) {
     return width > 0 && height > 0 &&
-           (size_t)width <= SIZE_MAX / (size_t)height;
+           (size_t)width <= SIZE_MAX / (size_t)height &&
+           (size_t)width * (size_t)height <=
+               CLAY_ENGINE_MAX_FRAMEBUFFER_PIXELS;
 }
 
 template <typename Fn> cl_err guarded(Fn &&fn) {
