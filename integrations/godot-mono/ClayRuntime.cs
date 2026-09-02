@@ -38,6 +38,9 @@ public sealed class ClayRuntime : IDisposable
     public void LoadReactions(string json) => Check(
         Native.LoadReactions(handle, json ?? throw new ArgumentNullException(nameof(json))));
 
+    public void LoadActions(string json) => Check(
+        Native.LoadActions(handle, json ?? throw new ArgumentNullException(nameof(json))));
+
     public void SpawnSpecies(string species, float x, float y, float r, float g,
                              float b, float a, float life) => Check(
         Native.SpawnSpecies(handle,
@@ -127,6 +130,8 @@ public sealed class ClayRuntime : IDisposable
         public static extern void SetTimeScale(RuntimeHandle runtime, double scale);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_actions")]
+        public static extern int LoadActions(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]
         public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
                                                float x, float y, float r, float g,
