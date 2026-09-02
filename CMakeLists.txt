@@ -27,7 +27,12 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
+# GCC/Clang warning flags; MSVC rejects these spellings, so guard them off.
+if(NOT MSVC)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
+else()
+  add_compile_options(/W4)
+endif()
 
 option(CLAY_BUILD_TESTS "Build unit tests" ON)
 option(CLAY_BUILD_INTERACTIVE "Build the interactive `clay_player` app" ON)
