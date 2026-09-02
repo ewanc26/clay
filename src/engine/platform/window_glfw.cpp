@@ -56,6 +56,15 @@ cl_key glfw_to_key(int key) {
     return CLAY_KEY_NONE;
 }
 
+int glfw_mods(int mods) {
+    int out = CLAY_MOD_NONE;
+    if (mods & GLFW_MOD_SHIFT) out |= CLAY_MOD_SHIFT;
+    if (mods & GLFW_MOD_CONTROL) out |= CLAY_MOD_CTRL;
+    if (mods & GLFW_MOD_ALT) out |= CLAY_MOD_ALT;
+    if (mods & GLFW_MOD_SUPER) out |= CLAY_MOD_META;
+    return out;
+}
+
 struct EventQueue {
     std::vector<cl_input_event> events;
     double last_cursor_x = 0.0;
@@ -69,7 +78,7 @@ EventQueue *queue_for(GLFWwindow *wnd) {
     return static_cast<EventQueue *>(glfwGetWindowUserPointer(wnd));
 }
 
-void key_cb(GLFWwindow *wnd, int key, int, int action, int) {
+void key_cb(GLFWwindow *wnd, int key, int, int action, int mods) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
     if (action != GLFW_PRESS && action != GLFW_RELEASE) return;
@@ -77,6 +86,7 @@ void key_cb(GLFWwindow *wnd, int key, int, int action, int) {
     if (k == CLAY_KEY_NONE) return;
     cl_input_event e = cl_input_event_make(
         action == GLFW_PRESS ? CLAY_IN_PRESS : CLAY_IN_RELEASE, k);
+    e.mods = glfw_mods(mods);
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
@@ -137,7 +147,7 @@ void poll_gamepad(EventQueue *q) {
     }
 }
 
-void mouse_button_cb(GLFWwindow *wnd, int button, int action, int) {
+void mouse_button_cb(GLFWwindow *wnd, int button, int action, int mods) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
     cl_key k = CLAY_KEY_NONE;
@@ -149,6 +159,7 @@ void mouse_button_cb(GLFWwindow *wnd, int button, int action, int) {
     }
     cl_input_event e = cl_input_event_make(
         action == GLFW_PRESS ? CLAY_IN_PRESS : CLAY_IN_RELEASE, k);
+    e.mods = glfw_mods(mods);
     glfwGetCursorPos(wnd, &e.x, &e.y);
     q->events.push_back(e);
 }
