@@ -8,6 +8,8 @@ command when network access is available.
 
 ## Godot Mono binding package
 
-Clay still needs a maintained Godot Mono binding layer with generated managed
-types, native handle ownership, and a CI smoke project. The installed C ABI is
-now suitable as the native boundary, but this integration remains open.
+Clay still needs a complete Godot sample project, generated key constants,
+native library packaging for each supported platform, and a CI smoke project.
+The initial managed `SafeHandle` wrapper now exists under
+`integrations/godot-mono/`; this issue remains open until those distribution
+pieces are covered.
