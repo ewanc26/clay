@@ -250,3 +250,5 @@ install(FILES
   DESTINATION integrations/godot-mono)
 install(FILES integrations/godot-mono/managed/ClayRuntime.csproj
   DESTINATION integrations/godot-mono/managed)
+install(PROGRAMS scripts/godot_mono_stage_native.sh
+  DESTINATION integrations/godot-mono)
