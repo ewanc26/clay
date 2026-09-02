@@ -174,6 +174,18 @@ TEST_CASE("runtime: malformed direct timing is ignored") {
     CHECK_EQ(rt.sim_time(), 0.0);
 }
 
+TEST_CASE("runtime: resize reports invalid dimensions") {
+    Runtime rt(32, 24, 10);
+    CHECK(!rt.resize(0, 24));
+    CHECK(!rt.resize(32, -1));
+    CHECK(rt.width() == 32);
+    CHECK(rt.height() == 24);
+    CHECK(rt.resize(48, 20));
+    CHECK(rt.width() == 48);
+    CHECK(rt.height() == 20);
+    CHECK(rt.framebuffer().pixels.size() == 48u * 20u);
+}
+
 TEST_CASE("runtime: same seed, same transcript, same world") {
     uint64_t seed = 0xBEEF;
     const uint64_t frames = 60;
