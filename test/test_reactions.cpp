@@ -70,3 +70,18 @@ TEST_CASE("reaction: rules survive a clear and re-load") {
     rt.reactions().load_text(kRules);
     CHECK_EQ(rt.reactions().rule_count(), 4);
 }
+
+TEST_CASE("reaction: successful reload replaces rules and parse failure preserves") {
+    Runtime rt(200, 200, 4);
+    rt.reactions().load_text(kRules);
+    CHECK_EQ(rt.reactions().rule_count(), 4);
+
+    CHECK(rt.reactions().load_text(
+        R"json({"rules":[{"name":"replacement","on":"input.key",
+                         "match":{"value":"SPACE","kind":"press"},
+                         "do":[{"effect":"flash"}]}]})json"));
+    CHECK_EQ(rt.reactions().rule_count(), 1);
+
+    CHECK(!rt.reactions().load_text("{ malformed"));
+    CHECK_EQ(rt.reactions().rule_count(), 1);
+}
