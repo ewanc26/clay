@@ -22,10 +22,52 @@ void CommandLog::record(const Command &cmd) {
     double vals[5] = {get_double(stored.value), stored.x, stored.y,
                       (double)stored.frame, stored.time};
     hash_feed(fingerprint_, (const char *)vals, sizeof(vals));
+
+    /* Reversible commands go on the undo stack; an undo clears the redo
+     * branch (standard editor semantics — new actions invalidate redos). */
+    if (stored.reversible) {
+        undo_stack_.push_back(stored);
+        redo_stack_.clear();
+        hash_feed(fingerprint_, "\x03", 1); /* undo-push marker */
+    }
+}
+
+const Command *CommandLog::undo() {
+    if (undo_stack_.empty()) return nullptr;
+    Command cmd = std::move(undo_stack_.back());
+    undo_stack_.pop_back();
+    redo_stack_.push_back(cmd);
+    hash_feed(fingerprint_, "\xff", 1); /* undo marker */
+    hash_feed(fingerprint_, cmd.name.data(), cmd.name.size());
+    hash_feed(fingerprint_, "\x01", 1);
+    hash_feed(fingerprint_, cmd.source.data(), cmd.source.size());
+    hash_feed(fingerprint_, "\x02", 1);
+    double vals[5] = {get_double(cmd.value), cmd.x, cmd.y,
+                      (double)cmd.frame, cmd.time};
+    hash_feed(fingerprint_, (const char *)vals, sizeof(vals));
+    return &redo_stack_.back();
+}
+
+const Command *CommandLog::redo() {
+    if (redo_stack_.empty()) return nullptr;
+    Command cmd = std::move(redo_stack_.back());
+    redo_stack_.pop_back();
+    undo_stack_.push_back(cmd);
+    hash_feed(fingerprint_, "\xfe", 1); /* redo marker */
+    hash_feed(fingerprint_, cmd.name.data(), cmd.name.size());
+    hash_feed(fingerprint_, "\x01", 1);
+    hash_feed(fingerprint_, cmd.source.data(), cmd.source.size());
+    hash_feed(fingerprint_, "\x02", 1);
+    double vals[5] = {get_double(cmd.value), cmd.x, cmd.y,
+                      (double)cmd.frame, cmd.time};
+    hash_feed(fingerprint_, (const char *)vals, sizeof(vals));
+    return &undo_stack_.back();
 }
 
 void CommandLog::clear() {
     entries_.clear();
+    undo_stack_.clear();
+    redo_stack_.clear();
     fingerprint_ = 0x517CC1B727220A95ULL;
 }
 

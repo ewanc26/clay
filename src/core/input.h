@@ -90,6 +90,11 @@ typedef enum cl_mods {
 const char *cl_key_name(cl_key key);
 cl_key cl_key_from_str(cl_str s);
 
+/* Human names for modifiers: "SHIFT", "CTRL", "ALT", "META". Accepts
+ * "+"-separated combos like "CTRL+SHIFT" for compound bindings. */
+const char *cl_mods_name(cl_mods mods);
+cl_mods cl_mods_from_str(cl_str s);
+
 /* ------------------------------------------------------------------ events */
 
 typedef enum cl_input_kind {

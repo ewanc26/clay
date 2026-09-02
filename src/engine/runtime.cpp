@@ -187,6 +187,18 @@ void Runtime::publish_input_event(const cl_input_event &e) {
 }
 
 void Runtime::execute_action(const Action &a, bool record_command) {
+    /* Undo/redo are meta-actions that manipulate the command log directly.
+     * They must not themselves be recorded as commands (otherwise they would
+     * push themselves onto the undo stack, creating infinite regress). */
+    if (a.name == "undo") {
+        undo();
+        return;
+    }
+    if (a.name == "redo") {
+        redo();
+        return;
+    }
+
     hub_.publish_at(channel(CLAY_CH_ACTION),
                     cl_variant_str(cl_str_c(a.name.c_str())),
                     a.frame ? a.frame : frame_, a.time ? a.time : sim_time_);
@@ -198,6 +210,7 @@ void Runtime::execute_action(const Action &a, bool record_command) {
     cmd.value = a.value;
     cmd.x = a.x;
     cmd.y = a.y;
+    cmd.reversible = a.reversible;
     cmd.frame = a.frame ? a.frame : frame_;
     cmd.time = a.time ? a.time : sim_time_;
     commands_.record(cmd);
@@ -301,6 +314,34 @@ void Runtime::render() {
     RenderSystem *system = render_system_ ? render_system_
                                           : &default_renderer;
     system->render(*this, renderer_);
+}
+
+/* ----------------------------------------------------------- undo/redo */
+
+const Command *Runtime::undo() {
+    /* Undo is a meta-action: it manipulates the command log directly and
+     * must not itself be recorded as a command. */
+    const Command *cmd = commands_.undo();
+    if (cmd == nullptr) return nullptr;
+    /* Republish the undone command on the command channel so systems can
+     * observe and revert world state. The value is prefixed "undo:" so
+     * reaction rules can match undo events distinctly from fresh ones. */
+    std::string event_name = "undo:" + cmd->name;
+    hub_.publish_at(channel(CLAY_CH_COMMAND),
+                    cl_variant_str(cl_str_c(event_name.c_str())),
+                    cmd->frame, cmd->time);
+    return cmd;
+}
+
+const Command *Runtime::redo() {
+    const Command *cmd = commands_.redo();
+    if (cmd == nullptr) return nullptr;
+    /* Redone commands are republished as-is — systems re-apply the same
+     * world mutation they applied originally. */
+    hub_.publish_at(channel(CLAY_CH_COMMAND),
+                    cl_variant_str(cl_str_c(cmd->name.c_str())),
+                    cmd->frame, cmd->time);
+    return cmd;
 }
 
 } // namespace clay

@@ -90,6 +90,20 @@ static int test_input(void) {
     CHECK(cl_key_from_str(cl_str_c("MOUSE_LEFT")) == CLAY_KEY_MOUSE_LEFT);
     CHECK(cl_key_from_str(cl_str_c("GP_A")) == CLAY_KEY_GP_A);
     CHECK(cl_key_from_str(cl_str_c("DOES_NOT_EXIST")) == CLAY_KEY_NONE);
+
+    /* cl_mods_from_str: single and combined modifiers. */
+    CHECK(cl_mods_from_str(cl_str_c("CTRL")) == CLAY_MOD_CTRL);
+    CHECK(cl_mods_from_str(cl_str_c("SHIFT")) == CLAY_MOD_SHIFT);
+    CHECK(cl_mods_from_str(cl_str_c("ALT")) == CLAY_MOD_ALT);
+    CHECK(cl_mods_from_str(cl_str_c("META")) == CLAY_MOD_META);
+    CHECK(cl_mods_from_str(cl_str_c("CTRL+SHIFT")) ==
+          (CLAY_MOD_CTRL | CLAY_MOD_SHIFT));
+    CHECK(cl_mods_from_str(cl_str_c("CTRL+SHIFT+ALT")) ==
+          (CLAY_MOD_CTRL | CLAY_MOD_SHIFT | CLAY_MOD_ALT));
+    CHECK(cl_mods_from_str(cl_str_c("CTRL + SHIFT")) ==
+          (CLAY_MOD_CTRL | CLAY_MOD_SHIFT));
+    CHECK(cl_mods_from_str(cl_str_c("NONE")) == CLAY_MOD_NONE);
+    CHECK(cl_mods_from_str(cl_str_c("BOGUS")) == CLAY_MOD_NONE);
     return clay_test_failures;
 }
 

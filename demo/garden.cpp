@@ -80,6 +80,9 @@ void Garden::seed(const std::string &reactions_json) {
 
     rt_->actions().bind_hold("move_up", CLAY_KEY_W);
     rt_->actions().bind_hold("move_down", CLAY_KEY_S);
+    rt_->actions().bind("primary", CLAY_KEY_MOUSE_LEFT, CLAY_MOD_NONE, true);
+    rt_->actions().bind("undo", CLAY_KEY_Z, CLAY_MOD_CTRL);
+    rt_->actions().bind("redo", CLAY_KEY_Y, CLAY_MOD_CTRL);
 
     rt_->systems().add(std::make_unique<MovementSystem>());
     rt_->systems().add(std::make_unique<CursorMagnetSystem>());
