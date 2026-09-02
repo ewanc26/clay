@@ -155,9 +155,10 @@ target_link_libraries(clay_engine PUBLIC clay_core clay_third_party)
 # consumer and leaves libc++/libstdc++ symbols unresolved.
 if(NOT CLAY_BUILD_SHARED AND NOT MSVC)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_link_libraries(clay_engine PUBLIC stdc++)
+    target_link_libraries(clay_engine PUBLIC
+      "$<$<LINK_LANGUAGE:C>:stdc++>")
   else()
-    target_link_libraries(clay_engine PUBLIC c++)
+    target_link_libraries(clay_engine PUBLIC "$<$<LINK_LANGUAGE:C>:c++>")
   endif()
 endif()
 
