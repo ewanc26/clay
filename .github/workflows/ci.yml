@@ -93,3 +93,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Godot Mono sample project
         run: dotnet build integrations/godot-mono/ClayGodotSample.csproj --nologo
+
+  godot-mono-runtime:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot Mono
+        run: brew install --cask godot-mono
+      - name: Build Clay shared library
+        run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
+      - name: Run Godot Mono smoke test
+        env:
+          GODOT_MONO_BIN: godot-mono
+        run: ./scripts/godot_mono_smoke.sh
