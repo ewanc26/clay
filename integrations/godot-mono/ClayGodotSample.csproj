@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ClayRuntime.cs" />
+    <Compile Include="ClayKey.cs" />
   </ItemGroup>
 </Project>

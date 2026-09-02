@@ -53,6 +53,8 @@ public sealed class ClayRuntime : IDisposable
     public void FeedKey(int key, bool pressed) => Check(
         Native.FeedKey(handle, key, pressed));
 
+    public void FeedKey(ClayKey key, bool pressed) => FeedKey((int)key, pressed);
+
     public void FeedMotion(double x, double y, double dx, double dy) => Check(
         Native.FeedMotion(handle, x, y, dx, dy));
 
