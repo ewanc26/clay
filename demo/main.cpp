@@ -1,5 +1,7 @@
 #include "imageio.hpp"
 #include "garden.hpp"
+#include "render/scene3d.hpp"
+#include "render/render_system.hpp"
 
 #ifdef CLAY_PLAYER_INTERACTIVE
 #include "platform/window_glfw.hpp"
@@ -11,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -29,6 +32,7 @@ struct Options {
     std::string replay_from; /* .clayrec path */
     std::string rules;   /* optional reactions.json; builtin default otherwise */
     std::string actions; /* optional input-actions.json */
+    std::string scene;   /* optional .clay scene to render instead of the garden */
 };
 
 void usage() {
@@ -44,6 +48,7 @@ void usage() {
         "  --dump out.png       write the final framebuffer to a PNG\n"
         "  --rules file.json    load a reaction rules table\n"
         "  --actions file.json  load an input action map\n"
+        "  --scene file.clay    render a .clay 3D scene instead of the garden\n"
         "  --record out.clayrec append this run's input transcript\n"
         "  --replay in.clayrec  feed a recorded transcript instead of live "
         "input\n",
@@ -72,6 +77,8 @@ bool parse_options(int argc, char **argv, Options &o) {
             if (!next(o.rules)) return false;
         } else if (a == "--actions") {
             if (!next(o.actions)) return false;
+        } else if (a == "--scene") {
+            if (!next(o.scene)) return false;
         } else if (a == "--width") {
             if (!next(a)) return false;
             o.width = atoi(a.c_str());
@@ -121,7 +128,8 @@ void run_headless(clay::Garden &garden, clay::Runtime &rt,
     const double dt = 1.0 / 60.0;
     for (uint64_t frame = 1; frame <= o.frames; frame++) {
         rt.begin_frame(dt);
-        if (!o.replay) garden.drive_headless_input(rt.frame());
+        if (!o.replay && o.scene.empty())
+            garden.drive_headless_input(rt.frame());
         rt.update(rt.sim_dt());
         rt.render();
         if (!o.dump.empty() && frame == o.frames) {
@@ -146,6 +154,20 @@ int main(int argc, char **argv) {
     clay::Garden garden(o.width, o.height, o.seed);
     clay::Runtime &rt = garden.runtime();
 
+    std::unique_ptr<clay::ClayScene> scene;
+    std::unique_ptr<clay::Scene3DRenderSystem> scene_system;
+    if (!o.scene.empty()) {
+        std::string text = read_file(o.scene);
+        scene = std::make_unique<clay::ClayScene>();
+        if (text.empty() || !scene->load(cl_str_c(text.c_str()))) {
+            std::fprintf(stderr, "clay_player: could not load scene '%s'\n",
+                         o.scene.c_str());
+            return 1;
+        }
+        scene_system = std::make_unique<clay::Scene3DRenderSystem>(*scene);
+        rt.set_render_system(scene_system.get());
+    }
+
     if (o.record && o.replay) {
         std::fputs("clay_player: --record and --replay are mutually exclusive\n",
                    stderr);
@@ -167,7 +189,8 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    garden.plant();
+    if (o.scene.empty())
+        garden.plant();
 
     if (o.replay) {
         cl_err err = cl_input_log_load(&rt.input_log(),

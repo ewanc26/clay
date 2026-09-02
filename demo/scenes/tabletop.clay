@@ -1,0 +1,26 @@
+{
+    "version": 1,
+  "settings": {
+    "seed": 7,
+    "fps": 60,
+    "resolution": [640, 480]
+  },
+  "meshes": [
+    { "name": "ground", "primitive": "plane", "color": [70, 74, 84] },
+    { "name": "cube", "primitive": "cube", "color": [188, 128, 92] },
+    { "name": "ball", "uid": "ball_01", "primitive": "sphere",
+      "radius": 0.6, "color": [72, 132, 220] }
+  ],
+  "scene": [
+    { "name": "sun", "component": "directional_light",
+      "dir": [0.35, 0.6, 0.8], "intensity": 1.0 },
+    { "name": "floor", "component": "mesh_instance", "mesh": "ground",
+      "transform": { "pos": [0, -0.55, 0], "scale": [8, 1, 8] },
+      "color": [70, 74, 84] },
+    { "name": "block", "component": "mesh_instance", "mesh": "cube",
+      "transform": { "pos": [-1.2, 0, -2.5], "euler": [0, 0.7, 0] } },
+    { "name": "bball", "component": "mesh_instance",
+      "mesh": "does-not-exist", "mesh_uid": "ball_01",
+      "transform": { "pos": [1.2, 0.3, -3.0] } }
+  ]
+}
