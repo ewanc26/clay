@@ -21,7 +21,14 @@ public partial class ClayDemo : Node2D
               "do": [ { "effect": "ripple", "color": [0.55, 0.75, 0.95], "radius": 70 } ] },
             { "name": "motion moss", "on": "input.motion", "cooldown": 0.35,
               "do": [ { "effect": "spawn", "species": "pebble", "life": 6.0,
-                         "color": [0.45, 0.55, 0.40] } ] }
+                         "color": [0.45, 0.55, 0.40] } ] },
+            { "name": "grow herd", "on": "input.key",
+              "match": { "value": "E", "kind": "press" }, "cooldown": 0.2,
+              "do": [ { "effect": "spawn", "species": "animal", "life": 60.0,
+                         "color": [0.70, 0.85, 0.60] } ] },
+            { "name": "calm herd", "on": "input.key",
+              "match": { "value": "R", "kind": "press" }, "cooldown": 0.2,
+              "do": [ { "effect": "kill_radius", "radius": 220 } ] }
           ]
         }
         """;
@@ -71,9 +78,17 @@ public partial class ClayDemo : Node2D
         if (runtime == null)
             return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Keycode == Key.Space)
+        if (@event is InputEventKey keyEvent &&
+            (keyEvent.Keycode == Key.Space || keyEvent.Keycode == Key.E ||
+             keyEvent.Keycode == Key.R))
         {
-            runtime.FeedKeyAt(Clay.ClayKey.Space, keyEvent.Pressed,
+            Clay.ClayKey key = keyEvent.Keycode switch
+            {
+                Key.E => Clay.ClayKey.E,
+                Key.R => Clay.ClayKey.R,
+                _ => Clay.ClayKey.Space
+            };
+            runtime.FeedKeyAt(key, keyEvent.Pressed,
                               runtime.CursorX, runtime.CursorY);
         }
         else if (@event is InputEventMouseButton mouseEvent &&
