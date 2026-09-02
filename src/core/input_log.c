@@ -4,11 +4,41 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* On-disk header. Events are encoded field-by-field (never raw structs), so a
  * .clayrec round-trips across compilers/platforms with the same endianness. */
 #define CLAYREC_MAGIC UINT64_C(0x434C415952454301) /* "CLAYREC\x01"       */
 #define CLAYREC_VERSION 2u
+
+static uint64_t hash_word(uint64_t hash, uint64_t word) {
+    return cl_hash_u64(hash ^ cl_hash_u64(word));
+}
+
+static uint64_t double_bits(double value) {
+    uint64_t bits = 0;
+    memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
+/* Hash the semantic event fields rather than the raw struct bytes. Struct
+ * padding is unspecified and can differ between otherwise-identical values
+ * after a serialize/deserialize round-trip or across compilers. */
+static uint64_t hash_event(const cl_input_event *e, uint64_t seed) {
+    uint64_t hash = seed;
+    hash = hash_word(hash, (uint64_t)e->frame);
+    hash = hash_word(hash, double_bits(e->time));
+    hash = hash_word(hash, (uint64_t)(uint32_t)e->type);
+    hash = hash_word(hash, (uint64_t)(uint32_t)e->key);
+    hash = hash_word(hash, (uint64_t)(uint32_t)e->mods);
+    hash = hash_word(hash, double_bits(e->x));
+    hash = hash_word(hash, double_bits(e->y));
+    hash = hash_word(hash, double_bits(e->dx));
+    hash = hash_word(hash, double_bits(e->dy));
+    hash = hash_word(hash, (uint64_t)(uint32_t)e->wheel);
+    hash = hash_word(hash, e->focus ? UINT64_C(1) : UINT64_C(0));
+    return hash;
+}
 
 void cl_input_log_init(cl_input_log *log, cl_arena *a, size_t cap) {
     log->arena = a;
@@ -30,8 +60,7 @@ void cl_input_log_append(cl_input_log *log, const cl_input_event *e) {
         log->cap = cap;
     }
     log->items[log->count++] = *e;
-    log->fingerprint =
-        cl_hash_bytes(e, sizeof(cl_input_event), log->fingerprint);
+    log->fingerprint = hash_event(e, log->fingerprint);
 }
 
 size_t cl_input_log_count(const cl_input_log *log) {
