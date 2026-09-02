@@ -18,7 +18,7 @@ Upstream tracking: [#5](https://github.com/ewanc26/clay/issues/5).
 
 ## Windows and Godot export validation
 
-The shared C ABI now uses an explicit Windows export macro, and CI now includes
+The shared C ABI now uses an explicit Windows export macro, CI now includes
 a Windows build/test leg. The repository still needs an exported Godot Mono
 sample run to validate
 DLL naming, dependent runtime loading, and architecture selection.

@@ -8,7 +8,8 @@ editor, and run the project. Configure Clay with `-DCLAY_BUILD_SHARED=ON`
 (the default) to produce that library.
 
 `cmake --install build --prefix sdk` also places the shared library at
-`sdk/integrations/godot-mono/native/<system>/`. Copy that file into the Godot
+`sdk/integrations/godot-mono/native/<platform>/` (`macos`, `linux`, or
+`windows`). Copy that file into the Godot
 project root (or its platform export layout) so `DllImport("clay_engine")` can
 resolve it.
 

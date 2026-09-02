@@ -206,6 +206,13 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/clayConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
 if(CLAY_INSTALL_GODOT_NATIVE AND CLAY_BUILD_SHARED)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(CLAY_GODOT_PLATFORM "macos")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CLAY_GODOT_PLATFORM "windows")
+  else()
+    set(CLAY_GODOT_PLATFORM "linux")
+  endif()
   install(FILES $<TARGET_FILE:clay_engine>
-    DESTINATION integrations/godot-mono/native/${CMAKE_SYSTEM_NAME})
+    DESTINATION integrations/godot-mono/native/${CLAY_GODOT_PLATFORM})
 endif()
