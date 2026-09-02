@@ -83,6 +83,12 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(!cl_engine_runtime_is_key_down(runtime, CLAY_KEY_SPACE));
     CHECK(!cl_engine_runtime_is_focused(runtime));
     CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, true) == CLAY_OK);
+    CHECK(cl_engine_runtime_feed_key_at(runtime, CLAY_KEY_A, true, 3, 4,
+                                        CLAY_MOD_SHIFT) == CLAY_OK);
+    CHECK(cl_engine_runtime_feed_key_at(
+              runtime, CLAY_KEY_A, false,
+              std::numeric_limits<double>::quiet_NaN(), 4, 0) ==
+          CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_feed_motion(runtime, 8, 9, 1, 2) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_wheel(runtime, 8, 9, 1) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_focus(runtime, true) == CLAY_OK);

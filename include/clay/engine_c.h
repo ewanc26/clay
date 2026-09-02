@@ -35,6 +35,9 @@ CLAY_API cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                                        const cl_input_event *event);
 CLAY_API cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
                                            cl_key key, bool pressed);
+CLAY_API cl_err cl_engine_runtime_feed_key_at(cl_engine_runtime *runtime,
+                                              cl_key key, bool pressed,
+                                              double x, double y, int mods);
 CLAY_API cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
                                               double x, double y, double dx,
                                               double dy);

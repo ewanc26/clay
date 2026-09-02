@@ -94,6 +94,22 @@ extern "C" cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
     });
 }
 
+extern "C" cl_err cl_engine_runtime_feed_key_at(
+    cl_engine_runtime *runtime, cl_key key, bool pressed, double x, double y,
+    int mods) {
+    if (!runtime || key <= CLAY_KEY_NONE || key >= CLAY_KEY_COUNT ||
+        !std::isfinite(x) || !std::isfinite(y))
+        return CLAY_ERR_INVALID_ARG;
+    return guarded([&] {
+        cl_input_event event = cl_input_event_make(
+            pressed ? CLAY_IN_PRESS : CLAY_IN_RELEASE, key);
+        event.x = x;
+        event.y = y;
+        event.mods = mods;
+        runtime->impl.feed(event);
+    });
+}
+
 extern "C" cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
                                                   double x, double y, double dx,
                                                   double dy) {
