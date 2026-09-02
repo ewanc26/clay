@@ -173,8 +173,10 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_create_with_arena(10, 10, 1, 0) == nullptr);
     CHECK(cl_engine_runtime_create_with_arena(
               10, 10, 1, CLAY_ENGINE_MIN_ARENA_BYTES - 1) == nullptr);
-    CHECK(cl_engine_runtime_create_with_arena(
-              10, 10, 1, CLAY_ENGINE_MIN_ARENA_BYTES) != nullptr);
+    cl_engine_runtime *sized = cl_engine_runtime_create_with_arena(
+        10, 10, 1, CLAY_ENGINE_MIN_ARENA_BYTES);
+    CHECK(sized != nullptr);
+    cl_engine_runtime_destroy(sized);
     CHECK(cl_engine_runtime_create(std::numeric_limits<int>::max(),
                                    std::numeric_limits<int>::max(), 1) ==
           nullptr);
