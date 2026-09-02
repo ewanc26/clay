@@ -46,6 +46,19 @@ jobs:
           cmake --build build/package-consumer
           ctest --test-dir build/package-consumer --output-on-failure
 
+      - name: Verify installed static CMake package
+        shell: bash
+        run: |
+          cmake -S . -B build-static \
+            -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF \
+            -DCLAY_BUILD_EXAMPLES=OFF -DCLAY_BUILD_SHARED=OFF
+          cmake --build build-static -j
+          cmake --install build-static --prefix "$PWD/build/static-sdk"
+          cmake -S test/package-consumer -B build/static-package-consumer \
+            -DCMAKE_PREFIX_PATH="$PWD/build/static-sdk"
+          cmake --build build/static-package-consumer
+          ctest --test-dir build/static-package-consumer --output-on-failure
+
       - name: Headless demo smoke
         if: runner.os != 'Windows'
         run: |
