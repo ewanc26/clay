@@ -109,6 +109,13 @@ extern "C" cl_err cl_engine_runtime_feed_focus(cl_engine_runtime *runtime,
     return guarded([&] { runtime->impl.feed(event); });
 }
 
+extern "C" bool cl_engine_runtime_is_key_down(
+    const cl_engine_runtime *runtime, cl_key key) {
+    if (!runtime || key <= CLAY_KEY_NONE || key >= CLAY_KEY_COUNT)
+        return false;
+    return runtime->impl.is_key_down(key);
+}
+
 extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                      const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;

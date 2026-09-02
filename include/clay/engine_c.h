@@ -40,6 +40,8 @@ CLAY_API cl_err cl_engine_runtime_feed_wheel(cl_engine_runtime *runtime,
                                              double x, double y, int wheel);
 CLAY_API cl_err cl_engine_runtime_feed_focus(cl_engine_runtime *runtime,
                                              bool focused);
+CLAY_API bool cl_engine_runtime_is_key_down(
+    const cl_engine_runtime *runtime, cl_key key);
 CLAY_API cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                  const char *json);
 CLAY_API cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
