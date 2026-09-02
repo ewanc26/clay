@@ -151,6 +151,18 @@ TEST_CASE("runtime: cooldown suppresses a rapid second press") {
     CHECK(rt.reactions().fired_count() < 3);
 }
 
+TEST_CASE("runtime: malformed direct input is ignored") {
+    Runtime rt(320, 240, 8);
+    rt.begin_frame(1.0 / 60.0);
+
+    cl_input_event invalid = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_NONE);
+    rt.feed(invalid);
+
+    CHECK_EQ(rt.input_log().count, 0);
+    CHECK_EQ(rt.commands().count(), 0);
+    CHECK_EQ(rt.reactions().fired_count(), 0);
+}
+
 TEST_CASE("runtime: same seed, same transcript, same world") {
     uint64_t seed = 0xBEEF;
     const uint64_t frames = 60;
