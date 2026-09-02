@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contribution guide
+    url: https://github.com/ewanc26/clay/blob/main/CONTRIBUTING.md
+    about: Read the contribution and commit conventions before opening a change.
