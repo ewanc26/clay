@@ -123,6 +123,8 @@ model matrix: `pos`, `euler`, `scale` (uniform or per-axis when given a
 Entities the renderer understands:
 
 - `directional_light`: `dir` (world-space, normalized at load) + `intensity`.
+- `point_light`: `pos` (world-space) + `intensity` + `attenuation` (inverse-square
+  coefficient, evaluated per-triangle centroid).
 - `mesh_instance`: `mesh` (name) + `color` + `transform` → renders via
   `IRenderer::draw_mesh`.
 - 2D garden primitives (`block`, `ripple`, `hueshift`, `lifespan`) are
