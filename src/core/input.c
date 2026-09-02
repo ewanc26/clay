@@ -5,6 +5,9 @@
 bool cl_input_event_valid(const cl_input_event *e) {
     if (e == NULL || e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS)
         return false;
+    if ((e->mods & ~(CLAY_MOD_SHIFT | CLAY_MOD_CTRL | CLAY_MOD_ALT |
+                     CLAY_MOD_META)) != 0)
+        return false;
     if (!isfinite(e->x) || !isfinite(e->y) || !isfinite(e->dx) ||
         !isfinite(e->dy))
         return false;
