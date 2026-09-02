@@ -10,6 +10,11 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     REQUIRE(runtime != nullptr);
     CHECK(cl_engine_runtime_width(runtime) == 32);
     CHECK(cl_engine_runtime_height(runtime) == 24);
+    CHECK(cl_engine_runtime_resize(runtime, 48, 20) == CLAY_OK);
+    CHECK(cl_engine_runtime_width(runtime) == 48);
+    CHECK(cl_engine_runtime_height(runtime) == 20);
+    CHECK(cl_engine_runtime_resize(runtime, 0, 20) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_resize(runtime, 32, 24) == CLAY_OK);
     CHECK(cl_engine_runtime_frame(runtime) == 0);
     CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(0.0));
     CHECK(cl_engine_runtime_cursor_x(runtime) == doctest::Approx(0.0));

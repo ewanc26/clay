@@ -29,6 +29,8 @@ CLAY_API void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
 /* Advances one deterministic frame and renders the authoritative framebuffer. */
 CLAY_API cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
                                        double dt_seconds);
+CLAY_API cl_err cl_engine_runtime_resize(cl_engine_runtime *runtime, int width,
+                                         int height);
 CLAY_API cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                                        const cl_input_event *event);
 CLAY_API cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,

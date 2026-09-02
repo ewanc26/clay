@@ -63,6 +63,12 @@ extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
     return guarded([&] { runtime->impl.step(dt_seconds); });
 }
 
+extern "C" cl_err cl_engine_runtime_resize(cl_engine_runtime *runtime,
+                                             int width, int height) {
+    if (!runtime || width <= 0 || height <= 0) return CLAY_ERR_INVALID_ARG;
+    return guarded([&] { runtime->impl.resize(width, height); });
+}
+
 extern "C" cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                                            const cl_input_event *event) {
     if (!runtime || !event || !valid_input_event(*event))
