@@ -76,22 +76,16 @@ static void write_f64(FILE *f, double v) {
     fwrite(&v, sizeof(v), 1, f);
 }
 
-static uint32_t read_u32(FILE *f) {
-    uint32_t v = 0;
-    if (fread(&v, sizeof(v), 1, f) != 1) return 0;
-    return v;
+static bool read_u32(FILE *f, uint32_t *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
 }
 
-static uint64_t read_u64(FILE *f) {
-    uint64_t v = 0;
-    if (fread(&v, sizeof(v), 1, f) != 1) return 0;
-    return v;
+static bool read_u64(FILE *f, uint64_t *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
 }
 
-static double read_f64(FILE *f) {
-    double v = 0;
-    if (fread(&v, sizeof(v), 1, f) != 1) return 0;
-    return v;
+static bool read_f64(FILE *f, double *out) {
+    return fread(out, sizeof(*out), 1, f) == 1;
 }
 
 static void encode_event(FILE *f, const cl_input_event *e) {
@@ -108,20 +102,26 @@ static void encode_event(FILE *f, const cl_input_event *e) {
     write_u32(f, e->focus ? 1u : 0u);
 }
 
-static cl_input_event decode_event(FILE *f) {
-    cl_input_event e = {0};
-    e.frame = read_u32(f);
-    e.time = read_f64(f);
-    e.type = (cl_input_kind)read_u32(f);
-    e.key = (cl_key)read_u32(f);
-    e.mods = (int)read_u32(f);
-    e.x = read_f64(f);
-    e.y = read_f64(f);
-    e.dx = read_f64(f);
-    e.dy = read_f64(f);
-    e.wheel = (int)read_f64(f);
-    e.focus = read_u32(f) != 0;
-    return e;
+static bool decode_event(FILE *f, cl_input_event *e) {
+    uint32_t type = 0;
+    uint32_t key = 0;
+    uint32_t mods = 0;
+    uint32_t focus = 0;
+    double wheel_value = 0.0;
+    *e = (cl_input_event){0};
+    if (!read_u32(f, &e->frame) || !read_f64(f, &e->time) ||
+        !read_u32(f, &type) || !read_u32(f, &key) ||
+        !read_u32(f, &mods) || !read_f64(f, &e->x) ||
+        !read_f64(f, &e->y) || !read_f64(f, &e->dx) ||
+        !read_f64(f, &e->dy) || !read_f64(f, &wheel_value) ||
+        !read_u32(f, &focus))
+        return false;
+    e->type = (cl_input_kind)type;
+    e->key = (cl_key)key;
+    e->mods = (int)mods;
+    e->wheel = (int)wheel_value;
+    e->focus = focus != 0;
+    return true;
 }
 
 cl_err cl_input_log_save(cl_input_log *log, const char *path) {
@@ -139,10 +139,15 @@ cl_err cl_input_log_save(cl_input_log *log, const char *path) {
 cl_err cl_input_log_load(cl_input_log *log, const char *path) {
     FILE *f = fopen(path, "rb");
     if (!f) return CLAY_ERR_IO;
-    uint64_t magic = read_u64(f);
-    uint32_t version = read_u32(f);
-    uint64_t count = read_u64(f);
-    uint64_t stamp = read_u64(f);
+    uint64_t magic = 0;
+    uint32_t version = 0;
+    uint64_t count = 0;
+    uint64_t stamp = 0;
+    if (!read_u64(f, &magic) || !read_u32(f, &version) ||
+        !read_u64(f, &count) || !read_u64(f, &stamp)) {
+        fclose(f);
+        return CLAY_ERR_PARSE;
+    }
     if (magic != CLAYREC_MAGIC || version != CLAYREC_VERSION) {
         fclose(f);
         return CLAY_ERR_PARSE;
@@ -152,7 +157,11 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         return CLAY_ERR_PARSE;
     }
     for (uint64_t i = 0; i < count; i++) {
-        cl_input_event e = decode_event(f);
+        cl_input_event e;
+        if (!decode_event(f, &e)) {
+            fclose(f);
+            return CLAY_ERR_PARSE;
+        }
         cl_input_log_append(log, &e);
     }
     fclose(f);
