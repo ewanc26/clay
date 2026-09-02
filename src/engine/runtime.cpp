@@ -70,11 +70,12 @@ cl_err Runtime::load_recording(const std::string &path) {
     return err;
 }
 
-void Runtime::resize(int width, int height) {
-    if (width <= 0 || height <= 0) return;
+bool Runtime::resize(int width, int height) {
+    if (width <= 0 || height <= 0) return false;
     width_ = width;
     height_ = height;
     renderer_.framebuffer().resize(width, height);
+    return true;
 }
 
 Event Runtime::to_event(const cl_event &ev) {

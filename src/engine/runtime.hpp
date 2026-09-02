@@ -67,7 +67,7 @@ class Runtime {
     bool load_actions(const std::string &text);
     cl_err save_recording(const std::string &path) const;
     cl_err load_recording(const std::string &path);
-    void resize(int width, int height);
+    bool resize(int width, int height);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
     void kill_within(float x, float y, float radius);
