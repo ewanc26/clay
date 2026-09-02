@@ -77,6 +77,12 @@ static int test_input(void) {
 
     cl_input_event valid = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
     CHECK(cl_input_event_valid(&valid));
+    valid = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_A);
+    valid.mods = CLAY_MOD_SHIFT | CLAY_MOD_CTRL | CLAY_MOD_ALT |
+                 CLAY_MOD_META;
+    CHECK(cl_input_event_valid(&valid));
+    valid.mods |= 1 << 8;
+    CHECK(!cl_input_event_valid(&valid));
     wheel.wheel = -1;
     CHECK(!cl_input_state_feed(&s, &wheel));
 
