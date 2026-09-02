@@ -42,6 +42,24 @@ public partial class ClayDemo : Node2D
         QueueRedraw();
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (runtime == null)
+            return;
+
+        if (@event is InputEventKey keyEvent && keyEvent.Keycode == Key.Space)
+        {
+            runtime.FeedKeyAt(Clay.ClayKey.Space, keyEvent.Pressed,
+                              runtime.CursorX, runtime.CursorY);
+        }
+        else if (@event is InputEventMouseButton mouseEvent &&
+                 mouseEvent.ButtonIndex == MouseButton.Left)
+        {
+            runtime.FeedKeyAt(Clay.ClayKey.MouseLeft, mouseEvent.Pressed,
+                              mouseEvent.Position.X, mouseEvent.Position.Y);
+        }
+    }
+
     private void ResizeSurface(int width, int height)
     {
         if (runtime != null)
