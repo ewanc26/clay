@@ -228,6 +228,10 @@ if(CLAY_INSTALL_GODOT_NATIVE AND CLAY_BUILD_SHARED)
   endif()
   install(FILES $<TARGET_FILE:clay_engine>
     DESTINATION integrations/godot-mono/native/${CLAY_GODOT_PLATFORM})
+  # Keep a copy beside the sample project so DllImport("clay_engine") resolves
+  # immediately after installing the SDK, without a manual staging step.
+  install(FILES $<TARGET_FILE:clay_engine>
+    DESTINATION integrations/godot-mono)
 endif()
 install(FILES
   integrations/godot-mono/ClayRuntime.cs
