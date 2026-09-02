@@ -1,5 +1,12 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Integration guide
+    url: https://github.com/ewanc26/clay/blob/main/docs/integration.md
+    about: Read the standalone and Godot host integration guidance first.
+  - name: Godot Mono tracking issue
+    url: https://github.com/ewanc26/clay/issues/5
+    about: Follow cross-platform Godot packaging and runtime validation work.
+contact_links:
   - name: Contribution guide
     url: https://github.com/ewanc26/clay/blob/main/CONTRIBUTING.md
     about: Read the contribution and commit conventions before opening a change.
