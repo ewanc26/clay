@@ -226,3 +226,30 @@ TEST_CASE("runtime: recorded transcript replays byte-identically") {
     CHECK(replay.reactions().fired_count() == original.reactions().fired_count());
     CHECK(fnv1a64(replay.framebuffer()) == fnv1a64(original.framebuffer()));
 }
+
+TEST_CASE("runtime: replay applies input on its recorded frame") {
+    Runtime original(64, 64, 17);
+    original.begin_frame(1.0 / 60.0);
+    original.feed_press(CLAY_KEY_SPACE);
+    original.update(original.sim_dt());
+    original.render();
+    original.begin_frame(1.0 / 60.0);
+    original.feed_release(CLAY_KEY_SPACE);
+    original.update(original.sim_dt());
+    original.render();
+
+    const char *path = "clay_test_runtime_input_timing.clayrec";
+    REQUIRE(cl_input_log_save(&original.input_log(), path) == CLAY_OK);
+
+    Runtime replay(64, 64, 17);
+    REQUIRE(cl_input_log_load(&replay.input_log(), path) == CLAY_OK);
+    replay.set_replaying(true);
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(replay.is_key_down(CLAY_KEY_SPACE));
+    CHECK(cl_input_just_pressed(&replay.input_state(), CLAY_KEY_SPACE));
+    replay.update(replay.sim_dt());
+    replay.render();
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(!replay.is_key_down(CLAY_KEY_SPACE));
+    CHECK(cl_input_just_released(&replay.input_state(), CLAY_KEY_SPACE));
+}
