@@ -34,6 +34,8 @@ public sealed class ClayRuntime : IDisposable
     public double SimTime => Native.SimTime(handle);
     public double CursorX => Native.CursorX(handle);
     public double CursorY => Native.CursorY(handle);
+    public nuint RecordingCount => Native.RecordingCount(handle);
+    public ulong RecordingFingerprint => Native.RecordingFingerprint(handle);
 
     public void InstallBuiltinSystems() => Check(
         Native.InstallBuiltinSystems(handle));
@@ -157,6 +159,10 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_replaying")]
         public static extern void SetReplaying(RuntimeHandle runtime,
                                                 [MarshalAs(UnmanagedType.I1)] bool replaying);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_recording_count")]
+        public static extern nuint RecordingCount(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_recording_fingerprint")]
+        public static extern ulong RecordingFingerprint(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]
         public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
                                                float x, float y, float r, float g,

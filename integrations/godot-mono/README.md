@@ -21,6 +21,8 @@ available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
 requiring hosts to pass numeric ABI values.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
+`RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
+loading a recording.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
