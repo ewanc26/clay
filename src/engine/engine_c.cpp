@@ -4,6 +4,7 @@
 #include "runtime.hpp"
 #include "systems/builtin.hpp"
 
+#include <cmath>
 #include <new>
 #include <stdexcept>
 #include <utility>
@@ -46,7 +47,8 @@ extern "C" void cl_engine_runtime_destroy(cl_engine_runtime *runtime) {
 
 extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
                                            double dt_seconds) {
-    if (!runtime || dt_seconds < 0.0) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !std::isfinite(dt_seconds) || dt_seconds < 0.0)
+        return CLAY_ERR_INVALID_ARG;
     return guarded([&] { runtime->impl.step(dt_seconds); });
 }
 

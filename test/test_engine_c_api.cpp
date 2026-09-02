@@ -3,6 +3,8 @@
 
 #include <clay/engine_c.h>
 
+#include <limits>
+
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     cl_engine_runtime *runtime = cl_engine_runtime_create(32, 24, 7);
     REQUIRE(runtime != nullptr);
@@ -45,6 +47,11 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_step(runtime, -1.0) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_step(runtime, std::numeric_limits<double>::quiet_NaN()) ==
+          CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_step(runtime,
+                                 std::numeric_limits<double>::infinity()) ==
+          CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_step(nullptr, 1.0 / 60.0) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_load_reactions(runtime, nullptr) ==
           CLAY_ERR_INVALID_ARG);
