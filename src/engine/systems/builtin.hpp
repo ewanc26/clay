@@ -91,6 +91,19 @@ class PhysicsSystem final : public System {
     void update(Runtime &rt, double dt) override;
 };
 
+/* AnimationSystem advances Tween components each frame: it applies the
+ * easing curve, interpolates from->to, and publishes an "animation.complete"
+ * event on the world channel when a one-shot tween finishes. Runs after
+ * SceneGraphSystem and before PhysicsSystem so animated transforms feed
+ * into collision detection. */
+class AnimationSystem final : public System {
+  public:
+    const char *name() const override {
+        return "animation";
+    }
+    void update(Runtime &rt, double dt) override;
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_SYSTEMS_BUILTIN_HPP */

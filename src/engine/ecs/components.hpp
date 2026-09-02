@@ -1,6 +1,8 @@
 #ifndef CLAY_ENGINE_ECS_COMPONENTS_HPP
 #define CLAY_ENGINE_ECS_COMPONENTS_HPP
 
+#include "clay/clay.h"
+
 #include <cstdint>
 
 namespace clay {
@@ -116,6 +118,21 @@ struct PhysicsBody2D {
     float mass = 0.0f;       /* 0 = static, immovable                */
     float restitution = 0.5f; /* bounciness, 0 = stop, 1 = elastic   */
     float friction = 0.2f;   /* 0 = none, 1 = sticky                 */
+};
+
+/* Tween component: animates a single float value over time using an easing
+ * curve. The AnimationSystem advances elapsed each frame and writes the
+ * interpolated result into value. Games read value and apply it to
+ * whatever property they wish (position, rotation, color, etc.). */
+struct Tween {
+    float from = 0.0f;
+    float to = 1.0f;
+    float duration = 1.0f;   /* seconds, total                       */
+    float elapsed = 0.0f;     /* seconds, current                     */
+    float value = 0.0f;       /* interpolated result                  */
+    cl_ease ease = CL_EASE_LINEAR;
+    bool loop = false;       /* restart from 0 when elapsed >= duration */
+    bool active = true;     /* set false to pause                   */
 };
 
 } // namespace clay

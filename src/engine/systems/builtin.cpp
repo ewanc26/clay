@@ -300,4 +300,35 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
     }
 }
 
+void AnimationSystem::update(Runtime &rt, double dt) {
+    World &world = rt.world();
+    ComponentStorage<Tween> &tws = world.storage<Tween>();
+
+    for (size_t i = 0; i < tws.count(); i++) {
+        Tween &tw = tws.dense[i];
+        if (!tw.active) continue;
+
+        tw.elapsed += (float)dt;
+        float t = tw.duration > 0.0f ? (tw.elapsed / tw.duration) : 1.0f;
+        float eased = cl_ease_apply(tw.ease, t);
+        tw.value = tw.from + (tw.to - tw.from) * eased;
+
+        if (tw.elapsed >= tw.duration) {
+            if (tw.loop) {
+                tw.elapsed -= tw.duration;
+                if (tw.elapsed < 0.0f) tw.elapsed = 0.0f;
+                t = tw.elapsed / tw.duration;
+                eased = cl_ease_apply(tw.ease, t);
+                tw.value = tw.from + (tw.to - tw.from) * eased;
+            } else {
+                tw.active = false;
+                tw.value = tw.to;
+                rt.hub().publish(
+                    channel(CLAY_CH_WORLD),
+                    cl_variant_str(cl_str_c("animation.complete")));
+            }
+        }
+    }
+}
+
 } // namespace clay

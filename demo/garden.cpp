@@ -91,6 +91,7 @@ void Garden::seed(const std::string &reactions_json) {
     rt_->systems().add(std::make_unique<RippleSystem>());
     rt_->systems().add(std::make_unique<SceneGraphSystem>());
     rt_->systems().add(std::make_unique<PhysicsSystem>());
+    rt_->systems().add(std::make_unique<AnimationSystem>());
 }
 
 void Garden::plant() {
