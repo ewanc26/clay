@@ -3,6 +3,29 @@ using System;
 
 public partial class ClayDemo : Node2D
 {
+    private const string SampleReactions = """
+        {
+          "rules": [
+            { "name": "click ripple", "on": "input.key",
+              "match": { "value": "MOUSE_LEFT", "kind": "press" },
+              "cooldown": 0.05,
+              "do": [ { "effect": "ripple", "color": [0.95, 0.72, 0.40], "radius": 42 } ] },
+            { "name": "space bloom", "on": "input.key",
+              "match": { "value": "SPACE", "kind": "press" },
+              "cooldown": 0.15,
+              "do": [
+                { "effect": "flash", "color": [1.0, 0.85, 0.55] },
+                { "effect": "ripple", "color": [0.95, 0.55, 0.40], "radius": 90 }
+              ] },
+            { "name": "wheel ripple", "on": "input.wheel", "cooldown": 0.2,
+              "do": [ { "effect": "ripple", "color": [0.55, 0.75, 0.95], "radius": 70 } ] },
+            { "name": "motion moss", "on": "input.motion", "cooldown": 0.35,
+              "do": [ { "effect": "spawn", "species": "pebble", "life": 6.0,
+                         "color": [0.45, 0.55, 0.40] } ] }
+          ]
+        }
+        """;
+
     private Clay.ClayRuntime? runtime;
     private ImageTexture? texture;
     private Image? image;
@@ -14,7 +37,7 @@ public partial class ClayDemo : Node2D
     {
         runtime = new Clay.ClayRuntime(640, 480, 0xC0FFEE);
         runtime.InstallBuiltinSystems();
-        runtime.LoadReactions("{\"rules\": []}");
+        runtime.LoadReactions(SampleReactions);
         runtime.FeedFocus(true);
         runtime.FeedMotion(320, 240, 0, 0);
         runtime.SpawnSpecies("animal", 320, 240, 0.7f, 0.9f, 0.6f, 1, 60);
