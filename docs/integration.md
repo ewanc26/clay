@@ -18,8 +18,8 @@ managed layer at the C ABI boundary and expose an explicit native-library
 lifetime handle; the C++ headers are not a binding ABI.
 
 The install package is validated with both a C ABI consumer and a C++ consumer;
-the latter includes `<clay/engine/runtime.hpp>`, constructs a `Runtime`, steps
-one frame, and checks the installed framebuffer.
+the latter includes the public `<clay/engine.hpp>` umbrella, constructs a
+`Runtime`, steps one frame, and checks the installed framebuffer.
 
 For a managed binding, include `clay/engine_c.h` and P/Invoke the
 `cl_engine_runtime_*` functions. The runtime handle is opaque, and framebuffer
