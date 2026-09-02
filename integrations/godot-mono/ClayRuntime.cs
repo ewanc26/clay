@@ -18,7 +18,7 @@ public sealed class ClayRuntime : IDisposable
     }
 
     private readonly RuntimeHandle handle;
-    private readonly uint[] pixelBuffer;
+    private uint[] pixelBuffer;
 
     public ClayRuntime(int width, int height, ulong seed)
     {
@@ -82,7 +82,15 @@ public sealed class ClayRuntime : IDisposable
         Native.Step(handle, deltaSeconds));
 
     public void Resize(int width, int height) => Check(
-        Native.Resize(handle, width, height));
+        ResizeNative(width, height));
+
+    private int ResizeNative(int width, int height)
+    {
+        int error = Native.Resize(handle, width, height);
+        if (error == 0)
+            pixelBuffer = new uint[checked(width * height)];
+        return error;
+    }
 
     /// <summary>Copies packed 0x00RRGGBB pixels into a caller-owned array.</summary>
     public ReadOnlySpan<uint> CopyPixels()
