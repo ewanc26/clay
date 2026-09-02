@@ -81,6 +81,9 @@ public sealed class ClayRuntime : IDisposable
     public void Step(double deltaSeconds) => Check(
         Native.Step(handle, deltaSeconds));
 
+    public void Resize(int width, int height) => Check(
+        Native.Resize(handle, width, height));
+
     /// <summary>Copies packed 0x00RRGGBB pixels into a caller-owned array.</summary>
     public ReadOnlySpan<uint> CopyPixels()
     {
@@ -134,6 +137,8 @@ public sealed class ClayRuntime : IDisposable
         public static extern void Destroy(IntPtr runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_step")]
         public static extern int Step(RuntimeHandle runtime, double dt);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_resize")]
+        public static extern int Resize(RuntimeHandle runtime, int width, int height);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_key")]
         public static extern int FeedKey(RuntimeHandle runtime, int key,
                                          [MarshalAs(UnmanagedType.I1)] bool pressed);
