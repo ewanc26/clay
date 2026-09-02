@@ -6,7 +6,7 @@ config_version=5
 [application]
 config/name="Clay Godot Mono Sample"
 run/main_scene="res://ClayDemo.tscn"
-config/features=PackedStringArray("4.7", "C#")
+config/features=PackedStringArray("4.5", "C#")
 
 [dotnet]
 project/assembly_name="ClayGodotSample"
