@@ -56,6 +56,22 @@ static int test_input_log(void) {
     const cl_input_event *b1 = cl_input_log_at(&back, 0);
     CHECK(b1 != NULL && b1->key == CLAY_KEY_SPACE && b1->frame == 5);
 
+    /* Version 2 used native-endian fields; this fixture is written on the
+     * native test host and verifies that legacy files remain readable. */
+    const char *legacy_path = "clay_test_input_log_v2.clayrec";
+    CHECK(cl_input_log_save(&log, legacy_path) == CLAY_OK);
+    FILE *legacy = fopen(legacy_path, "r+b");
+    CHECK(legacy != NULL);
+    if (legacy != NULL) {
+        uint32_t legacy_version = 2;
+        CHECK(fseek(legacy, (long)sizeof(uint64_t), SEEK_SET) == 0);
+        CHECK(fwrite(&legacy_version, sizeof(legacy_version), 1, legacy) == 1);
+        fclose(legacy);
+        CHECK(cl_input_log_load(&back, legacy_path) == CLAY_OK);
+        CHECK(cl_input_log_fingerprint(&back) == fp);
+        CHECK_EQ_INT(cl_input_log_count(&back), 2);
+    }
+
     cl_input_event extra = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_A);
     cl_input_log_append(&back, &extra);
     CHECK_EQ_INT(cl_input_log_count(&back), 3);
