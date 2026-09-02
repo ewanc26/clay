@@ -7,6 +7,8 @@ public partial class ClayDemo : Node2D
     private ImageTexture? texture;
     private Image? image;
     private byte[]? rgba;
+    private int surfaceWidth;
+    private int surfaceHeight;
 
     public override void _Ready()
     {
@@ -16,9 +18,7 @@ public partial class ClayDemo : Node2D
         runtime.FeedMotion(320, 240, 0, 0);
         runtime.SpawnSpecies("animal", 320, 240, 0.7f, 0.9f, 0.6f, 1, 60);
 
-        image = Image.Create(640, 480, false, Image.Format.Rgba8);
-        texture = ImageTexture.CreateFromImage(image);
-        rgba = new byte[640 * 480 * 4];
+        ResizeSurface(640, 480);
     }
 
     public override void _Process(double delta)
@@ -26,13 +26,31 @@ public partial class ClayDemo : Node2D
         if (runtime == null || image == null || texture == null || rgba == null)
             return;
 
+        Vector2 viewport = GetViewportRect().Size;
+        int width = Math.Max(1, (int)viewport.X);
+        int height = Math.Max(1, (int)viewport.Y);
+        if (width != surfaceWidth || height != surfaceHeight)
+            ResizeSurface(width, height);
+
         runtime.FeedMotion(GetGlobalMousePosition().X,
                            GetGlobalMousePosition().Y, 0, 0);
         runtime.Step(delta);
         runtime.CopyRgbaTo(rgba);
-        image.SetData(640, 480, false, Image.Format.Rgba8, rgba);
+        image.SetData(surfaceWidth, surfaceHeight, false, Image.Format.Rgba8,
+                      rgba);
         texture.SetImage(image);
         QueueRedraw();
+    }
+
+    private void ResizeSurface(int width, int height)
+    {
+        if (runtime != null)
+            runtime.Resize(width, height);
+        surfaceWidth = width;
+        surfaceHeight = height;
+        image = Image.Create(width, height, false, Image.Format.Rgba8);
+        texture = ImageTexture.CreateFromImage(image);
+        rgba = new byte[checked(width * height * 4)];
     }
 
     public override void _Draw()
