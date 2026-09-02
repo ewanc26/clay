@@ -33,6 +33,9 @@ the C ABI with `cl_engine_runtime_load_actions`,
 `cl_engine_runtime_load_reactions`, `cl_engine_runtime_spawn_species`, and
 `cl_engine_runtime_spawn_ripple`. Both JSON loaders return `CLAY_ERR_PARSE` for
 invalid JSON; loading an action document replaces existing bindings.
+Recordings can be persisted with `cl_engine_runtime_save_recording` and
+`cl_engine_runtime_load_recording`, then driven with
+`cl_engine_runtime_set_replaying`.
 Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
