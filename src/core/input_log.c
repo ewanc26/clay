@@ -259,6 +259,11 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         items[i] = decoded;
         loaded_fingerprint = fingerprint_event(&items[i], loaded_fingerprint);
     }
+    if (fgetc(f) != EOF || ferror(f)) {
+        fclose(f);
+        cl_arena_return(scratch);
+        return CLAY_ERR_PARSE;
+    }
     fclose(f);
     if (loaded_fingerprint != stamp) {
         cl_arena_return(scratch);
