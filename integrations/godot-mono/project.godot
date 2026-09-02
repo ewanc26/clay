@@ -1,6 +1,6 @@
 ; Minimal Godot Mono host project for the Clay integration sample.
-; Copy the native Clay library into the platform-specific location described
-; in README.md before running.
+; The installed SDK places the native Clay library beside this project; source
+; checkouts must build/copy it as described in README.md before running.
 config_version=5
 
 [application]
