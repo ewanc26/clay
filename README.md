@@ -62,7 +62,9 @@ ctest --test-dir build            # unit tests, all headless
   record. `--scene out.clay` runs a 3D scene from the JSON-based
   **.clay file format** instead.
 - `examples` — standalone C host using only the stable `engine_c.h` ABI.
-- `docs/` — design notes including the [.clay file format spec](docs/file-format.md).
+- `docs/` — design notes: [.clay file format spec](docs/file-format.md),
+  [C/C++ host integration guide](docs/integration.md), and
+  [open issues tracker](docs/issues.md).
 
 ## Host integrations
 
