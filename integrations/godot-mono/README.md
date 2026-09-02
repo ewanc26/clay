@@ -23,6 +23,8 @@ requiring hosts to pass numeric ABI values.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
 coordinates and modifier bits for positioned key or mouse-button events.
+`ClayRuntime.IsReplaying` reports whether the runtime is currently driven by a
+loaded transcript.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer

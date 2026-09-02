@@ -42,7 +42,8 @@ the C ABI with `cl_engine_runtime_load_actions`,
 invalid JSON; loading an action document replaces existing bindings.
 Recordings can be persisted with `cl_engine_runtime_save_recording` and
 `cl_engine_runtime_load_recording`, then driven with
-`cl_engine_runtime_set_replaying`.
+`cl_engine_runtime_set_replaying`; query the active mode with
+`cl_engine_runtime_is_replaying`.
 Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
