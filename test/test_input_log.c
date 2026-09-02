@@ -43,9 +43,22 @@ static int test_input_log(void) {
     const cl_input_event *b1 = cl_input_log_at(&back, 0);
     CHECK(b1 != NULL && b1->key == CLAY_KEY_SPACE && b1->frame == 5);
 
-    /* Loading a bad file must be a clean, reported failure. */
     cl_input_log bad;
     cl_input_log_init(&bad, &arena, 0);
+
+    FILE *corrupt = fopen(path, "r+b");
+    CHECK(corrupt != NULL);
+    if (corrupt != NULL) {
+        CHECK(fseek(corrupt, 20, SEEK_SET) == 0);
+        int first = fgetc(corrupt);
+        CHECK(first != EOF);
+        CHECK(fseek(corrupt, 20, SEEK_SET) == 0);
+        CHECK(fputc(first ^ 1, corrupt) != EOF);
+        fclose(corrupt);
+        CHECK(cl_input_log_load(&bad, path) == CLAY_ERR_PARSE);
+    }
+
+    /* Loading a bad file must be a clean, reported failure. */
     CHECK(cl_input_log_load(&bad, "definitely/missing.clayrec") == CLAY_ERR_IO);
 
     FILE *truncated = fopen("clay_test_input_log_truncated.clayrec", "wb");

@@ -156,15 +156,16 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         fclose(f);
         return CLAY_ERR_PARSE;
     }
+    uint64_t loaded_fingerprint = 0x9E3779B97F4A7C15ULL;
     for (uint64_t i = 0; i < count; i++) {
         cl_input_event e;
         if (!decode_event(f, &e)) {
             fclose(f);
             return CLAY_ERR_PARSE;
         }
+        loaded_fingerprint = fingerprint_event(&e, loaded_fingerprint);
         cl_input_log_append(log, &e);
     }
     fclose(f);
-    (void)stamp;
-    return CLAY_OK;
+    return loaded_fingerprint == stamp ? CLAY_OK : CLAY_ERR_PARSE;
 }
