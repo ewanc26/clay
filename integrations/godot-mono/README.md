@@ -23,6 +23,18 @@ available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
 requiring hosts to pass numeric ABI values.
 `ClayModifiers.cs` provides typed modifier flags for the `FeedKeyAt` overload.
+
+After building Clay and installing Godot Mono, the bundled smoke test stages a
+temporary project and verifies the managed build, Godot solution import, and
+headless game startup:
+
+```sh
+GODOT_MONO_BIN=/path/to/godot-mono ./scripts/godot_mono_smoke.sh
+```
+
+The script defaults to `godot-mono` on `PATH` and
+`build/libclay_engine.dylib` as the native library; set
+`CLAY_NATIVE_LIBRARY` for another platform or build directory.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
 coordinates and modifier bits for positioned key or mouse-button events.
