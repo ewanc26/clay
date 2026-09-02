@@ -59,6 +59,17 @@ bool Runtime::load_actions(const std::string &text) {
     return true;
 }
 
+cl_err Runtime::save_recording(const std::string &path) const {
+    return cl_input_log_save(const_cast<cl_input_log *>(&input_log_),
+                             path.c_str());
+}
+
+cl_err Runtime::load_recording(const std::string &path) {
+    cl_err err = cl_input_log_load(&input_log_, path.c_str());
+    if (err == CLAY_OK) replay_.rewind();
+    return err;
+}
+
 Event Runtime::to_event(const cl_event &ev) {
     Event out;
     out.channel = ev.channel;

@@ -65,6 +65,8 @@ class Runtime {
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
     bool load_actions(const std::string &text);
+    cl_err save_recording(const std::string &path) const;
+    cl_err load_recording(const std::string &path);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
     void kill_within(float x, float y, float radius);

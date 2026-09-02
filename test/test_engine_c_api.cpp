@@ -25,6 +25,15 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_OK);
     CHECK(cl_engine_runtime_load_actions(runtime, "not json") == CLAY_ERR_PARSE);
     CHECK(cl_engine_runtime_load_actions(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
+    CHECK(cl_engine_runtime_save_recording(runtime,
+                                           "/tmp/clay-engine-c-api.clayrec") ==
+          CLAY_OK);
+    CHECK(cl_engine_runtime_load_recording(
+              runtime, "/tmp/clay-engine-c-api.clayrec") == CLAY_OK);
+    CHECK(cl_engine_runtime_load_recording(runtime, "/no/such/file.clayrec") ==
+          CLAY_ERR_IO);
+    cl_engine_runtime_set_replaying(runtime, true);
+    cl_engine_runtime_set_replaying(runtime, false);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) == CLAY_OK);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) ==
           CLAY_ERR_INVALID_ARG);

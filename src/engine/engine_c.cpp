@@ -141,6 +141,35 @@ extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" cl_err cl_engine_runtime_save_recording(
+    const cl_engine_runtime *runtime, const char *path) {
+    if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
+    try {
+        return runtime->impl.save_recording(path);
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_IO;
+    }
+}
+
+extern "C" cl_err cl_engine_runtime_load_recording(
+    cl_engine_runtime *runtime, const char *path) {
+    if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
+    try {
+        return runtime->impl.load_recording(path);
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_PARSE;
+    }
+}
+
+extern "C" void cl_engine_runtime_set_replaying(cl_engine_runtime *runtime,
+                                                  bool replaying) {
+    if (runtime) runtime->impl.set_replaying(replaying);
+}
+
 extern "C" cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life) {
