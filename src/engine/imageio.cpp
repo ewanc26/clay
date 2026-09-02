@@ -10,6 +10,10 @@
 
 namespace clay {
 
+/* PNG encode/decode backed by stb_image / stb_image_write (vendored). The
+ * framebuffer is 0xAARRGGBB packed; these helpers keep the alpha channel so
+ * sprites composited from images blend src-over exactly like text glyphs. */
+
 std::vector<uint32_t> load_png_rgba(const std::string &path, int &out_width,
                                     int &out_height) {
     int comp = 0;
@@ -20,8 +24,8 @@ std::vector<uint32_t> load_png_rgba(const std::string &path, int &out_width,
     out.resize((size_t)out_width * (size_t)out_height);
     for (size_t i = 0; i < out.size(); i++) {
         unsigned char *p = data + i * 4;
-        out[i] = ((uint32_t)p[0] << 16) | ((uint32_t)p[1] << 8) |
-                 (uint32_t)p[2];
+        out[i] = ((uint32_t)p[3] << 24) | ((uint32_t)p[0] << 16) |
+                 ((uint32_t)p[1] << 8) | (uint32_t)p[2];
     }
     stbi_image_free(data);
     return out;
@@ -35,13 +39,14 @@ void png_write_row(void *ctx, void *data, int len) {
     sink->insert(sink->end(), bytes, bytes + len);
 }
 
-/* Packed 0x00RRGGBB -> 3-channel rows for stb. */
-void flatten_rgb(const uint32_t *src, size_t count, std::vector<uint8_t> &rgb) {
-    rgb.resize(count * 3);
+/* Packed 0xAARRGGBB -> 4-channel rows for stb. */
+void flatten_rgba(const uint32_t *src, size_t count, std::vector<uint8_t> &rgba) {
+    rgba.resize(count * 4);
     for (size_t i = 0; i < count; i++) {
-        rgb[i * 3 + 0] = (uint8_t)(src[i] >> 16);
-        rgb[i * 3 + 1] = (uint8_t)(src[i] >> 8);
-        rgb[i * 3 + 2] = (uint8_t)(src[i]);
+        rgba[i * 4 + 0] = (uint8_t)(src[i] >> 16);
+        rgba[i * 4 + 1] = (uint8_t)(src[i] >> 8);
+        rgba[i * 4 + 2] = (uint8_t)(src[i]);
+        rgba[i * 4 + 3] = (uint8_t)(src[i] >> 24);
     }
 }
 
@@ -49,14 +54,12 @@ void flatten_rgb(const uint32_t *src, size_t count, std::vector<uint8_t> &rgb) {
 
 bool save_png(const std::string &path, int width, int height,
               const uint32_t *rgba_pixels) {
-    std::vector<uint8_t> rgb;
-    flatten_rgb(rgba_pixels, (size_t)width * (size_t)height, rgb);
+    std::vector<uint8_t> rgba;
+    flatten_rgba(rgba_pixels, (size_t)width * (size_t)height, rgba);
 
     std::vector<uint8_t> bytes;
-    const char *old_filename = "unused";
-    (void)old_filename;
     bool ok = stbi_write_png_to_func(
-        png_write_row, &bytes, width, height, 3, rgb.data(), width * 3);
+        png_write_row, &bytes, width, height, 4, rgba.data(), width * 4);
 
     if (!ok) return false;
     FILE *f = std::fopen(path.c_str(), "wb");
