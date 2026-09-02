@@ -35,15 +35,24 @@ static int test_input(void) {
     CHECK(!cl_input_down(&s, CLAY_KEY_SPACE));
     CHECK(cl_input_just_released(&s, CLAY_KEY_SPACE));
 
-    /* Motion moves the cursor and updates per-frame deltas. */
+    cl_input_event focus_lost = cl_input_event_make(CLAY_IN_FOCUS, CLAY_KEY_NONE);
+    focus_lost.focus = false;
     cl_input_state_begin(&s, 3, 0.0);
+    CHECK(cl_input_state_feed(&s, &press));
+    CHECK(cl_input_down(&s, CLAY_KEY_SPACE));
+    CHECK(!cl_input_state_feed(&s, &focus_lost));
+    CHECK(!cl_input_down(&s, CLAY_KEY_SPACE));
+    CHECK(cl_input_just_released(&s, CLAY_KEY_SPACE));
+
+    /* Motion moves the cursor and updates per-frame deltas. */
+    cl_input_state_begin(&s, 4, 0.0);
     cl_input_event motion = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
     motion.x = 100.0;
     motion.y = 50.0;
     CHECK(!cl_input_state_feed(&s, &motion)); /* motion is not an edge */
     CHECK_EQ_DBL(s.cursor_x, 100.0, 1e-9);
     CHECK_EQ_DBL(s.cursor_y, 50.0, 1e-9);
-    cl_input_state_begin(&s, 4, 0.0);
+    cl_input_state_begin(&s, 5, 0.0);
     CHECK_EQ_DBL(s.dx, 0.0, 1e-9); /* deltas cleared each frame */
 
     /* Wheel accumulates. */

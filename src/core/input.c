@@ -70,6 +70,16 @@ bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
         return false;
     case CLAY_IN_FOCUS:
         s->focus = e->focus;
+        if (!e->focus) {
+            /* A window can lose focus without delivering matching releases.
+             * Clear held inputs so a host cannot leave movement or actions
+             * latched after returning from another application. */
+            for (int key = 1; key < CLAY_KEY_COUNT; key++) {
+                if (!s->down[key]) continue;
+                s->down[key] = false;
+                s->released_frame[key] = s->frame;
+            }
+        }
         return false;
     }
     return false;
