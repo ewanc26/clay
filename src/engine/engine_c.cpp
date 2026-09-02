@@ -105,6 +105,18 @@ extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
+                                                   const char *json) {
+    if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
+    try {
+        return runtime->impl.load_actions(json) ? CLAY_OK : CLAY_ERR_PARSE;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_INVALID_ARG;
+    }
+}
+
 extern "C" cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life) {

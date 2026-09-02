@@ -17,6 +17,11 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_ERR_PARSE);
     CHECK(cl_engine_runtime_load_reactions(runtime, "{\"rules\": []}") ==
           CLAY_OK);
+    CHECK(cl_engine_runtime_load_actions(
+              runtime, "{\"actions\": {\"primary\": {\"key\": \"SPACE\"}}}") ==
+          CLAY_OK);
+    CHECK(cl_engine_runtime_load_actions(runtime, "not json") == CLAY_ERR_PARSE);
+    CHECK(cl_engine_runtime_load_actions(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) == CLAY_OK);
     CHECK(cl_engine_runtime_install_builtin_systems(runtime) ==
           CLAY_ERR_INVALID_ARG);

@@ -63,6 +63,7 @@ class Runtime {
     Entity spawn_species(const std::string &species, float x, float y,
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
+    bool load_actions(const std::string &text);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
     void kill_within(float x, float y, float radius);

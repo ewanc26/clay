@@ -42,6 +42,8 @@ CLAY_API cl_err cl_engine_runtime_feed_focus(cl_engine_runtime *runtime,
                                              bool focused);
 CLAY_API cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                  const char *json);
+CLAY_API cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
+                                               const char *json);
 CLAY_API cl_err cl_engine_runtime_spawn_species(
     cl_engine_runtime *runtime, const char *species, float x, float y, float r,
     float g, float b, float a, float life);

@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <vector>
 
 namespace clay {
 
@@ -45,6 +46,18 @@ Runtime::Runtime(int width, int height, uint64_t seed, size_t arena_bytes)
 }
 
 Runtime::~Runtime() = default;
+
+bool Runtime::load_actions(const std::string &text) {
+    std::vector<uint8_t> storage(64u << 10);
+    cl_arena arena;
+    cl_arena_init(&arena, storage.data(), storage.size());
+    cl_json_node root;
+    if (cl_json_parse(&root, &arena, cl_str_c(text.c_str())) != CLAY_OK)
+        return false;
+    actions_.clear();
+    actions_.bind_from_json(&root);
+    return true;
+}
 
 Event Runtime::to_event(const cl_event &ev) {
     Event out;
