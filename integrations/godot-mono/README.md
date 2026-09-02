@@ -34,7 +34,9 @@ values used by the deterministic simulation.
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer
 when the viewport changes. It forwards Space, left mouse button, mouse motion,
-wheel, and application focus events through the managed facade.
+wheel, digital joypad buttons, and application focus events through the managed
+facade. Joypad A/B/X/Y, shoulders, start/back, stick buttons, and the four
+D-pad directions map to Clay's corresponding `ClayKey` values.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
