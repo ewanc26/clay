@@ -11,6 +11,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_width(runtime) == 32);
     CHECK(cl_engine_runtime_height(runtime) == 24);
     CHECK(cl_engine_runtime_frame(runtime) == 0);
+    CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_cursor_x(runtime) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_cursor_y(runtime) == doctest::Approx(0.0));
 
     CHECK(cl_engine_runtime_step(runtime, 1.0 / 60.0) == CLAY_OK);
     CHECK(cl_engine_runtime_load_reactions(runtime, "not json") ==
@@ -51,6 +54,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_save_png(runtime, "/no/such/directory/frame.png") ==
           CLAY_ERR_IO);
     CHECK(cl_engine_runtime_frame(runtime) == 1);
+    CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(1.0 / 60.0));
+    CHECK(cl_engine_runtime_cursor_x(runtime) == doctest::Approx(8.0));
+    CHECK(cl_engine_runtime_cursor_y(runtime) == doctest::Approx(9.0));
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_step(runtime, -1.0) == CLAY_ERR_INVALID_ARG);
@@ -71,4 +77,7 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_width(nullptr) == 0);
     CHECK(cl_engine_runtime_height(nullptr) == 0);
     CHECK(cl_engine_runtime_frame(nullptr) == 0);
+    CHECK(cl_engine_runtime_sim_time(nullptr) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_cursor_x(nullptr) == doctest::Approx(0.0));
+    CHECK(cl_engine_runtime_cursor_y(nullptr) == doctest::Approx(0.0));
 }

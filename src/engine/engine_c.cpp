@@ -167,6 +167,21 @@ extern "C" uint64_t cl_engine_runtime_frame(
     return runtime ? runtime->impl.frame() : 0;
 }
 
+extern "C" double cl_engine_runtime_sim_time(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.sim_time() : 0.0;
+}
+
+extern "C" double cl_engine_runtime_cursor_x(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.cursor_x() : 0.0;
+}
+
+extern "C" double cl_engine_runtime_cursor_y(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.cursor_y() : 0.0;
+}
+
 extern "C" const uint32_t *cl_engine_runtime_pixels(
     const cl_engine_runtime *runtime, size_t *count) {
     if (count) *count = 0;

@@ -61,6 +61,9 @@ CLAY_API cl_err cl_engine_runtime_install_builtin_systems(
 CLAY_API int cl_engine_runtime_width(const cl_engine_runtime *runtime);
 CLAY_API int cl_engine_runtime_height(const cl_engine_runtime *runtime);
 CLAY_API uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
+CLAY_API double cl_engine_runtime_sim_time(const cl_engine_runtime *runtime);
+CLAY_API double cl_engine_runtime_cursor_x(const cl_engine_runtime *runtime);
+CLAY_API double cl_engine_runtime_cursor_y(const cl_engine_runtime *runtime);
 
 /* Packed 0x00RRGGBB pixels, row-major, top-left origin. The pointer remains
  * valid until the next step or destruction of the runtime. */
