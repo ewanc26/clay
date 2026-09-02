@@ -22,6 +22,7 @@ Building the sample project requires the Godot .NET SDK to be installed or
 available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
 requiring hosts to pass numeric ABI values.
+`ClayModifiers.cs` provides typed modifier flags for the `FeedKeyAt` overload.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
 coordinates and modifier bits for positioned key or mouse-button events.

@@ -55,5 +55,7 @@ simulation.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
+Use the managed `ClayKey` and `ClayModifiers` enums to avoid passing raw ABI
+integers from C#.
 The bundled sample additionally forwards mouse motion, wheel, and application
 focus notifications, providing a complete host-loop reference.
