@@ -8,7 +8,7 @@
 
 #if defined(_WIN32) && defined(CLAY_BUILDING_SHARED)
 #define CLAY_API __declspec(dllexport)
-#elif defined(_WIN32)
+#elif defined(_WIN32) && defined(CLAY_USING_SHARED)
 #define CLAY_API __declspec(dllimport)
 #else
 #define CLAY_API
