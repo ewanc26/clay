@@ -14,6 +14,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_resize(runtime, 48, 20) == CLAY_OK);
     CHECK(cl_engine_runtime_width(runtime) == 48);
     CHECK(cl_engine_runtime_height(runtime) == 20);
+    size_t resized_pixels = 0;
+    CHECK(cl_engine_runtime_pixels(runtime, &resized_pixels) != nullptr);
+    CHECK(resized_pixels == 48u * 20u);
     CHECK(cl_engine_runtime_resize(runtime, 0, 20) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_resize(runtime, 32, 24) == CLAY_OK);
     CHECK(cl_engine_runtime_frame(runtime) == 0);
