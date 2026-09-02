@@ -1,5 +1,19 @@
 #include "input.h"
 
+#include <math.h>
+
+static bool valid_event(const cl_input_event *e) {
+    if (e == NULL || e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS)
+        return false;
+    if (!isfinite(e->x) || !isfinite(e->y) || !isfinite(e->dx) ||
+        !isfinite(e->dy))
+        return false;
+    if ((e->type == CLAY_IN_PRESS || e->type == CLAY_IN_RELEASE) &&
+        (e->key <= CLAY_KEY_NONE || e->key >= CLAY_KEY_COUNT))
+        return false;
+    return true;
+}
+
 static const char *const k_key_names[CLAY_KEY_COUNT] = {
     "NONE",
     "ESCAPE", "ENTER", "TAB", "SPACE", "BACKSPACE", "DELETE", "HOME", "END",
@@ -44,6 +58,8 @@ void cl_input_state_begin(cl_input_state *s, uint32_t frame, double time) {
 }
 
 bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
+    if (s == NULL || !valid_event(e)) return false;
+
     switch (e->type) {
     case CLAY_IN_PRESS:
         if (e->key >= CLAY_KEY_COUNT || e->key < 0) return false;
