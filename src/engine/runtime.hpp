@@ -124,6 +124,14 @@ class Runtime {
     const CommandLog &commands() const {
         return commands_;
     }
+
+    /* Undo/redo: revert or re-apply the most recent reversible command.
+     * Returns the command that was affected (nullptr if nothing to undo/redo).
+     * The undone/redone command is republished on CLAY_CH_COMMAND so systems
+     * can observe and revert/re-apply world state. The command log fingerprint
+     * incorporates undo/redo, keeping replays byte-stable. */
+    const Command *undo();
+    const Command *redo();
     SystemGraph &systems() {
         return systems_;
     }
