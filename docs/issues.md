@@ -7,6 +7,12 @@ each supported platform, a CI build job, an installed SDK payload, and a
 managed `SafeHandle` wrapper under `integrations/godot-mono/`. This issue
 remains open until the sample is run through Godot editor/export validation.
 
+The macOS path is now validated locally with Godot Mono 4.7.2: the managed
+assembly imports in the editor and the sample starts headlessly with the Clay
+native library. The repeatable check is `scripts/godot_mono_smoke.sh`, and CI
+has a macOS runtime job. Windows/Linux editor and exported-player validation
+remain outstanding.
+
 Upstream tracking: [#5](https://github.com/ewanc26/clay/issues/5).
 
 ## Windows and Godot export validation
