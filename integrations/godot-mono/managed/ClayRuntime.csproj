@@ -8,6 +8,6 @@
     <RootNamespace>Clay</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ClayRuntime.cs" />
+    <Compile Include="../ClayRuntime.cs" Link="ClayRuntime.cs" />
   </ItemGroup>
 </Project>

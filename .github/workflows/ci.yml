@@ -47,4 +47,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build managed host wrapper
-        run: dotnet build integrations/godot-mono/ClayRuntime.csproj --nologo
+        run: dotnet build integrations/godot-mono/managed/ClayRuntime.csproj --nologo
