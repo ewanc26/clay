@@ -60,6 +60,22 @@ cl_key glfw_to_key(int key) {
     case GLFW_KEY_RIGHT_BRACKET: return CLAY_KEY_BRACKET_RIGHT;
     case GLFW_KEY_BACKSLASH: return CLAY_KEY_BACKSLASH;
     case GLFW_KEY_GRAVE_ACCENT: return CLAY_KEY_GRAVE;
+    case GLFW_KEY_KP_0: return CLAY_KEY_0;
+    case GLFW_KEY_KP_1: return CLAY_KEY_1;
+    case GLFW_KEY_KP_2: return CLAY_KEY_2;
+    case GLFW_KEY_KP_3: return CLAY_KEY_3;
+    case GLFW_KEY_KP_4: return CLAY_KEY_4;
+    case GLFW_KEY_KP_5: return CLAY_KEY_5;
+    case GLFW_KEY_KP_6: return CLAY_KEY_6;
+    case GLFW_KEY_KP_7: return CLAY_KEY_7;
+    case GLFW_KEY_KP_8: return CLAY_KEY_8;
+    case GLFW_KEY_KP_9: return CLAY_KEY_9;
+    case GLFW_KEY_KP_DECIMAL: return CLAY_KEY_PERIOD;
+    case GLFW_KEY_KP_DIVIDE: return CLAY_KEY_SLASH;
+    case GLFW_KEY_KP_MULTIPLY: return CLAY_KEY_NONE;
+    case GLFW_KEY_KP_SUBTRACT: return CLAY_KEY_MINUS;
+    case GLFW_KEY_KP_ADD: return CLAY_KEY_EQUALS;
+    case GLFW_KEY_KP_ENTER: return CLAY_KEY_ENTER;
     default: break;
     }
     if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
@@ -179,6 +195,8 @@ void mouse_button_cb(GLFWwindow *wnd, int button, int action, int mods) {
     case GLFW_MOUSE_BUTTON_LEFT: k = CLAY_KEY_MOUSE_LEFT; break;
     case GLFW_MOUSE_BUTTON_RIGHT: k = CLAY_KEY_MOUSE_RIGHT; break;
     case GLFW_MOUSE_BUTTON_MIDDLE: k = CLAY_KEY_MOUSE_MIDDLE; break;
+    case GLFW_MOUSE_BUTTON_4: k = CLAY_KEY_MOUSE_X1; break;
+    case GLFW_MOUSE_BUTTON_5: k = CLAY_KEY_MOUSE_X2; break;
     default: return;
     }
     cl_input_event e = cl_input_event_make(
