@@ -30,6 +30,9 @@ the latter includes the public `<clay/engine.hpp>` umbrella, constructs a
 For a managed binding, include `clay/engine_c.h` and P/Invoke the
 `cl_engine_runtime_*` functions. The runtime handle is opaque, and framebuffer
 pixels are packed `0x00RRGGBB` values in row-major order.
+The default C ABI constructor reserves 4 MiB for engine state; hosts with
+larger scenes can use `cl_engine_runtime_create_with_arena` to provide an
+explicit arena size in bytes. A zero-sized arena is rejected.
 Before creating a runtime, hosts may compare
 `cl_engine_runtime_abi_version()` with `CLAY_ENGINE_ABI_VERSION` to detect a
 native library/binding mismatch.
