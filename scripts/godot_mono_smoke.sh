@@ -35,6 +35,7 @@ cp "$repo_dir/integrations/godot-mono/ClayDemo.cs" \
    "$repo_dir/integrations/godot-mono/ClayKey.cs" \
    "$repo_dir/integrations/godot-mono/ClayModifiers.cs" \
    "$repo_dir/integrations/godot-mono/ClayRuntime.cs" \
+   "$repo_dir/integrations/godot-mono/ClayGodotSample.sln" \
    "$repo_dir/integrations/godot-mono/project.godot" "$stage_dir/"
 cp "$native_lib" "$stage_dir/"
 

@@ -13,6 +13,11 @@ native library. The repeatable check is `scripts/godot_mono_smoke.sh`, and CI
 has a macOS runtime job. Windows/Linux editor and exported-player validation
 remain outstanding.
 
+The macOS export preset and solution metadata are now committed. A real
+universal export packages successfully, but the exported app still requires
+`libclay_engine.dylib` to be copied into `Contents/MacOS` because Godot packs
+the loose library as a resource and macOS cannot resolve P/Invoke from there.
+
 Upstream tracking: [#5](https://github.com/ewanc26/clay/issues/5).
 
 ## Windows and Godot export validation
