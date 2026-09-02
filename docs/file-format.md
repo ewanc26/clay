@@ -1,204 +1,204 @@
-# Clay file format (.clay)
+# Clay file format (`.clay`)
 
-A Clay file is a single, deterministically-loadable JSON document describing a
-level (a scene), the 3D/2D geometry it references, and engine settings. It is
-the on-disk form of what the reactive pipeline runs against: it feeds the
-world (`Runtime`), the reaction rules, and the renderer — nothing in a `.clay`
-file is code.
+A `.clay` file is a versioned JSON document describing a deterministic 3D
+scene: renderer settings, reusable meshes, lights, a camera, and mesh
+instances. Files are syntax-parsed through the public C ABI
+`cl_json_parse`/`cl_json_write`; schema validation and scene ownership remain in
+the C++ engine.
 
-This document is the spec. The core `cl_json_parse` / `cl_json_write` pair in
-`src/core/json.[ch]` is the only serializer; no `.clay` file is ever decoded by
-hand-written parsers on either side.
+Version 1 is intentionally small. Features that are not implemented are not
+part of the v1 contract simply because they may be useful later.
 
-## Philosophy (inherited from the reactions.json contract)
+## Design rules
 
-- **Data, not code.** Loading a `.clay` file must not require a rebuild.
-- **Deterministic.** With a fixed seed and no wall-clock reads, the same file
-  renders identical commits. JSON object ordering is *significant*: entity
-  draw/update order and mesh triangle order come straight from the file.
-- **Human-editable.** Plain text, meaningful names, no binary bags of floats.
-  Large meshes may be external (see "External assets"), but a single-file,
-  inline form always works.
-- **One C ABI.** All reading goes through `cl_json_parse`; all writing through
-  `cl_json_write`.
-- **Stable IDs, never sequential.** Cross-file references use stable strings
-  and (where a mesh is shared) an optional `uid://` so a rename does not
-  renumber anything downstream. This follows a lesson from game engines that
-  shipped integer resource IDs and paid for it in merge conflicts. Denied as
-  byproducts: no derived/`load_steps`-style counts go in headers; every id is
-  spelled out, never implied by position.
+- **Data, not code.** Loading a scene never executes code from the file.
+- **Versioned.** `version` is required and must be an integer understood by the
+  loader. A v1 loader rejects other versions rather than guessing.
+- **Stable references.** Meshes use explicit string `name` values and may also
+  carry a stable `uid`. There are no derived header counts or positional IDs.
+- **UID first.** When an instance supplies both `mesh_uid` and `mesh`, UID
+  resolution wins; `mesh` is the rename/path fallback.
+- **Order preserving.** Mesh and scene arrays retain file order. Rendering never
+  depends on hash-map iteration order.
+- **Strict recognised fields.** Unknown object keys are ignored for forward
+  compatibility, but a recognised key with the wrong type or invalid value is
+  a load error. Unknown `component` names are ignored.
 
 ## Top-level shape
 
 ```jsonc
 {
   "version": 1,
-
   "settings": {
-    "seed": 1337,          // finite or omitted -> fixed seed (determinism)
+    "seed": 1337,
     "fps": 60,
     "render": {
-      "width": 320,
-      "height": 240,
-      "clear": [0x10, 0x12, 0x1a, 0xff]
+      "width": 640,
+      "height": 480,
+      "clear": [24, 26, 34, 255]
     }
   },
-
-  "reactions": [ ... ],    // optional; identical shape to reactions.json
-
-  "meshes": [              // named, reusable 3D geometry
-    { "name": "cube", "primitive": "cube" },
-    { "name": "monkey", "primitive": "sphere", "segments": { "y": 16, "x": 8 } }
-  ],
-
-  "scene": [
-    {
-      "name": "light",
-      "component": "directional_light",
-      "dir": [0.3, 0.5, 0.8],
-      "intensity": 1.0
-    },
-    {
-      "name": "garden-block",
-      "component": "block",
-      "transform": { "pos": [0, 0, -3], "euler": [0, 0.5, 0], "scale": 1 },
-      "mesh": "cube",
-      "color": [180, 120, 80]
-    }
-  ]
+  "meshes": [ ... ],
+  "scene": [ ... ]
 }
 ```
 
-## Field rules
+`settings`, `meshes`, and `scene` are optional. If present, they must have the
+shapes described below.
 
-- `version` is a required integer. Loaders must reject a `version` they do not
-  understand rather than guess (mirrors the `cl_T_free`/`cl_result` contract:
-  possible-but-unexpected states return errors, programmer errors are fatal).
-- Unknown object keys and unknown `component` names are **ignored with a note in
-  the log** (matching existing JSON lookup semantics). A malformed value for a
-  key that *is* understood is an error.
-- `seed` present and integer → fixed seed; omitted → non-deterministic run.
-  `null`/`false` also allowed to mean “run, don’t fix the seed.”
-- `scene` is an array of entity descriptors. Load order is entity order; a later
-  entity may not reorder earlier ones (the pipeline is order-defined, never
-  luck).
-- Colors are `[r, g, b]` or `[r, g, b, a]`, 0–255. Matches the `Rgba` engine
-  type and `0xAARRGGBB` pixel layout.
-- 3D vectors are `[x, y, z]`; Euler angles are radians, applied YXZ (yaw,
-  pitch, roll) to match the engine’s row-vector `cl_m4` convention.
+## Settings
 
-## `meshes` — 3D geometry
+`settings.seed` is either a non-negative integer for a fixed seed, or `null` /
+`false` for no fixed seed. Omitting it also means no fixed seed.
 
-A named mesh is either an inline surface or a reference:
+`settings.fps` is a positive integer. It is metadata for the scene/runtime; the
+renderer itself does not read wall-clock time.
 
-```jsonc
-{ "name": "cube", "uid": "cub1", "primitive": "cube", "color": [180,120,80] }
-{ "name": "monkey", "uid": "mnky", "positions": [[...]], "indices": [...],
-  "color": [180,120,80] }
-```
+`settings.render` may contain:
 
-`positions` (array of `[x,y,z]`) and `indices` (flat, 3 per triangle) map one
-to one onto `Mesh3D`. `primitive` selects a builtin generator (`cube`,
-`sphere`, `plane`) so scenes never need to spell out tessellations by hand;
-its parameters are under the generator's own object. `color` gives the flat
-shading base for the whole mesh.
+- `width` and `height`: positive integer dimensions, currently limited to 8192.
+- `clear`: `[r,g,b]` or `[r,g,b,a]`, integer channels from 0 through 255.
 
-`name` is the stable string id a scene references; `uid` is an optional
-content-addressed or random identifier for cross-file references (see
-"External assets"). Coroutines on `name` for renames, and on `uid` so a mesh
-referenced from another file survives a rename unharmed.
+The early demo spelling `"resolution": [width, height]` remains accepted as a
+v1 compatibility alias. New files should use `settings.render`.
 
-The load order of a mesh's triangle list is preserved verbatim: the z-buffer
-and backface culling decide visibility; the file only decides *order in*,
-which keeps replays stable.
+## Meshes
 
-## `scene` entities
+Each mesh requires a unique non-empty `name` and may have a unique non-empty
+`uid` and a base `color`.
 
-Each entry has exactly one `component`. This is intentionally flat (no
-component inventory indirection) — the ECS `Storage<T>` attaches a typed
-pool per component by name. `transform` (optional) is the default
-model matrix: `pos`, `euler`, `scale` (uniform or per-axis when given a
-3-vector).
+A mesh is either a builtin primitive or inline indexed geometry.
 
-Entities the renderer understands:
-
-- `directional_light`: `dir` (world-space, normalized at load) + `intensity`.
-- `point_light`: `pos` (world-space) + `intensity` + `attenuation` (inverse-square
-  coefficient, evaluated per-triangle centroid).
-- `mesh_instance`: `mesh` (name) + `color` + `transform` → renders via
-  `IRenderer::draw_mesh`.
-- 2D garden primitives (`block`, `ripple`, `hueshift`, `lifespan`) are
-  accepted with a 2D `pos`; the ECS already owns these components.
-
-`reactions`: an optional array in the exact `reactions.json` shape, passed
-straight to `ReactionEngine::load_json`. Keeping it inline makes a `.clay`
-file self-contained; the separate reaction module still works for layered
-content.
-
-## External assets (future, reserved)
-
-A `scene` entity's `mesh` value names a mesh declared in `meshes` (or a
-`uid://` referring to one). A `"file"` form (reserved) would pull a standalone
-`.claym` mesh asset. Both are the same schema under the hood. Nothing uses
-`"file"` yet; it is reserved so the spec does not need to change later.
-
-When a reference can point across files, it carries **both** a stable id and a
-path fallback, Godot-`ExtResource`-style:
+### Builtins
 
 ```jsonc
-{ "name": "hero", "uid": "hero01", "mesh": "banana",
-  "mesh_uid": "bnn002" }              // uid first, name/path as fallback
+{ "name": "box", "primitive": "cube", "half_extent": 0.5 }
+{ "name": "ball", "uid": "ball01", "primitive": "sphere",
+  "radius": 0.6, "rings": 16, "slices": 12 }
+{ "name": "floor", "primitive": "plane",
+  "width": 8, "height": 8, "nx": 4, "ny": 4 }
 ```
 
-If `uid` resolution fails, the loader falls back to `name`/path. This is the
-one rule that most removes "reference broken by move" bugs; it is mandatory
-for any `"file"` reference the day that lands.
+Supported primitive names are exactly `cube`, `sphere`, and `plane`. Unknown
+primitive names are errors; they are never silently substituted with another
+shape. Generated windings are outward CCW for backface culling.
+
+### Inline geometry
+
+```jsonc
+{
+  "name": "triangle",
+  "positions": [[0,0,0], [1,0,0], [0,1,0]],
+  "indices": [0,1,2],
+  "color": [10,200,10]
+}
+```
+
+`positions` is a non-empty array of three-number vectors. `indices` is a
+non-empty flat integer array whose length is a multiple of three; every index
+must refer to an existing position. Position and triangle order are preserved.
+
+## Scene entries
+
+Every scene entry is an object with a string `component`. Version 1 understands
+four component names.
+
+### `directional_light`
+
+```jsonc
+{ "component": "directional_light",
+  "dir": [0.3, 0.5, 0.8], "intensity": 1.0 }
+```
+
+At most one directional light is allowed. `dir`, when supplied, must be a
+non-zero vector and is normalised at load time. `intensity` must be
+non-negative.
+
+### `point_light`
+
+```jsonc
+{ "component": "point_light", "pos": [2,3,1],
+  "intensity": 0.7, "attenuation": 0.05 }
+```
+
+Version 1 supports at most one point light. This is explicit: v1 does not parse
+an arbitrary light list and then silently render only the first one.
+
+### `camera`
+
+```jsonc
+{ "component": "camera", "eye": [0,0,6], "target": [0,0,0],
+  "up": [0,1,0], "fov": 0.9, "znear": 0.1, "zfar": 100 }
+```
+
+At most one camera is allowed. FOV is in radians, `znear` must be positive, and
+`zfar` must be greater than `znear`. If no camera is present, the engine uses
+its documented default camera.
+
+### `mesh_instance`
+
+```jsonc
+{
+  "component": "mesh_instance",
+  "mesh": "box",
+  "mesh_uid": "optional-stable-id",
+  "transform": {
+    "pos": [0,0,-3],
+    "euler": [0,0.5,0],
+    "scale": 1
+  },
+  "color": [180,120,80]
+}
+```
+
+An instance must provide `mesh`, `mesh_uid`, or both. When both are present,
+`mesh_uid` is resolved first and `mesh` is the fallback. The reference must
+resolve during load.
+
+`scale` may be a scalar or `[x,y,z]`. Euler angles are radians and rotations are
+applied Y-X-Z. Clay uses row vectors, so the model transform is composed as
+`S * R * T`: scale and rotation affect the object while `pos` remains its world
+position.
+
+If `color` is omitted, the instance inherits the referenced mesh's base color.
+
+## Rendering semantics
+
+The perspective projection uses OpenGL-style NDC depth `[-1,1]`. The software
+rasterizer clips against all six homogeneous frustum planes, including both
+`z >= -w` and `z <= w`, before perspective divide.
+
+The depth buffer is frame-scoped. Separate mesh instances therefore occlude one
+another by depth rather than draw order. Flat face normals are recomputed from
+world-space transformed positions, which keeps lighting correct under
+non-uniform scale.
+
+## Determinism
+
+For a fixed input scene and engine state, traversal order is explicit:
+
+- mesh arrays preserve file order;
+- inline triangle order is preserved;
+- scene instances render in scene-array order;
+- visibility is decided by deterministic clipping, culling and depth testing;
+- no render-significant order comes from unordered-map iteration.
+
+The test suite renders the same loaded scene repeatedly and compares framebuffer
+hashes, and it separately gates depth across mesh instances, clip planes and
+builtin winding on both Linux and macOS CI.
+
+## Reserved / not in v1
+
+External mesh files, arbitrary multi-light accumulation, inline reaction rules,
+and 2D garden ECS components are not part of the version-1 loader. They may be
+added by a later format version or by a backwards-compatible extension with an
+explicit implementation and tests. Their absence from v1 is deliberate rather
+than an implicit promise.
 
 ## Errors
 
-Load failures are a single `cl_err`/`cl_result` (success, unsupported
-version, malformed JSON, unknown component, out-of-memory). Partial state
-after a failed load is unspecified; callers retry with the previous world
-intact. This matches `src/core`’s “handle it or halt” arena contract — the
-arena that allocates the loaded world is the same one that will free it.
-
-## Determinism note
-
-JSON object order is preserved by `cl_json_parse`. Do not rely on hash
-iteration anywhere a `.clay` file touches order (scene order, mesh order).
-The `fb_hash` replay round-trip is the gate: a file change that breaks
-determinism fails `test_runtime`.
-
-## Grammar, and why it is JSON here but INI-like elsewhere
-
-JSON is the right on-disk grammar for Clay because the engine's single C ABI
-already speaks it (`cl_json_parse`/`cl_json_write`) and the reaction layer is
-already data in JSON. One `.clay` file is therefore loaded by the same parser
-that loads rules — one parser, one error model, no second grammar to maintain.
-
-Godot's `.tscn` uses a flat `[header]` + `key=value` grammar and keeps its
-nested variant data in `key = Vector2(...)` lines. Clay inverts that split:
-nesting lives naturally in JSON, while the *stability* rules Godot gets from
-its flat format are enforced here by convention instead:
-
-- each `meshes`/`scene` entry carries a stable `name` (and optional `uid`),
-  never an implicit index — so inserting one entity renumbers nothing;
-- no derived counts or hints go in the header (no `load_steps` analogue); the
-  parser derives array lengths from the data;
-- load is order-significant by documented contract, matching `.tscn`'s
-  "section order is significant."
-
-## Lessons carried over from mature-engine formats
-
-- **Dual-path references** everywhere one file could point at another
-  (uid-first, path/name fallback) — see "External assets".
-- **Refuse-forward, accept-backward.** `version` is a single integer; a loader
-  rejects a version it does not know rather than guess, and migrates older
-  versions up (the core `cl_json_to_variant` layer stays untouched by format
-  bumps).
-- **No VCS churn by construction.** No derived header counts, no renumbering,
-  stable string ids. A `.clay` diff should be readable.
-- **Binary is a later concern.** Development ships text (diffable, grep-able);
-  a compact binary form is a possible future "export" that must round-trip
-  losslessly with the text form — deliberately out of scope until the text
-  grammar is frozen.
+`ClayScene::load` returns `false` for malformed JSON, missing/unsupported
+versions, malformed recognised values, duplicate mesh names/UIDs, invalid
+geometry, ambiguous v1 singleton components, and unresolved mesh references.
+The underlying JSON syntax parser continues to use `cl_err` through the public C
+ABI.

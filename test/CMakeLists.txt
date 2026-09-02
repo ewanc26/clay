@@ -51,3 +51,31 @@ clay_cpp_test(test_engine_c_api)
 # every frame it renders deterministically and the dump is a non-degenerate
 # PNG. Guards the CLI + reaction-rules + presenter plumbing end to end.
 include(${PROJECT_SOURCE_DIR}/cmake/headless_smoke.cmake)
+
+# A real .clay scene must also survive the CLI path, and two independent runs
+# must produce byte-identical PNGs. CI runs this on Linux and macOS.
+set(_scene_smoke_dir "${CMAKE_BINARY_DIR}/scene-smoke")
+file(MAKE_DIRECTORY "${_scene_smoke_dir}")
+set(_scene_file "${PROJECT_SOURCE_DIR}/demo/scenes/tabletop.clay")
+
+add_test(
+  NAME headless_scene_smoke_a
+  COMMAND clay_player --headless --scene ${_scene_file} --frames 1
+                      --dump ${_scene_smoke_dir}/scene-a.png)
+set_tests_properties(headless_scene_smoke_a PROPERTIES
+  PASS_REGULAR_EXPRESSION "clay_player: dumped")
+
+add_test(
+  NAME headless_scene_smoke_b
+  COMMAND clay_player --headless --scene ${_scene_file} --frames 1
+                      --dump ${_scene_smoke_dir}/scene-b.png)
+set_tests_properties(headless_scene_smoke_b PROPERTIES
+  PASS_REGULAR_EXPRESSION "clay_player: dumped")
+
+add_test(
+  NAME headless_scene_determinism
+  COMMAND ${CMAKE_COMMAND} -E compare_files
+          ${_scene_smoke_dir}/scene-a.png
+          ${_scene_smoke_dir}/scene-b.png)
+set_tests_properties(headless_scene_determinism PROPERTIES
+  DEPENDS "headless_scene_smoke_a;headless_scene_smoke_b")

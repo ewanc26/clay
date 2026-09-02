@@ -3,84 +3,164 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 namespace clay {
 
 namespace {
 
-/* Read an optional [x,y,z] array into a cl_v3; returns identity on absence. */
-cl_v3 vec3_from(cl_json_node *n, cl_v3 dflt) {
-    if (!n || n->kind != CLAY_J_ARR || n->arr.n < 3) return dflt;
-    cl_json_node *x = n->arr.items[0];
-    cl_json_node *y = n->arr.items[1];
-    cl_json_node *z = n->arr.items[2];
-    auto num = [](cl_json_node *v, float d) {
-        if (!v) return d;
-        if (v->kind == CLAY_J_F64) return (float)v->f;
-        if (v->kind == CLAY_J_I64) return (float)v->i;
-        return d;
-    };
-    return cl_v3_make(num(x, dflt.x), num(y, dflt.y), num(z, dflt.z));
-}
-
-Rgba color_from(cl_json_node *n, Rgba dflt) {
-    if (!n) return dflt;
-    cl_v3 v = vec3_from(n, cl_v3_make(dflt.r, dflt.g, dflt.b));
-    Rgba c;
-    c.r = (uint8_t)std::clamp(v.x, 0.0f, 255.0f);
-    c.g = (uint8_t)std::clamp(v.y, 0.0f, 255.0f);
-    c.b = (uint8_t)std::clamp(v.z, 0.0f, 255.0f);
-    c.a = dflt.a;
-    if (n->arr.n >= 4 && n->arr.items[3]->kind == CLAY_J_I64)
-        c.a = (uint8_t)n->arr.items[3]->i;
-    return c;
-}
-
-float number(cl_json_node *n, float dflt) {
-    if (!n) return dflt;
-    if (n->kind == CLAY_J_F64) return (float)n->f;
-    if (n->kind == CLAY_J_I64) return (float)n->i;
-    return dflt;
-}
-
 bool string_equals(cl_json_node *n, const char *want) {
     if (!n || n->kind != CLAY_J_STR) return false;
-    cl_str s = n->s;
-    size_t len = 0;
-    while (want[len]) len++;
-    return s.len == len && std::memcmp(s.data, want, len) == 0;
+    size_t len = std::strlen(want);
+    return n->s.len == len && std::memcmp(n->s.data, want, len) == 0;
 }
 
-std::string node_str(cl_json_node *n) {
-    if (!n || n->kind != CLAY_J_STR) return {};
-    return std::string(n->s.data, n->s.len);
+bool read_string(cl_json_node *n, std::string &out) {
+    if (!n || n->kind != CLAY_J_STR) return false;
+    out.assign(n->s.data, n->s.len);
+    return !out.empty();
 }
 
-/* Build a model matrix from an optional `transform` object. */
-cl_m4 transform_from(cl_json_node *t) {
-    cl_m4 m = cl_m4_identity();
-    if (!t || t->kind != CLAY_J_OBJ) return m;
+bool read_number(cl_json_node *n, float &out) {
+    if (!n) return false;
+    double value;
+    if (n->kind == CLAY_J_F64)
+        value = n->f;
+    else if (n->kind == CLAY_J_I64)
+        value = (double)n->i;
+    else
+        return false;
+    if (!std::isfinite(value) || value < -(double)std::numeric_limits<float>::max() ||
+        value > (double)std::numeric_limits<float>::max())
+        return false;
+    out = (float)value;
+    return true;
+}
 
-    cl_v3 pos = vec3_from(cl_json_get_cstr(t, "pos"), cl_v3_make(0, 0, 0));
-    cl_v3 euler = vec3_from(cl_json_get_cstr(t, "euler"), cl_v3_make(0, 0, 0));
+bool read_positive_int(cl_json_node *n, unsigned &out) {
+    if (!n || n->kind != CLAY_J_I64 || n->i <= 0 ||
+        (uint64_t)n->i > (uint64_t)std::numeric_limits<unsigned>::max())
+        return false;
+    out = (unsigned)n->i;
+    return true;
+}
 
-    /* uniform scale if scalar, per-axis if [x,y,z]. */
-    cl_m4 s = cl_m4_identity();
-    cl_json_node *scale = cl_json_get_cstr(t, "scale");
-    if (scale && scale->kind == CLAY_J_ARR && scale->arr.n >= 3) {
-        s = cl_m4_scale(number(scale->arr.items[0], 1),
-                        number(scale->arr.items[1], 1),
-                        number(scale->arr.items[2], 1));
+bool read_vec3(cl_json_node *n, cl_v3 &out) {
+    if (!n || n->kind != CLAY_J_ARR || n->arr.n != 3) return false;
+    float x, y, z;
+    if (!read_number(n->arr.items[0], x) || !read_number(n->arr.items[1], y) ||
+        !read_number(n->arr.items[2], z))
+        return false;
+    out = cl_v3_make(x, y, z);
+    return true;
+}
+
+bool read_color(cl_json_node *n, Rgba &out) {
+    if (!n || n->kind != CLAY_J_ARR ||
+        (n->arr.n != 3 && n->arr.n != 4))
+        return false;
+
+    uint8_t channels[4] = {0, 0, 0, 255};
+    for (size_t i = 0; i < n->arr.n; i++) {
+        cl_json_node *v = n->arr.items[i];
+        if (!v || v->kind != CLAY_J_I64 || v->i < 0 || v->i > 255)
+            return false;
+        channels[i] = (uint8_t)v->i;
+    }
+    out = {channels[0], channels[1], channels[2], channels[3]};
+    return true;
+}
+
+bool transform_from(cl_json_node *t, cl_m4 &out) {
+    cl_v3 pos = cl_v3_make(0, 0, 0);
+    cl_v3 euler = cl_v3_make(0, 0, 0);
+    cl_v3 scale = cl_v3_make(1, 1, 1);
+
+    if (t) {
+        if (t->kind != CLAY_J_OBJ) return false;
+
+        if (cl_json_node *p = cl_json_get_cstr(t, "pos")) {
+            if (!read_vec3(p, pos)) return false;
+        }
+        if (cl_json_node *e = cl_json_get_cstr(t, "euler")) {
+            if (!read_vec3(e, euler)) return false;
+        }
+        if (cl_json_node *s = cl_json_get_cstr(t, "scale")) {
+            if (s->kind == CLAY_J_ARR) {
+                if (!read_vec3(s, scale)) return false;
+            } else {
+                float uniform;
+                if (!read_number(s, uniform)) return false;
+                scale = cl_v3_make(uniform, uniform, uniform);
+            }
+        }
     }
 
-    cl_m4 r = cl_m4_identity();
-    r = cl_m4_mul(r, cl_m4_rotate_y(euler.y));
-    r = cl_m4_mul(r, cl_m4_rotate_x(euler.x));
-    r = cl_m4_mul(r, cl_m4_rotate_z(euler.z));
+    cl_m4 sm = cl_m4_scale(scale.x, scale.y, scale.z);
+    cl_m4 rm = cl_m4_identity();
+    rm = cl_m4_mul(rm, cl_m4_rotate_y(euler.y));
+    rm = cl_m4_mul(rm, cl_m4_rotate_x(euler.x));
+    rm = cl_m4_mul(rm, cl_m4_rotate_z(euler.z));
+    cl_m4 tm = cl_m4_translate(pos.x, pos.y, pos.z);
 
-    cl_m4 tr = cl_m4_translate(pos.x, pos.y, pos.z);
-    return cl_m4_mul(cl_m4_mul(cl_m4_mul(tr, s), r), cl_m4_identity());
+    /* Row-vector convention: v' = v * S * R * T. Translation therefore stays
+     * in world space instead of being scaled/rotated with the object. */
+    out = cl_m4_mul(cl_m4_mul(sm, rm), tm);
+    return true;
+}
+
+bool parse_render_settings(cl_json_node *settings, ClaySettings &out) {
+    cl_json_node *seed = cl_json_get_cstr(settings, "seed");
+    if (seed) {
+        if (seed->kind == CLAY_J_I64) {
+            if (seed->i < 0) return false;
+            out.seed = (uint64_t)seed->i;
+            out.has_seed = true;
+        } else if (seed->kind == CLAY_J_NIL ||
+                   (seed->kind == CLAY_J_BOOL && !seed->b)) {
+            out.has_seed = false;
+        } else {
+            return false;
+        }
+    }
+
+    if (cl_json_node *fps = cl_json_get_cstr(settings, "fps")) {
+        if (fps->kind != CLAY_J_I64 || fps->i <= 0 || fps->i > 1000)
+            return false;
+        out.fps = (int)fps->i;
+    }
+
+    /* Compatibility with the first demo file written before the v1 contract
+     * was tightened. `render.width/height` is canonical; `resolution` remains
+     * an accepted alias for existing files. */
+    if (cl_json_node *res = cl_json_get_cstr(settings, "resolution")) {
+        if (res->kind != CLAY_J_ARR || res->arr.n != 2) return false;
+        for (int i = 0; i < 2; i++) {
+            cl_json_node *v = res->arr.items[i];
+            if (!v || v->kind != CLAY_J_I64 || v->i <= 0 || v->i > 8192)
+                return false;
+            out.resolution[i] = (int)v->i;
+        }
+    }
+
+    if (cl_json_node *render = cl_json_get_cstr(settings, "render")) {
+        if (render->kind != CLAY_J_OBJ) return false;
+        if (cl_json_node *width = cl_json_get_cstr(render, "width")) {
+            if (width->kind != CLAY_J_I64 || width->i <= 0 || width->i > 8192)
+                return false;
+            out.resolution[0] = (int)width->i;
+        }
+        if (cl_json_node *height = cl_json_get_cstr(render, "height")) {
+            if (height->kind != CLAY_J_I64 || height->i <= 0 || height->i > 8192)
+                return false;
+            out.resolution[1] = (int)height->i;
+        }
+        if (cl_json_node *clear = cl_json_get_cstr(render, "clear")) {
+            if (!read_color(clear, out.clear)) return false;
+        }
+    }
+    return true;
 }
 
 } // namespace
@@ -89,141 +169,253 @@ bool ClayScene::load(cl_str text) {
     meshes_.clear();
     instances_.clear();
     index_.clear();
+    uid_index_.clear();
     light_ = {};
     point_lights_.clear();
     camera_ = {};
     settings_ = {};
 
+    if (!text.data || text.len == 0) return false;
+    if (text.len > (std::numeric_limits<size_t>::max() - (1u << 16)) / 8u)
+        return false;
+    const size_t arena_size =
+        std::max<size_t>(1u << 16, text.len * 8u + (1u << 12));
+    std::vector<unsigned char> storage(arena_size);
     cl_arena a;
-    std::vector<unsigned char> storage(1 << 16);
     cl_arena_init(&a, storage.data(), storage.size());
 
     cl_json_node root;
-    cl_err err = cl_json_parse(&root, &a, text);
-    if (err != CLAY_OK) return false;
+    if (cl_json_parse(&root, &a, text) != CLAY_OK || root.kind != CLAY_J_OBJ)
+        return false;
 
     cl_json_node *version = cl_json_get_cstr(&root, "version");
-    if (version && version->kind == CLAY_J_I64 && version->i != 1) return false;
+    if (!version || version->kind != CLAY_J_I64 || version->i != 1)
+        return false;
 
-    /* --- settings --- */
-    cl_json_node *settings = cl_json_get_cstr(&root, "settings");
-    if (settings && settings->kind == CLAY_J_OBJ) {
-        cl_json_node *seed = cl_json_get_cstr(settings, "seed");
-        if (seed && seed->kind == CLAY_J_I64)
-            settings_.seed = (uint64_t)seed->i;
-        cl_json_node *fps = cl_json_get_cstr(settings, "fps");
-        if (fps && fps->kind == CLAY_J_I64)
-            settings_.fps = (int)fps->i;
-        cl_json_node *res = cl_json_get_cstr(settings, "resolution");
-        if (res && res->kind == CLAY_J_ARR && res->arr.n >= 2) {
-            if (res->arr.items[0] && res->arr.items[0]->kind == CLAY_J_I64)
-                settings_.resolution[0] = (int)res->arr.items[0]->i;
-            if (res->arr.items[1] && res->arr.items[1]->kind == CLAY_J_I64)
-                settings_.resolution[1] = (int)res->arr.items[1]->i;
-        }
+    if (cl_json_node *settings = cl_json_get_cstr(&root, "settings")) {
+        if (settings->kind != CLAY_J_OBJ ||
+            !parse_render_settings(settings, settings_))
+            return false;
     }
 
-    /* --- meshes --- */
-    cl_json_node *meshes = cl_json_get_cstr(&root, "meshes");
-    if (meshes && meshes->kind == CLAY_J_ARR) {
+    if (cl_json_node *meshes = cl_json_get_cstr(&root, "meshes")) {
+        if (meshes->kind != CLAY_J_ARR) return false;
+
         for (size_t i = 0; i < meshes->arr.n; i++) {
             cl_json_node *m = meshes->arr.items[i];
-            if (!m || m->kind != CLAY_J_OBJ) continue;
+            if (!m || m->kind != CLAY_J_OBJ) return false;
+
             ClayMesh cm;
-            cm.name = node_str(cl_json_get_cstr(m, "name"));
-            cm.uid = node_str(cl_json_get_cstr(m, "uid"));
-            cm.color =
-                color_from(cl_json_get_cstr(m, "color"), {200, 200, 200, 255});
+            if (!read_string(cl_json_get_cstr(m, "name"), cm.name)) return false;
+            if (index_.find(cm.name) != index_.end()) return false;
+
+            if (cl_json_node *uid = cl_json_get_cstr(m, "uid")) {
+                if (!read_string(uid, cm.uid) ||
+                    uid_index_.find(cm.uid) != uid_index_.end())
+                    return false;
+            }
+            if (cl_json_node *color = cl_json_get_cstr(m, "color")) {
+                if (!read_color(color, cm.color)) return false;
+            }
 
             cl_json_node *prim = cl_json_get_cstr(m, "primitive");
             if (prim) {
-                float lit = number(cl_json_get_cstr(m, "radius"), 0.5f);
-                if (string_equals(prim, "cube"))
-                    build_cube(cm.mesh, 0.5f);
-                else if (string_equals(prim, "sphere"))
-                    build_sphere(cm.mesh, lit, 16, 12);
-                else
-                    build_plane(cm.mesh, 2.0f, 2.0f, 4, 4);
+                if (prim->kind != CLAY_J_STR) return false;
+                if (string_equals(prim, "cube")) {
+                    float half_extent = 0.5f;
+                    if (cl_json_node *he = cl_json_get_cstr(m, "half_extent")) {
+                        if (!read_number(he, half_extent) || half_extent <= 0.0f)
+                            return false;
+                    }
+                    build_cube(cm.mesh, half_extent);
+                } else if (string_equals(prim, "sphere")) {
+                    float radius = 0.5f;
+                    unsigned rings = 16, slices = 12;
+                    if (cl_json_node *r = cl_json_get_cstr(m, "radius")) {
+                        if (!read_number(r, radius) || radius <= 0.0f)
+                            return false;
+                    }
+                    if (cl_json_node *r = cl_json_get_cstr(m, "rings")) {
+                        if (!read_positive_int(r, rings) || rings < 2) return false;
+                    }
+                    if (cl_json_node *s = cl_json_get_cstr(m, "slices")) {
+                        if (!read_positive_int(s, slices) || slices < 3)
+                            return false;
+                    }
+                    build_sphere(cm.mesh, radius, rings, slices);
+                } else if (string_equals(prim, "plane")) {
+                    float width = 2.0f, height = 2.0f;
+                    unsigned nx = 4, ny = 4;
+                    if (cl_json_node *w = cl_json_get_cstr(m, "width")) {
+                        if (!read_number(w, width) || width <= 0.0f) return false;
+                    }
+                    if (cl_json_node *h = cl_json_get_cstr(m, "height")) {
+                        if (!read_number(h, height) || height <= 0.0f)
+                            return false;
+                    }
+                    if (cl_json_node *x = cl_json_get_cstr(m, "nx")) {
+                        if (!read_positive_int(x, nx)) return false;
+                    }
+                    if (cl_json_node *y = cl_json_get_cstr(m, "ny")) {
+                        if (!read_positive_int(y, ny)) return false;
+                    }
+                    build_plane(cm.mesh, width, height, nx, ny);
+                } else {
+                    return false;
+                }
             } else {
-                /* Inline positions + indices. */
                 cl_json_node *pos = cl_json_get_cstr(m, "positions");
                 cl_json_node *idx = cl_json_get_cstr(m, "indices");
-                if (pos && pos->kind == CLAY_J_ARR && idx &&
-                    idx->kind == CLAY_J_ARR) {
-                    std::vector<cl_v3> verts;
-                    verts.reserve(pos->arr.n);
-                    for (size_t k = 0; k < pos->arr.n; k++)
-                        verts.push_back(
-                            vec3_from(pos->arr.items[k], {0, 0, 0}));
-                    for (size_t k = 0; k + 2 < idx->arr.n; k += 3) {
-                        auto at = [&](size_t j) -> unsigned {
-                            cl_json_node *e = idx->arr.items[k + j];
-                            return e && e->kind == CLAY_J_I64 ? (unsigned)e->i
-                                                              : 0u;
-                        };
-                        unsigned ia = at(0), ib = at(1), ic = at(2);
-                        if (ia < verts.size() && ib < verts.size() &&
-                            ic < verts.size())
-                            cm.mesh.add_triangle(verts[ia], verts[ib],
-                                                 verts[ic]);
-                    }
+                if (!pos || pos->kind != CLAY_J_ARR || !idx ||
+                    idx->kind != CLAY_J_ARR || pos->arr.n == 0 ||
+                    idx->arr.n == 0 || idx->arr.n % 3 != 0)
+                    return false;
+
+                cm.mesh.positions.reserve(pos->arr.n);
+                for (size_t k = 0; k < pos->arr.n; k++) {
+                    cl_v3 v;
+                    if (!read_vec3(pos->arr.items[k], v)) return false;
+                    cm.mesh.positions.push_back(v);
+                }
+                cm.mesh.indices.reserve(idx->arr.n);
+                for (size_t k = 0; k < idx->arr.n; k++) {
+                    cl_json_node *entry = idx->arr.items[k];
+                    if (!entry || entry->kind != CLAY_J_I64 || entry->i < 0 ||
+                        (uint64_t)entry->i >= cm.mesh.positions.size() ||
+                        (uint64_t)entry->i >
+                            (uint64_t)std::numeric_limits<unsigned>::max())
+                        return false;
+                    cm.mesh.indices.push_back((unsigned)entry->i);
                 }
             }
-            if (cm.name.empty() || cm.mesh.empty()) continue;
-            index_[cm.name] = meshes_.size();
+
+            if (cm.mesh.empty()) return false;
+            size_t mesh_index = meshes_.size();
+            index_.emplace(cm.name, mesh_index);
+            if (!cm.uid.empty()) uid_index_.emplace(cm.uid, mesh_index);
             meshes_.push_back(std::move(cm));
         }
     }
 
-    /* --- scene --- */
-    cl_json_node *scene = cl_json_get_cstr(&root, "scene");
-    if (scene && scene->kind == CLAY_J_ARR) {
+    if (cl_json_node *scene = cl_json_get_cstr(&root, "scene")) {
+        if (scene->kind != CLAY_J_ARR) return false;
+        bool saw_directional = false;
+        bool saw_camera = false;
+
         for (size_t i = 0; i < scene->arr.n; i++) {
             cl_json_node *e = scene->arr.items[i];
-            if (!e || e->kind != CLAY_J_OBJ) continue;
+            if (!e || e->kind != CLAY_J_OBJ) return false;
             cl_json_node *comp = cl_json_get_cstr(e, "component");
+            if (!comp || comp->kind != CLAY_J_STR) return false;
+
             if (string_equals(comp, "directional_light")) {
-                light_.dir = vec3_from(cl_json_get_cstr(e, "dir"),
-                                       cl_v3_make(0.3f, 0.5f, 0.8f));
-                light_.intensity =
-                    number(cl_json_get_cstr(e, "intensity"), 1.0f);
+                if (saw_directional) return false;
+                saw_directional = true;
+                if (cl_json_node *dir = cl_json_get_cstr(e, "dir")) {
+                    if (!read_vec3(dir, light_.dir) ||
+                        cl_v3_length(light_.dir) <= 0.0f)
+                        return false;
+                    light_.dir = cl_v3_normalize(light_.dir);
+                }
+                if (cl_json_node *intensity = cl_json_get_cstr(e, "intensity")) {
+                    if (!read_number(intensity, light_.intensity) ||
+                        light_.intensity < 0.0f)
+                        return false;
+                }
                 continue;
             }
+
             if (string_equals(comp, "camera")) {
-                camera_.eye = vec3_from(cl_json_get_cstr(e, "eye"),
-                                        cl_v3_make(0, 0, 6));
-                camera_.target = vec3_from(cl_json_get_cstr(e, "target"),
-                                           cl_v3_make(0, 0, 0));
-                camera_.up = vec3_from(cl_json_get_cstr(e, "up"),
-                                       cl_v3_make(0, 1, 0));
-                camera_.fov_y_rad =
-                    number(cl_json_get_cstr(e, "fov"), 0.9f);
-                camera_.znear = number(cl_json_get_cstr(e, "znear"), 0.1f);
-                camera_.zfar = number(cl_json_get_cstr(e, "zfar"), 100.0f);
+                if (saw_camera) return false;
+                saw_camera = true;
+                if (cl_json_node *eye = cl_json_get_cstr(e, "eye")) {
+                    if (!read_vec3(eye, camera_.eye)) return false;
+                }
+                if (cl_json_node *target = cl_json_get_cstr(e, "target")) {
+                    if (!read_vec3(target, camera_.target)) return false;
+                }
+                if (cl_json_node *up = cl_json_get_cstr(e, "up")) {
+                    if (!read_vec3(up, camera_.up) || cl_v3_length(camera_.up) <= 0.0f)
+                        return false;
+                }
+                if (cl_json_node *fov = cl_json_get_cstr(e, "fov")) {
+                    if (!read_number(fov, camera_.fov_y_rad) ||
+                        camera_.fov_y_rad <= 0.0f ||
+                        camera_.fov_y_rad >= 3.14159265f)
+                        return false;
+                }
+                if (cl_json_node *znear = cl_json_get_cstr(e, "znear")) {
+                    if (!read_number(znear, camera_.znear) || camera_.znear <= 0.0f)
+                        return false;
+                }
+                if (cl_json_node *zfar = cl_json_get_cstr(e, "zfar")) {
+                    if (!read_number(zfar, camera_.zfar)) return false;
+                }
+                if (camera_.zfar <= camera_.znear) return false;
                 continue;
             }
+
             if (string_equals(comp, "point_light")) {
+                if (!point_lights_.empty()) return false;
                 ClayPointLight pl;
-                pl.pos = vec3_from(cl_json_get_cstr(e, "pos"),
-                                   cl_v3_make(0, 0, 0));
-                pl.intensity = number(cl_json_get_cstr(e, "intensity"), 1.0f);
-                pl.attenuation =
-                    number(cl_json_get_cstr(e, "attenuation"), 0.0f);
+                if (cl_json_node *pos = cl_json_get_cstr(e, "pos")) {
+                    if (!read_vec3(pos, pl.pos)) return false;
+                }
+                if (cl_json_node *intensity = cl_json_get_cstr(e, "intensity")) {
+                    if (!read_number(intensity, pl.intensity) || pl.intensity < 0.0f)
+                        return false;
+                } else {
+                    pl.intensity = 1.0f;
+                }
+                if (cl_json_node *attenuation =
+                        cl_json_get_cstr(e, "attenuation")) {
+                    if (!read_number(attenuation, pl.attenuation) ||
+                        pl.attenuation < 0.0f)
+                        return false;
+                }
                 point_lights_.push_back(pl);
                 continue;
             }
-            if (!string_equals(comp, "mesh_instance")) continue;
 
-            ClayInstance inst;
-            inst.mesh_name = node_str(cl_json_get_cstr(e, "mesh"));
-            inst.mesh_uid = node_str(cl_json_get_cstr(e, "mesh_uid"));
-            inst.model = transform_from(cl_json_get_cstr(e, "transform"));
-            inst.color =
-                color_from(cl_json_get_cstr(e, "color"), {200, 200, 200, 255});
-            instances_.push_back(std::move(inst));
+            if (string_equals(comp, "mesh_instance")) {
+                ClayInstance inst;
+                if (cl_json_node *mesh = cl_json_get_cstr(e, "mesh")) {
+                    if (!read_string(mesh, inst.mesh_name)) return false;
+                }
+                if (cl_json_node *uid = cl_json_get_cstr(e, "mesh_uid")) {
+                    if (!read_string(uid, inst.mesh_uid)) return false;
+                }
+                if (inst.mesh_name.empty() && inst.mesh_uid.empty()) return false;
+                if (!transform_from(cl_json_get_cstr(e, "transform"), inst.model))
+                    return false;
+                if (cl_json_node *color = cl_json_get_cstr(e, "color")) {
+                    if (!read_color(color, inst.color)) return false;
+                    inst.has_color = true;
+                }
+                instances_.push_back(std::move(inst));
+                continue;
+            }
+
+            /* Unknown component names are forwards-compatible and ignored. */
         }
     }
+
+    for (const ClayInstance &inst : instances_)
+        if (resolve_mesh(inst) >= meshes_.size()) return false;
+
     return true;
+}
+
+size_t ClayScene::resolve_mesh(const ClayInstance &inst) const {
+    if (!inst.mesh_uid.empty()) {
+        auto uid = uid_index_.find(inst.mesh_uid);
+        if (uid != uid_index_.end()) return uid->second;
+    }
+    if (!inst.mesh_name.empty()) {
+        auto name = index_.find(inst.mesh_name);
+        if (name != index_.end()) return name->second;
+    }
+    return meshes_.size();
 }
 
 cl_m4 ClayScene::view_matrix() const {
@@ -236,36 +428,23 @@ cl_m4 ClayScene::proj_matrix(float aspect) const {
 }
 
 void ClayScene::render(IRenderer &r, cl_m4 view, cl_m4 proj) {
-    /* Model matrix per instance composes translate*scale*rotate; the mesh
-     * library supplies geometry + base color. */
     for (const ClayInstance &inst : instances_) {
-        /* Resolve the mesh by name, falling back to uid (dual reference). */
-        size_t idx = meshes_.size();
-        auto it = index_.find(inst.mesh_name);
-        if (it != index_.end()) {
-            idx = it->second;
-        } else if (!inst.mesh_uid.empty()) {
-            for (size_t k = 0; k < meshes_.size(); k++) {
-                if (meshes_[k].uid == inst.mesh_uid) {
-                    idx = k;
-                    break;
-                }
-            }
-        }
-        if (idx >= meshes_.size()) continue;
+        size_t idx = resolve_mesh(inst);
+        if (idx >= meshes_.size()) continue; /* load() already validates this */
         const ClayMesh &cm = meshes_[idx];
 
         cl_v3 pl_pos = {0.0f, 0.0f, 0.0f};
         float pl_int = 0.0f;
         float pl_att = 0.0f;
         if (!point_lights_.empty()) {
-            const ClayPointLight &pl = point_lights_[0];
+            const ClayPointLight &pl = point_lights_.front();
             pl_pos = pl.pos;
             pl_int = pl.intensity;
             pl_att = pl.attenuation;
         }
 
-        r.draw_mesh(cm.mesh, inst.model, view, proj, inst.color, light_.dir,
+        Rgba color = inst.has_color ? inst.color : cm.color;
+        r.draw_mesh(cm.mesh, inst.model, view, proj, color, light_.dir,
                     light_.intensity, pl_pos, pl_int, pl_att, 0.35f);
     }
 }

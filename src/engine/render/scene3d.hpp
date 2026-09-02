@@ -12,21 +12,21 @@
 namespace clay {
 
 /* A named triangulated mesh, generated from a .clay `meshes` entry or a
- * builtin `primitive`. The generator substitutes memory for tedium: a scene
- * never spells out a tessellation by hand. */
+ * builtin `primitive`. */
 struct ClayMesh {
     std::string name;
     std::string uid; /* stable cross-file id; empty when single-file */
     Mesh3D mesh;
-    Rgba color; /* flat shading base */
+    Rgba color{200, 200, 200, 255}; /* flat shading base */
 };
 
 /* A camera-facing placement of a mesh, from a .clay `scene` entry. */
 struct ClayInstance {
-    std::string mesh_name; /* resolves against MeshLibrary by name then uid */
-    std::string mesh_uid;
+    std::string mesh_name;
+    std::string mesh_uid; /* uid is authoritative when both are present */
     cl_m4 model{};
-    Rgba color;
+    Rgba color{200, 200, 200, 255};
+    bool has_color = false; /* otherwise inherit the mesh's base color */
 };
 
 /* One directional light, from the scene. */
@@ -35,7 +35,7 @@ struct ClayLight {
     float intensity = 1.0f;
 };
 
-/* One point light, from the scene. */
+/* One point light, from the scene. Version 1 allows at most one. */
 struct ClayPointLight {
     cl_v3 pos{0.0f, 0.0f, 0.0f};
     float intensity = 0.0f;
@@ -55,17 +55,20 @@ struct ClayCamera {
 /* Settings from the .clay top-level block. */
 struct ClaySettings {
     uint64_t seed = 0;
+    bool has_seed = false;
     int fps = 60;
     int resolution[2] = {640, 480};
+    Rgba clear{24, 26, 34, 255};
 };
 
 /* A 3D scene loaded from one .clay document: a named mesh library, a list of
- * instanced meshes, and a light. Loading goes through the single C ABI
- * cl_json_parse; nothing here peeks at the 2D garden ECS. */
+ * instanced meshes, lights and camera. JSON syntax is parsed exclusively by
+ * the public C ABI; schema validation and C++ ownership live here. */
 class ClayScene {
   public:
-    /* Parse `text` (a complete .clay document). Returns false on unsupported
-     * version, malformed JSON, or an unknown but *referenced* mesh name. */
+    /* Parse and validate a complete version-1 .clay document. Returns false
+     * for malformed JSON, unsupported/missing versions, malformed recognised
+     * fields, duplicate stable IDs, or unresolved mesh references. */
     bool load(cl_str text);
 
     size_t mesh_count() const {
@@ -93,17 +96,15 @@ class ClayScene {
         return settings_;
     }
 
-    /* Build the view matrix from the scene camera (or default). */
     cl_m4 view_matrix() const;
-
-    /* Build the projection matrix from the scene camera + aspect. */
     cl_m4 proj_matrix(float aspect) const;
-
-    /* Draw every instance into `r` using camera `view`/`proj`. */
     void render(IRenderer &r, cl_m4 view, cl_m4 proj);
 
   private:
-    std::unordered_map<std::string, size_t> index_; /* name -> meshes_ */
+    size_t resolve_mesh(const ClayInstance &inst) const;
+
+    std::unordered_map<std::string, size_t> index_;     /* name -> meshes_ */
+    std::unordered_map<std::string, size_t> uid_index_; /* uid -> meshes_ */
     std::vector<ClayMesh> meshes_;
     std::vector<ClayInstance> instances_;
     ClayLight light_;
