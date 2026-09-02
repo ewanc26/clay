@@ -10,18 +10,6 @@ namespace clay {
 
 constexpr double kTwoPi = 6.28318530717958647692;
 
-static bool valid_input_event(const cl_input_event &event) {
-    if (event.type < CLAY_IN_PRESS || event.type > CLAY_IN_FOCUS)
-        return false;
-    if (!std::isfinite(event.x) || !std::isfinite(event.y) ||
-        !std::isfinite(event.dx) || !std::isfinite(event.dy))
-        return false;
-    if ((event.type == CLAY_IN_PRESS || event.type == CLAY_IN_RELEASE) &&
-        (event.key <= CLAY_KEY_NONE || event.key >= CLAY_KEY_COUNT))
-        return false;
-    return true;
-}
-
 static Rgba u8c(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
     return Rgba{(uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a};
 }
@@ -139,7 +127,7 @@ void Runtime::feed_motion(double x, double y, double dx, double dy) {
 }
 
 void Runtime::feed(const cl_input_event &raw) {
-    if (!valid_input_event(raw)) return;
+    if (!cl_input_event_valid(&raw)) return;
 
     /* Level-triggered edge detection into the shared input state. */
     cl_input_state_feed(&input_state_, &raw);

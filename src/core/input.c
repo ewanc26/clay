@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-static bool valid_event(const cl_input_event *e) {
+bool cl_input_event_valid(const cl_input_event *e) {
     if (e == NULL || e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS)
         return false;
     if (!isfinite(e->x) || !isfinite(e->y) || !isfinite(e->dx) ||
@@ -58,7 +58,7 @@ void cl_input_state_begin(cl_input_state *s, uint32_t frame, double time) {
 }
 
 bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
-    if (s == NULL || !valid_event(e)) return false;
+    if (s == NULL || !cl_input_event_valid(e)) return false;
 
     switch (e->type) {
     case CLAY_IN_PRESS:
