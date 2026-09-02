@@ -31,6 +31,9 @@ public sealed class ClayRuntime : IDisposable
     public int Width => Native.Width(handle);
     public int Height => Native.Height(handle);
     public ulong Frame => Native.Frame(handle);
+    public double SimTime => Native.SimTime(handle);
+    public double CursorX => Native.CursorX(handle);
+    public double CursorY => Native.CursorY(handle);
 
     public void InstallBuiltinSystems() => Check(
         Native.InstallBuiltinSystems(handle));
@@ -144,6 +147,12 @@ public sealed class ClayRuntime : IDisposable
         public static extern int Height(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_frame")]
         public static extern ulong Frame(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_sim_time")]
+        public static extern double SimTime(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_cursor_x")]
+        public static extern double CursorX(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_cursor_y")]
+        public static extern double CursorY(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels")]
         public static extern IntPtr Pixels(RuntimeHandle runtime, out nuint count);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels_rgba")]
