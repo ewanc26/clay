@@ -227,3 +227,14 @@ if(CLAY_INSTALL_GODOT_NATIVE AND CLAY_BUILD_SHARED)
   install(FILES $<TARGET_FILE:clay_engine>
     DESTINATION integrations/godot-mono/native/${CLAY_GODOT_PLATFORM})
 endif()
+install(FILES
+  integrations/godot-mono/ClayRuntime.cs
+  integrations/godot-mono/ClayKey.cs
+  integrations/godot-mono/ClayGodotSample.csproj
+  integrations/godot-mono/ClayDemo.cs
+  integrations/godot-mono/ClayDemo.tscn
+  integrations/godot-mono/project.godot
+  integrations/godot-mono/README.md
+  DESTINATION integrations/godot-mono)
+install(FILES integrations/godot-mono/managed/ClayRuntime.csproj
+  DESTINATION integrations/godot-mono/managed)
