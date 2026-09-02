@@ -76,6 +76,14 @@ void RendererSW::fill_triangle(float x0, float y0, float x1, float y1,
     touched_ += 64;
 }
 
+void RendererSW::draw_image(int x, int y, const uint32_t *src, int src_w,
+                            int src_h) {
+    if (!src || src_w <= 0 || src_h <= 0) return;
+    raster::blit(fb_.pixels.data(), fb_.width, fb_.height, x, y, src, src_w,
+                 src_h);
+    touched_ += (uint64_t)src_w * (uint64_t)src_h;
+}
+
 uint32_t RendererSW::pixel(int x, int y) const {
     return fb_.pixel(x, y);
 }

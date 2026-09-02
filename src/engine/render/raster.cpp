@@ -138,4 +138,24 @@ void clear(void *buf, int width, int height, Pixel c) {
     for (size_t i = 0; i < (size_t)width * (size_t)height; i++) p[i] = c;
 }
 
+void blit(void *buf, int width, int height, int dst_x, int dst_y,
+          const Pixel *src, int src_w, int src_h) {
+    if (!src || src_w <= 0 || src_h <= 0) return;
+    int x1 = std::max(dst_x, 0);
+    int y1 = std::max(dst_y, 0);
+    int x2 = std::min(dst_x + src_w, width);
+    int y2 = std::min(dst_y + src_h, height);
+    if (x2 <= x1 || y2 <= y1) return;
+    for (int y = y1; y < y2; y++) {
+        int sy = y - dst_y;
+        Pixel *dst_row = reinterpret_cast<Pixel *>(buf) +
+                         (size_t)y * (size_t)width;
+        for (int x = x1; x < x2; x++) {
+            int sx = x - dst_x;
+            Pixel s = src[(size_t)sy * (size_t)src_w + (size_t)sx];
+            dst_row[x] = blend(dst_row[x], s);
+        }
+    }
+}
+
 } // namespace clay::raster

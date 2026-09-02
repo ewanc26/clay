@@ -35,6 +35,12 @@ void clear(void *buf, int width, int height, Pixel c);
 /* Deterministic raster of the whole region (for scattering updates later). */
 void blend_pixel(void *buf, int width, int height, int x, int y, Pixel c);
 
+/* Composite a source image (same Pixel layout, row-major) onto the canvas at
+ * (dst_x, dst_y), src-over. The source keeps its alpha; only the overlapping
+ * region is touched. Used by sprite/text blitting. */
+void blit(void *buf, int width, int height, int dst_x, int dst_y,
+          const Pixel *src, int src_w, int src_h);
+
 } // namespace clay::raster
 
 #endif /* CLAY_ENGINE_RENDER_RASTER_HPP */
