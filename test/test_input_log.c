@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 static int test_input_log(void) {
-    unsigned char buf[1 << 16];
+    unsigned char buf[1 << 18];
     cl_arena arena;
     cl_arena_init(&arena, buf, sizeof(buf));
 
@@ -43,6 +43,13 @@ static int test_input_log(void) {
     const cl_input_event *b1 = cl_input_log_at(&back, 0);
     CHECK(b1 != NULL && b1->key == CLAY_KEY_SPACE && b1->frame == 5);
 
+    cl_input_event extra = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_A);
+    cl_input_log_append(&back, &extra);
+    CHECK_EQ_INT(cl_input_log_count(&back), 3);
+    CHECK(cl_input_log_load(&back, path) == CLAY_OK);
+    CHECK_EQ_INT(cl_input_log_count(&back), 2);
+    CHECK(cl_input_log_fingerprint(&back) == fp);
+
     cl_input_log bad;
     cl_input_log_init(&bad, &arena, 0);
 
@@ -56,6 +63,7 @@ static int test_input_log(void) {
         CHECK(fputc(first ^ 1, corrupt) != EOF);
         fclose(corrupt);
         CHECK(cl_input_log_load(&bad, path) == CLAY_ERR_PARSE);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
     }
 
     /* Loading a bad file must be a clean, reported failure. */
@@ -68,6 +76,7 @@ static int test_input_log(void) {
         fclose(truncated);
         CHECK(cl_input_log_load(&bad, "clay_test_input_log_truncated.clayrec") ==
               CLAY_ERR_PARSE);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
     }
     return clay_test_failures;
 }

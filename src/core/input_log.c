@@ -156,16 +156,37 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         fclose(f);
         return CLAY_ERR_PARSE;
     }
+    if (count > SIZE_MAX / sizeof(cl_input_event)) {
+        fclose(f);
+        return CLAY_ERR_PARSE;
+    }
+    size_t capacity = count > 256 ? (size_t)count : 256;
+    cl_arena_frame scratch = cl_arena_temp(log->arena);
+    cl_input_event *items = (cl_input_event *)cl_arena_alloc(
+        log->arena, capacity * sizeof(cl_input_event),
+        _Alignof(cl_input_event));
     uint64_t loaded_fingerprint = 0x9E3779B97F4A7C15ULL;
     for (uint64_t i = 0; i < count; i++) {
-        cl_input_event e;
-        if (!decode_event(f, &e)) {
+        if (!decode_event(f, &items[i])) {
             fclose(f);
+            cl_arena_return(scratch);
             return CLAY_ERR_PARSE;
         }
-        loaded_fingerprint = fingerprint_event(&e, loaded_fingerprint);
-        cl_input_log_append(log, &e);
+        loaded_fingerprint = fingerprint_event(&items[i], loaded_fingerprint);
     }
     fclose(f);
-    return loaded_fingerprint == stamp ? CLAY_OK : CLAY_ERR_PARSE;
+    if (loaded_fingerprint != stamp) {
+        cl_arena_return(scratch);
+        return CLAY_ERR_PARSE;
+    }
+    if (capacity <= log->cap) {
+        for (size_t i = 0; i < (size_t)count; i++) log->items[i] = items[i];
+        cl_arena_return(scratch);
+    } else {
+        log->items = items;
+        log->cap = capacity;
+    }
+    log->count = (size_t)count;
+    log->fingerprint = loaded_fingerprint;
+    return CLAY_OK;
 }
