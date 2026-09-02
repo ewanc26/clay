@@ -28,6 +28,7 @@ struct Options {
     std::string record_to; /* .clayrec path */
     std::string replay_from; /* .clayrec path */
     std::string rules;   /* optional reactions.json; builtin default otherwise */
+    std::string actions; /* optional input-actions.json */
 };
 
 void usage() {
@@ -42,6 +43,7 @@ void usage() {
         "  --seed N             simulation seed (default 0xCAFEBABE)\n"
         "  --dump out.png       write the final framebuffer to a PNG\n"
         "  --rules file.json    load a reaction rules table\n"
+        "  --actions file.json  load an input action map\n"
         "  --record out.clayrec append this run's input transcript\n"
         "  --replay in.clayrec  feed a recorded transcript instead of live "
         "input\n",
@@ -68,6 +70,8 @@ bool parse_options(int argc, char **argv, Options &o) {
             if (!next(o.dump)) return false;
         } else if (a == "--rules") {
             if (!next(o.rules)) return false;
+        } else if (a == "--actions") {
+            if (!next(o.actions)) return false;
         } else if (a == "--width") {
             if (!next(a)) return false;
             o.width = atoi(a.c_str());
@@ -155,6 +159,14 @@ int main(int argc, char **argv) {
         return 1;
     }
     garden.seed(custom.empty() ? clay::kGardenReactions : custom);
+    if (!o.actions.empty()) {
+        std::string actions = read_file(o.actions);
+        if (actions.empty() || !rt.load_actions(actions)) {
+            std::fprintf(stderr, "clay_player: could not read actions file '%s'\n",
+                         o.actions.c_str());
+            return 1;
+        }
+    }
     garden.plant();
 
     if (o.replay) {

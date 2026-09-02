@@ -35,6 +35,7 @@ cmake --build build
 ctest --test-dir build            # unit tests, all headless
 ./build/demo/clay_player --help
 ./build/demo/clay_player --headless --frames 120 --dump scene.png
+./build/demo/clay_player --headless --actions actions.json --frames 120
 ./build/demo/clay_player --record out/take.clayrec --frames 90
 ./build/demo/clay_player --replay out/take.clayrec --dump out/replay.png
 ./build/examples/clay_host_c [optional-frame.png]
