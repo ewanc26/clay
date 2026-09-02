@@ -56,8 +56,10 @@ extern "C" {
 #define CLAY_CH_FRAME "frame"
 #define CLAY_CH_RULE "rule"
 #define CLAY_CH_WORLD "world"
-#define CLAY_CH_DEBUG "debug"
 
+#define CLAY_CH_COLLISION "collision"
+
+#define CLAY_CH_DEBUG "debug"
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

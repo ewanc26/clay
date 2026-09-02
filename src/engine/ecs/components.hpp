@@ -96,6 +96,28 @@ struct WorldTransform2D {
     float scale = 1.0f;
 };
 
+/* --- physics --- */
+
+/* Axis-aligned bounding box, centered on the entity's Transform2D position.
+ * Width and height are in canvas pixels. */
+struct BoxCollider2D {
+    float width = 1.0f;
+    float height = 1.0f;
+};
+
+/* Circle collider, centered on the entity's Transform2D position. */
+struct CircleCollider2D {
+    float radius = 1.0f;
+};
+
+/* Rigid body properties. mass == 0 means static (immovable). Non-zero mass
+ * entities respond to collision with simple bounce/reflection. */
+struct PhysicsBody2D {
+    float mass = 0.0f;       /* 0 = static, immovable                */
+    float restitution = 0.5f; /* bounciness, 0 = stop, 1 = elastic   */
+    float friction = 0.2f;   /* 0 = none, 1 = sticky                 */
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_ECS_COMPONENTS_HPP */

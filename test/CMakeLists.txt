@@ -6,6 +6,7 @@
 #
 # C++ engine tests (doctest, link clay_engine):
 #   test_ecs/test_raster/test_actions/test_command
+#   test_collision
 #   test_reactions/test_runtime   (the pipeline + replay determinism)
 
 function(clay_c_test name)
@@ -42,6 +43,7 @@ clay_cpp_test(test_scene3d)
 clay_cpp_test(test_text)
 clay_cpp_test(test_actions)
 clay_cpp_test(test_command)
+clay_cpp_test(test_collision)
 clay_cpp_test(test_reactions)
 clay_cpp_test(test_runtime)
 clay_cpp_test(test_clay_file)

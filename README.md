@@ -46,12 +46,14 @@ ctest --test-dir build            # unit tests, all headless
 
 - `src/core` — memory arenas, math, string-keyed maps, JSON, RNG, monotonic
   time, input state, event bus, input recorder/replayer.
-- `src/engine` — `Runtime` orchestration, ECS (`World`, typed `Storage<T>`),
-  input→action mapping (rebindable from JSON, with modifier support like
-  Ctrl+Z), command log with undo/redo, reactive `SystemGraph`, data-driven
-  `ReactionRule`s, and both the 2D garden rasterizer and a from-scratch
-  **3D software rasterizer** (depth buffer, flat shading, directional + point
-  lights, perspective camera).
+- `src/engine` — `Runtime` orchestration, ECS (`World`, typed `Storage<T>`
+  with runtime-registrable pools), input→action mapping (rebindable from
+  JSON, with modifier support like Ctrl+Z), command log with undo/redo,
+  reactive `SystemGraph`, data-driven `ReactionRule`s, hierarchical scene
+  graph (Parent/WorldTransform2D), 2D physics & collision detection, and
+  both the 2D garden rasterizer and a from-scratch **3D software
+  rasterizer** (depth buffer, flat shading, directional + point lights,
+  perspective camera).
 - `demo` — *The Clay Garden*: a living, fully headless scene where everything
   reacts to the player. A sculpture anchors the world; a herd of
   cursor-magnet animals drifts toward the mouse; clicks emit ripples, space

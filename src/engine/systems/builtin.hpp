@@ -78,6 +78,19 @@ class SceneGraphSystem final : public System {
     void update(Runtime &rt, double dt) override;
 };
 
+/* PhysicsSystem does brute-force O(n²) collision detection over all
+ * entities that have a Collider component. It publishes Contact2D events on
+ * the "collision" channel so reaction rules and other systems can respond.
+ * Bodies with non-zero mass get simple bounce/reflection resolution. Runs
+ * after SceneGraphSystem so world transforms are resolved. */
+class PhysicsSystem final : public System {
+  public:
+    const char *name() const override {
+        return "physics";
+    }
+    void update(Runtime &rt, double dt) override;
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_SYSTEMS_BUILTIN_HPP */

@@ -281,6 +281,10 @@ extern "C" cl_err cl_engine_runtime_install_builtin_systems(
         runtime->impl.systems().add(std::make_unique<clay::RippleSystem>());
         runtime->impl.systems().add(
             std::make_unique<clay::SceneGraphSystem>());
+        runtime->impl.systems().add(
+            std::make_unique<clay::PhysicsSystem>());
+        runtime->impl.systems().add(
+            std::make_unique<clay::SceneGraphSystem>());
     });
 }
 
