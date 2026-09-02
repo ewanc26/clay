@@ -137,6 +137,8 @@ set(CLAY_ENGINE_SOURCES
   src/engine/input_system.cpp
   src/engine/ecs/world.cpp
   src/engine/render/raster.cpp
+  src/engine/render/raster3d.cpp
+  src/engine/render/scene3d.cpp
   src/engine/render/renderer_sw.cpp
   src/engine/render/render_system.cpp
   src/engine/render/text.cpp

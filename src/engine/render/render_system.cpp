@@ -1,5 +1,6 @@
 #include "render/render_system.hpp"
 
+#include "render/scene3d.hpp"
 #include "runtime.hpp"
 
 #include <cmath>
@@ -115,6 +116,33 @@ void GardenRenderSystem::render(Runtime &rt, IRenderer &renderer) {
         Rgba over = f32c(fc.r, fc.g, fc.b, 0.0f + t);
         renderer.fill_rect(0, 0, w, h, over);
     }
+
+    renderer.end_frame();
+}
+
+/* ------------------------------------------------------ 3D scene frame */
+
+Scene3DRenderSystem::Scene3DRenderSystem(ClayScene &scene, float fov_y_rad)
+    : scene_(scene) {
+    (void)fov_y_rad; /* fov now comes from the scene camera; kept for API
+                      * compatibility with existing callers. */
+}
+
+void Scene3DRenderSystem::render(Runtime &rt, IRenderer &renderer) {
+    renderer.begin_frame(u8c(24, 26, 34, 255));
+
+    const int w = rt.width();
+    const int h = rt.height();
+    if (w <= 0 || h <= 0) {
+        renderer.end_frame();
+        return;
+    }
+
+    /* Use the scene's camera (eye/target/up + fov) if the .clay file
+     * declares one; otherwise the ClayCamera defaults apply (z=6, origin). */
+    cl_m4 view = scene_.view_matrix();
+    cl_m4 proj = scene_.proj_matrix((float)w / (float)h);
+    scene_.render(renderer, view, proj);
 
     renderer.end_frame();
 }
