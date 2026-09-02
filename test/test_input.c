@@ -58,7 +58,11 @@ static int test_input(void) {
     /* Wheel accumulates. */
     cl_input_event wheel = cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
     wheel.wheel = 1;
+    wheel.x = 210.0;
+    wheel.y = 90.0;
     CHECK(!cl_input_state_feed(&s, &wheel)); /* wheel feeds accumulate */
+    CHECK_EQ_DBL(s.cursor_x, 210.0, 1e-9);
+    CHECK_EQ_DBL(s.cursor_y, 90.0, 1e-9);
     wheel.wheel = -1;
     CHECK(!cl_input_state_feed(&s, &wheel));
 

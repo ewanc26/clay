@@ -52,6 +52,8 @@ bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
         s->pressed_frame[e->key] = s->frame;
         s->press_x[e->key] = e->x;
         s->press_y[e->key] = e->y;
+        s->cursor_x = e->x;
+        s->cursor_y = e->y;
         return true;
     case CLAY_IN_RELEASE:
         if (e->key >= CLAY_KEY_COUNT || e->key < 0) return false;
@@ -67,6 +69,8 @@ bool cl_input_state_feed(cl_input_state *s, const cl_input_event *e) {
         return false;
     case CLAY_IN_WHEEL:
         s->wheel_accum += (double)e->wheel * CLAY_WHEEL_ACCUM_FACTOR;
+        s->cursor_x = e->x;
+        s->cursor_y = e->y;
         return false;
     case CLAY_IN_FOCUS:
         s->focus = e->focus;
