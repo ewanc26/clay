@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__GNUC__) || defined(__clang__)
+#define CLAY_PRINTF_ATTR(format_index, argument_index) \
+    __attribute__((format(printf, format_index, argument_index)))
+#else
+#define CLAY_PRINTF_ATTR(format_index, argument_index)
+#endif
+
 /* ------------------------------------------------------------------ errors */
 
 typedef enum cl_err {

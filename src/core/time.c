@@ -7,7 +7,28 @@
 
 #include "time.h"
 
-#if defined(__APPLE__) || defined(__linux__) || defined(__unix__)
+#if defined(_WIN32)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+static double windows_frequency(void) {
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    return (double)frequency.QuadPart;
+}
+
+double cl_time_seconds(void) {
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / windows_frequency();
+}
+
+int64_t cl_time_millis(void) {
+    return (int64_t)(cl_time_seconds() * 1000.0);
+}
+
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
 
 #include <time.h>
 
@@ -22,9 +43,5 @@ int64_t cl_time_millis(void) {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
-
-#else
-
-#error "clay: src/core/time.c needs a monotonic clock for this platform"
 
 #endif
