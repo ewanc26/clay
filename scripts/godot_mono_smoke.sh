@@ -3,7 +3,20 @@ set -euo pipefail
 
 repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 godot_bin=${GODOT_MONO_BIN:-godot-mono}
-native_lib=${CLAY_NATIVE_LIBRARY:-"$repo_dir/build/libclay_engine.dylib"}
+if [[ -n "${CLAY_NATIVE_LIBRARY:-}" ]]; then
+    native_lib=$CLAY_NATIVE_LIBRARY
+else
+    native_lib=""
+    for candidate in \
+        "$repo_dir/build/libclay_engine.dylib" \
+        "$repo_dir/build/libclay_engine.so" \
+        "$repo_dir/build/clay_engine.dll"; do
+        if [[ -f "$candidate" ]]; then
+            native_lib=$candidate
+            break
+        fi
+    done
+fi
 stage_dir=$(mktemp -d "${TMPDIR:-/tmp}/clay-godot-smoke.XXXXXX")
 trap 'rm -rf "$stage_dir"' EXIT
 
