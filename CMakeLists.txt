@@ -33,6 +33,8 @@ option(CLAY_BUILD_TESTS "Build unit tests" ON)
 option(CLAY_BUILD_INTERACTIVE "Build the interactive `clay_player` app" ON)
 option(CLAY_BUILD_EXAMPLES "Build standalone host examples" ON)
 option(CLAY_BUILD_SHARED "Build clay_engine as a shared library for host bindings" ON)
+option(CLAY_INSTALL_GODOT_NATIVE
+       "Install the shared Clay library into the Godot native layout" ON)
 
 # ------------------------------------------------------------------ third party
 # Deliberate, minimal dependency set (see third_party/README.md):
@@ -203,3 +205,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/clayConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/clayConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
+if(CLAY_INSTALL_GODOT_NATIVE AND CLAY_BUILD_SHARED)
+  install(FILES $<TARGET_FILE:clay_engine>
+    DESTINATION integrations/godot-mono/native/${CMAKE_SYSTEM_NAME})
+endif()

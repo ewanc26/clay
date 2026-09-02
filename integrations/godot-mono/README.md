@@ -7,6 +7,11 @@ the platform's native library location, open the directory in a Godot Mono
 editor, and run the project. Configure Clay with `-DCLAY_BUILD_SHARED=ON`
 (the default) to produce that library.
 
+`cmake --install build --prefix sdk` also places the shared library at
+`sdk/integrations/godot-mono/native/<system>/`. Copy that file into the Godot
+project root (or its platform export layout) so `DllImport("clay_engine")` can
+resolve it.
+
 `managed/ClayRuntime.csproj` builds the wrapper independently as a `net8.0`
 library, which is useful for checking the binding without the Godot editor.
 `ClayGodotSample.csproj` is the Godot SDK project opened by the Mono editor.
