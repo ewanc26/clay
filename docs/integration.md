@@ -20,6 +20,9 @@ lifetime handle; the C++ headers are not a binding ABI.
 For a managed binding, include `clay/engine_c.h` and P/Invoke the
 `cl_engine_runtime_*` functions. The runtime handle is opaque, and framebuffer
 pixels are packed `0x00RRGGBB` values in row-major order.
+Before creating a runtime, hosts may compare
+`cl_engine_runtime_abi_version()` with `CLAY_ENGINE_ABI_VERSION` to detect a
+native library/binding mismatch.
 For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
 When the host viewport changes, call `cl_engine_runtime_resize` before the next

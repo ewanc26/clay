@@ -16,6 +16,8 @@ resolve it.
 `managed/ClayRuntime.csproj` builds the wrapper independently as a `net8.0`
 library, which is useful for checking the binding without the Godot editor.
 `ClayGodotSample.csproj` is the Godot SDK project opened by the Mono editor.
+`ClayRuntime` checks the exported ABI version during construction and fails
+early if the native library does not match the wrapper contract.
 Building the sample project requires the Godot .NET SDK to be installed or
 available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
