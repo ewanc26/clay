@@ -23,6 +23,9 @@ available through NuGet; the standalone wrapper project does not require it.
 `ClayKey.cs` provides typed key constants for `ClayRuntime.FeedKey` instead of
 requiring hosts to pass numeric ABI values.
 `ClayModifiers.cs` provides typed modifier flags for the `FeedKeyAt` overload.
+`ClayError` provides symbolic names for native failures reported by the
+managed facade, so invalid arguments, parse errors, I/O failures, and arena
+exhaustion are distinguishable in host exceptions.
 
 After building Clay and installing Godot Mono, the bundled smoke test stages a
 temporary project and verifies the managed build, Godot solution import, and
