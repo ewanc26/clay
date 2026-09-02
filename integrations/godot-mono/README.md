@@ -23,6 +23,8 @@ requiring hosts to pass numeric ABI values.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
+The sample also tracks the Godot viewport and recreates its RGBA upload buffer
+when the viewport changes.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
 copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
