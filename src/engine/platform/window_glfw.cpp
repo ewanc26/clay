@@ -69,11 +69,20 @@ EventQueue *queue_for(GLFWwindow *wnd) {
 void key_cb(GLFWwindow *wnd, int key, int, int action, int) {
     EventQueue *q = queue_for(wnd);
     if (!q) return;
+    if (action != GLFW_PRESS && action != GLFW_RELEASE) return;
     cl_key k = glfw_to_key(key);
     if (k == CLAY_KEY_NONE) return;
     cl_input_event e = cl_input_event_make(
         action == GLFW_PRESS ? CLAY_IN_PRESS : CLAY_IN_RELEASE, k);
     glfwGetCursorPos(wnd, &e.x, &e.y);
+    q->events.push_back(e);
+}
+
+void focus_cb(GLFWwindow *wnd, int focused) {
+    EventQueue *q = queue_for(wnd);
+    if (!q) return;
+    cl_input_event e = cl_input_event_make(CLAY_IN_FOCUS, CLAY_KEY_NONE);
+    e.focus = focused != 0;
     q->events.push_back(e);
 }
 
@@ -154,6 +163,10 @@ WindowGLFW::WindowGLFW(int canvas_width, int canvas_height, const char *title)
     glfwSetMouseButtonCallback(impl_->window, mouse_button_cb);
     glfwSetCursorPosCallback(impl_->window, cursor_cb);
     glfwSetScrollCallback(impl_->window, scroll_cb);
+    glfwSetWindowFocusCallback(impl_->window, focus_cb);
+
+    glfwGetCursorPos(impl_->window, &impl_->queue.last_cursor_x,
+                     &impl_->queue.last_cursor_y);
 
     glfwMakeContextCurrent(impl_->window);
     glfwSwapInterval(1);
