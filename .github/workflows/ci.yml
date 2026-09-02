@@ -116,6 +116,8 @@ jobs:
         run: brew install --cask godot-mono
       - name: Build Clay shared library
         run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
+      - name: Compile Clay shared library
+        run: cmake --build build -j
       - name: Run Godot Mono smoke test
         env:
           GODOT_MONO_BIN: godot-mono
