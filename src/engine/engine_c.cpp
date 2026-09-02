@@ -18,6 +18,11 @@ bool valid_color(float r, float g, float b, float a) {
     return finite(r) && finite(g) && finite(b) && finite(a);
 }
 
+bool valid_dimensions(int width, int height) {
+    return width > 0 && height > 0 &&
+           (size_t)width <= SIZE_MAX / (size_t)height;
+}
+
 template <typename Fn> cl_err guarded(Fn &&fn) {
     try {
         std::forward<Fn>(fn)();
@@ -50,7 +55,7 @@ extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
 
 extern "C" cl_engine_runtime *cl_engine_runtime_create_with_arena(
     int width, int height, uint64_t seed, size_t arena_bytes) {
-    if (width <= 0 || height <= 0 ||
+    if (!valid_dimensions(width, height) ||
         arena_bytes < CLAY_ENGINE_MIN_ARENA_BYTES)
         return nullptr;
     try {
@@ -75,7 +80,8 @@ extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
 
 extern "C" cl_err cl_engine_runtime_resize(cl_engine_runtime *runtime,
                                              int width, int height) {
-    if (!runtime || width <= 0 || height <= 0) return CLAY_ERR_INVALID_ARG;
+    if (!runtime || !valid_dimensions(width, height))
+        return CLAY_ERR_INVALID_ARG;
     try {
         return runtime->impl.resize(width, height) ? CLAY_OK
                                                    : CLAY_ERR_INVALID_ARG;
