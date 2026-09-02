@@ -67,11 +67,16 @@ static int test_input(void) {
 
     cl_input_event invalid = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
     invalid.x = __builtin_nan("");
+    CHECK(!cl_input_event_valid(&invalid));
     CHECK(!cl_input_state_feed(&s, &invalid));
     CHECK_EQ_DBL(s.cursor_x, 210.0, 1e-9);
 
     invalid = cl_input_event_make((cl_input_kind)99, CLAY_KEY_NONE);
+    CHECK(!cl_input_event_valid(&invalid));
     CHECK(!cl_input_state_feed(&s, &invalid));
+
+    cl_input_event valid = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
+    CHECK(cl_input_event_valid(&valid));
     wheel.wheel = -1;
     CHECK(!cl_input_state_feed(&s, &wheel));
 
