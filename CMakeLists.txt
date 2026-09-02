@@ -103,6 +103,10 @@ set(CLAY_CORE_SOURCES
 add_library(clay_core STATIC ${CLAY_CORE_SOURCES})
 target_include_directories(clay_core PUBLIC include)
 set_target_properties(clay_core PROPERTIES C_STANDARD 23 C_STANDARD_REQUIRED ON)
+# On glibc, math functions (sqrtf, cosf, sinf) live in libm, not libc.
+if(NOT APPLE AND NOT MSVC)
+  target_link_libraries(clay_core PUBLIC m)
+endif()
 
 # ------------------------------------------------------------------- clay_engine (C++23)
 set(CLAY_ENGINE_SOURCES
