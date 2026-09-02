@@ -8,8 +8,7 @@ command when network access is available.
 
 ## Godot Mono binding package
 
-Clay still needs a complete Godot sample project, generated key constants,
-native library packaging for each supported platform, and a CI smoke project.
-The initial managed `SafeHandle` wrapper now exists under
-`integrations/godot-mono/`; this issue remains open until those distribution
-pieces are covered.
+Clay still needs generated key constants, native library packaging for each
+supported platform, and a CI smoke project. A minimal sample project and the
+managed `SafeHandle` wrapper now exist under `integrations/godot-mono/`; this
+issue remains open until those distribution pieces are covered.

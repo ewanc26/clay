@@ -20,10 +20,8 @@ public sealed class ClayRuntime : IDisposable
     private readonly RuntimeHandle handle;
     private readonly uint[] pixelBuffer;
 
-    public ClayRuntime(int width, int height, ulong seed,
-                       string nativeLibrary = "clay_engine")
+    public ClayRuntime(int width, int height, ulong seed)
     {
-        Native.LibraryName = nativeLibrary;
         handle = Native.Create(width, height, seed);
         if (handle.IsInvalid)
             throw new InvalidOperationException("Clay runtime creation failed.");
@@ -39,6 +37,12 @@ public sealed class ClayRuntime : IDisposable
 
     public void LoadReactions(string json) => Check(
         Native.LoadReactions(handle, json ?? throw new ArgumentNullException(nameof(json))));
+
+    public void SpawnSpecies(string species, float x, float y, float r, float g,
+                             float b, float a, float life) => Check(
+        Native.SpawnSpecies(handle,
+            species ?? throw new ArgumentNullException(nameof(species)), x, y,
+            r, g, b, a, life));
 
     public void FeedKey(int key, bool pressed) => Check(
         Native.FeedKey(handle, key, pressed));
@@ -70,7 +74,6 @@ public sealed class ClayRuntime : IDisposable
 
     private static class Native
     {
-        public static string LibraryName = "clay_engine";
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create")]
         public static extern RuntimeHandle Create(int width, int height, ulong seed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_destroy")]
@@ -78,11 +81,16 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_step")]
         public static extern int Step(RuntimeHandle runtime, double dt);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_key")]
-        public static extern int FeedKey(RuntimeHandle runtime, int key, bool pressed);
+        public static extern int FeedKey(RuntimeHandle runtime, int key,
+                                         [MarshalAs(UnmanagedType.I1)] bool pressed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_motion")]
         public static extern int FeedMotion(RuntimeHandle runtime, double x, double y, double dx, double dy);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]
+        public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
+                                               float x, float y, float r, float g,
+                                               float b, float a, float life);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_install_builtin_systems")]
         public static extern int InstallBuiltinSystems(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_width")]
