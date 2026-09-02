@@ -36,6 +36,7 @@ public sealed class ClayRuntime : IDisposable
     public double CursorY => Native.CursorY(handle);
     public nuint RecordingCount => Native.RecordingCount(handle);
     public ulong RecordingFingerprint => Native.RecordingFingerprint(handle);
+    public bool IsReplaying => Native.IsReplaying(handle);
     public bool IsFocused => Native.IsFocused(handle);
 
     public void InstallBuiltinSystems() => Check(
@@ -188,6 +189,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_replaying")]
         public static extern void SetReplaying(RuntimeHandle runtime,
                                                 [MarshalAs(UnmanagedType.I1)] bool replaying);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_is_replaying")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool IsReplaying(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_recording_count")]
         public static extern nuint RecordingCount(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_recording_fingerprint")]

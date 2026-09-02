@@ -205,6 +205,11 @@ extern "C" void cl_engine_runtime_set_replaying(cl_engine_runtime *runtime,
     if (runtime) runtime->impl.set_replaying(replaying);
 }
 
+extern "C" bool cl_engine_runtime_is_replaying(
+    const cl_engine_runtime *runtime) {
+    return runtime && runtime->impl.replaying();
+}
+
 extern "C" size_t cl_engine_runtime_recording_count(
     const cl_engine_runtime *runtime) {
     return runtime ? cl_input_log_count(&runtime->impl.input_log()) : 0;

@@ -38,7 +38,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_load_recording(runtime, "/no/such/file.clayrec") ==
           CLAY_ERR_IO);
     cl_engine_runtime_set_replaying(runtime, true);
+    CHECK(cl_engine_runtime_is_replaying(runtime));
     cl_engine_runtime_set_replaying(runtime, false);
+    CHECK(!cl_engine_runtime_is_replaying(runtime));
 
     cl_engine_runtime *recorded = cl_engine_runtime_create(16, 16, 42);
     REQUIRE(recorded != nullptr);
@@ -156,6 +158,7 @@ TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_cursor_y(nullptr) == doctest::Approx(0.0));
     CHECK(!cl_engine_runtime_is_key_down(nullptr, CLAY_KEY_SPACE));
     CHECK(!cl_engine_runtime_is_focused(nullptr));
+    CHECK(!cl_engine_runtime_is_replaying(nullptr));
     CHECK(cl_engine_runtime_recording_count(nullptr) == 0);
     CHECK(cl_engine_runtime_recording_fingerprint(nullptr) == 0);
 }
