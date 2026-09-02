@@ -288,3 +288,25 @@ TEST_CASE("runtime: rejects unsafe framebuffer dimensions before allocation") {
     CHECK_THROWS_AS(clay::Runtime(8193, 8193, 1), std::invalid_argument);
     CHECK_THROWS_AS(clay::Runtime(0, 10, 1), std::invalid_argument);
 }
+
+TEST_CASE("runtime: a custom render system replaces the default draw pass") {
+    class BlankRenderSystem final : public RenderSystem {
+      public:
+        int calls = 0;
+        void render(Runtime &, IRenderer &) override {
+            calls++;
+        }
+    };
+
+    Runtime rt(64, 64, 99);
+    BlankRenderSystem blank;
+    rt.set_render_system(&blank);
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.render();
+    (void)rt.update(0.0);
+
+    CHECK(blank.calls == 1);
+    CHECK(fnv1a64(rt.framebuffer()) ==
+           fnv1a64(Runtime(64, 64, 99).framebuffer()));
+}
