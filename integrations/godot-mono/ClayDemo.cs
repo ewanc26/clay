@@ -15,6 +15,7 @@ public partial class ClayDemo : Node2D
         runtime = new Clay.ClayRuntime(640, 480, 0xC0FFEE);
         runtime.InstallBuiltinSystems();
         runtime.LoadReactions("{\"rules\": []}");
+        runtime.FeedFocus(true);
         runtime.FeedMotion(320, 240, 0, 0);
         runtime.SpawnSpecies("animal", 320, 240, 0.7f, 0.9f, 0.6f, 1, 60);
 
