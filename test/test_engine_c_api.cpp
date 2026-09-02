@@ -166,6 +166,7 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
 TEST_CASE("C ABI rejects invalid construction") {
     CHECK(cl_engine_runtime_create(0, 10, 1) == nullptr);
     CHECK(cl_engine_runtime_create(10, 0, 1) == nullptr);
+    CHECK(cl_engine_runtime_create_with_arena(10, 10, 1, 0) == nullptr);
     CHECK(cl_engine_runtime_create(std::numeric_limits<int>::max(),
                                    std::numeric_limits<int>::max(), 1) ==
           nullptr);
