@@ -14,7 +14,8 @@ struct Rgba {
 };
 
 static inline uint32_t rgba_to_pixel(Rgba c) {
-    return ((uint32_t)c.r << 16) | ((uint32_t)c.g << 8) | (uint32_t)c.b;
+    return ((uint32_t)c.a << 24) | ((uint32_t)c.r << 16) |
+           ((uint32_t)c.g << 8) | (uint32_t)c.b;
 }
 
 /* A finished, engine-owned frame: RGBA8, top-left origin, row-major. This is

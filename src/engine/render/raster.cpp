@@ -18,17 +18,29 @@ inline bool in_bounds(int width, int height, int x, int y) {
 } // namespace
 
 Pixel px(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    /* Alpha is reserved (not stored): keep the high byte clear. */
-    (void)a;
-    return ((Pixel)r << 16) | ((Pixel)g << 8) | (Pixel)b;
+    return ((Pixel)a << 24) | ((Pixel)r << 16) | ((Pixel)g << 8) | (Pixel)b;
 }
 
-/* Pixel is opaque 0x00RRGGBB — no alpha channel is stored (see raster.hpp).
- * "Blending" is therefore a plain overwrite: the incoming colour fully covers
- * the destination. */
+/* Src-over compositing: result = src + dst * (1 - src_alpha).
+ * Both channels are in [0,255]; the multiply by src_a/255 and
+ * dst_a/255 keeps everything in integer math with rounding. */
 Pixel blend(Pixel dst, Pixel src) {
-    (void)dst;
-    return src;
+    uint8_t sa = (uint8_t)(src >> 24);
+    if (sa == 0) return dst;
+    if (sa == 255) return src;
+    uint8_t da = (uint8_t)(dst >> 24);
+    uint32_t a = 255 - sa;
+    uint32_t dr = (uint8_t)(dst >> 16);
+    uint32_t dg = (uint8_t)(dst >> 8);
+    uint32_t db = (uint8_t)dst;
+    uint32_t sr = (uint8_t)(src >> 16);
+    uint32_t sg = (uint8_t)(src >> 8);
+    uint32_t sb = (uint8_t)src;
+    uint32_t rr = (sr * sa + dr * a * da / 255) / 255;
+    uint32_t rg = (sg * sa + dg * a * da / 255) / 255;
+    uint32_t rb = (sb * sa + db * a * da / 255) / 255;
+    uint32_t ra = sa + (da * a / 255);
+    return px((uint8_t)rr, (uint8_t)rg, (uint8_t)rb, (uint8_t)ra);
 }
 
 void blend_pixel(void *buf, int width, int height, int x, int y, Pixel c) {

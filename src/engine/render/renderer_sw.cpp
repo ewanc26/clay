@@ -32,7 +32,7 @@ const uint8_t *Framebuffer::as_rgba() const {
         rgba_cache[i * 4u + 0u] = (uint8_t)(pixel >> 16);
         rgba_cache[i * 4u + 1u] = (uint8_t)(pixel >> 8);
         rgba_cache[i * 4u + 2u] = (uint8_t)pixel;
-        rgba_cache[i * 4u + 3u] = 255;
+        rgba_cache[i * 4u + 3u] = (uint8_t)(pixel >> 24);
     }
     return rgba_cache.data();
 }

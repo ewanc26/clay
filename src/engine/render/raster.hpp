@@ -6,10 +6,10 @@
 namespace clay::raster {
 
 /* The from-scratch software rasterizer: 32-bit RGBA pixels in a row-major
- * 4-byte/pixel buffer, (0,0) top-left, +x right, +y down. Opaque compositing
- * (src-over alpha onto the destination). Conventions and edge rules are
- * documented per primitive; none of them depend on GPU state. */
-using Pixel = uint32_t; /* 0x00RRGGBB (alpha channel reserved) */
+ * 4-byte/pixel buffer, (0,0) top-left, +x right, +y down. Src-over alpha
+ * compositing onto the destination. Conventions and edge rules are documented
+ * per primitive; none of them depend on GPU state. */
+using Pixel = uint32_t; /* 0xAARRGGBB */
 
 Pixel px(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 Pixel blend(Pixel dst, Pixel src);
