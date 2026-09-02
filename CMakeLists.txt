@@ -128,6 +128,7 @@ set(CLAY_ENGINE_SOURCES
   src/engine/ecs/world.cpp
   src/engine/render/raster.cpp
   src/engine/render/renderer_sw.cpp
+  src/engine/render/text.cpp
   src/engine/systems/system_graph.cpp
   src/engine/systems/reaction.cpp
   src/engine/systems/builtin.cpp
