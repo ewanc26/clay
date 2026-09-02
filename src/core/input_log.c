@@ -64,16 +64,16 @@ uint64_t cl_input_log_fingerprint(const cl_input_log *log) {
     return log->fingerprint;
 }
 
-static void write_u32(FILE *f, uint32_t v) {
-    fwrite(&v, sizeof(v), 1, f);
+static bool write_u32(FILE *f, uint32_t v) {
+    return fwrite(&v, sizeof(v), 1, f) == 1;
 }
 
-static void write_u64(FILE *f, uint64_t v) {
-    fwrite(&v, sizeof(v), 1, f);
+static bool write_u64(FILE *f, uint64_t v) {
+    return fwrite(&v, sizeof(v), 1, f) == 1;
 }
 
-static void write_f64(FILE *f, double v) {
-    fwrite(&v, sizeof(v), 1, f);
+static bool write_f64(FILE *f, double v) {
+    return fwrite(&v, sizeof(v), 1, f) == 1;
 }
 
 static bool read_u32(FILE *f, uint32_t *out) {
@@ -88,18 +88,12 @@ static bool read_f64(FILE *f, double *out) {
     return fread(out, sizeof(*out), 1, f) == 1;
 }
 
-static void encode_event(FILE *f, const cl_input_event *e) {
-    write_u32(f, e->frame);
-    write_f64(f, e->time);
-    write_u32(f, (uint32_t)e->type);
-    write_u32(f, (uint32_t)e->key);
-    write_u32(f, (uint32_t)e->mods);
-    write_f64(f, e->x);
-    write_f64(f, e->y);
-    write_f64(f, e->dx);
-    write_f64(f, e->dy);
-    write_f64(f, (double)e->wheel);
-    write_u32(f, e->focus ? 1u : 0u);
+static bool encode_event(FILE *f, const cl_input_event *e) {
+    return write_u32(f, e->frame) && write_f64(f, e->time) &&
+           write_u32(f, (uint32_t)e->type) && write_u32(f, (uint32_t)e->key) &&
+           write_u32(f, (uint32_t)e->mods) && write_f64(f, e->x) &&
+           write_f64(f, e->y) && write_f64(f, e->dx) && write_f64(f, e->dy) &&
+           write_f64(f, (double)e->wheel) && write_u32(f, e->focus ? 1u : 0u);
 }
 
 static bool decode_event(FILE *f, cl_input_event *e) {
@@ -127,13 +121,12 @@ static bool decode_event(FILE *f, cl_input_event *e) {
 cl_err cl_input_log_save(cl_input_log *log, const char *path) {
     FILE *f = fopen(path, "wb");
     if (!f) return CLAY_ERR_IO;
-    write_u64(f, CLAYREC_MAGIC);
-    write_u32(f, CLAYREC_VERSION);
-    write_u64(f, log->count);
-    write_u64(f, log->fingerprint);
-    for (size_t i = 0; i < log->count; i++) encode_event(f, &log->items[i]);
-    fclose(f);
-    return CLAY_OK;
+    bool ok = write_u64(f, CLAYREC_MAGIC) && write_u32(f, CLAYREC_VERSION) &&
+              write_u64(f, log->count) && write_u64(f, log->fingerprint);
+    for (size_t i = 0; ok && i < log->count; i++)
+        ok = encode_event(f, &log->items[i]);
+    if (fclose(f) != 0) ok = false;
+    return ok ? CLAY_OK : CLAY_ERR_IO;
 }
 
 cl_err cl_input_log_load(cl_input_log *log, const char *path) {
