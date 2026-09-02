@@ -194,6 +194,8 @@ install(FILES include/clay/clay.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
 install(FILES include/clay/engine_c.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
+install(FILES include/clay/engine.hpp
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
 install(DIRECTORY src/core/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay/core
   FILES_MATCHING PATTERN "*.h")
