@@ -22,6 +22,10 @@ void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
 cl_err cl_engine_runtime_step(cl_engine_runtime *runtime, double dt_seconds);
 cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
                               const cl_input_event *event);
+cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime, cl_key key,
+                                  bool pressed);
+cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime, double x,
+                                     double y, double dx, double dy);
 cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                         const char *json);
 cl_err cl_engine_runtime_spawn_species(cl_engine_runtime *runtime,

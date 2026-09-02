@@ -40,6 +40,22 @@ extern "C" cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
     return CLAY_OK;
 }
 
+extern "C" cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
+                                               cl_key key, bool pressed) {
+    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    runtime->impl.feed(pressed ? cl_input_event_make(CLAY_IN_PRESS, key)
+                                : cl_input_event_make(CLAY_IN_RELEASE, key));
+    return CLAY_OK;
+}
+
+extern "C" cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
+                                                  double x, double y, double dx,
+                                                  double dy) {
+    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    runtime->impl.feed_motion(x, y, dx, dy);
+    return CLAY_OK;
+}
+
 extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                      const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;

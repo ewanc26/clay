@@ -23,6 +23,8 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_OK);
     CHECK(cl_engine_runtime_spawn_ripple(runtime, 8, 9, 20, 1, 0.5f, 0.2f,
                                          1) == CLAY_OK);
+    CHECK(cl_engine_runtime_feed_key(runtime, CLAY_KEY_SPACE, true) == CLAY_OK);
+    CHECK(cl_engine_runtime_feed_motion(runtime, 8, 9, 1, 2) == CLAY_OK);
     size_t count = 0;
     const uint32_t *pixels = cl_engine_runtime_pixels(runtime, &count);
     CHECK(pixels != nullptr);
