@@ -66,7 +66,14 @@ extern "C" cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
 extern "C" cl_err cl_engine_runtime_resize(cl_engine_runtime *runtime,
                                              int width, int height) {
     if (!runtime || width <= 0 || height <= 0) return CLAY_ERR_INVALID_ARG;
-    return guarded([&] { runtime->impl.resize(width, height); });
+    try {
+        return runtime->impl.resize(width, height) ? CLAY_OK
+                                                   : CLAY_ERR_INVALID_ARG;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_INVALID_ARG;
+    }
 }
 
 extern "C" cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
