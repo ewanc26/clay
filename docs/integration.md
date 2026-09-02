@@ -35,6 +35,8 @@ Before creating a runtime, hosts may compare
 native library/binding mismatch.
 For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
+The pixel accessors may be called with a null count pointer when the host only
+needs the frame pointer; they return null for a null runtime.
 When the host viewport changes, call `cl_engine_runtime_resize` before the next
 step; the framebuffer dimensions and pixel count then reflect the new size.
 Hosts can query authoritative `frame`, `sim_time`, scaled simulation delta, and
