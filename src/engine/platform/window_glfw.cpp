@@ -42,9 +42,24 @@ cl_key glfw_to_key(int key) {
     case GLFW_KEY_LEFT: return CLAY_KEY_ARROW_LEFT;
     case GLFW_KEY_RIGHT: return CLAY_KEY_ARROW_RIGHT;
     case GLFW_KEY_LEFT_SHIFT: return CLAY_KEY_LEFT_SHIFT;
+    case GLFW_KEY_RIGHT_SHIFT: return CLAY_KEY_LEFT_SHIFT;
     case GLFW_KEY_LEFT_CONTROL: return CLAY_KEY_LEFT_CTRL;
+    case GLFW_KEY_RIGHT_CONTROL: return CLAY_KEY_LEFT_CTRL;
     case GLFW_KEY_LEFT_ALT: return CLAY_KEY_LEFT_ALT;
+    case GLFW_KEY_RIGHT_ALT: return CLAY_KEY_LEFT_ALT;
     case GLFW_KEY_LEFT_SUPER: return CLAY_KEY_LEFT_META;
+    case GLFW_KEY_RIGHT_SUPER: return CLAY_KEY_LEFT_META;
+    case GLFW_KEY_APOSTROPHE: return CLAY_KEY_QUOTE;
+    case GLFW_KEY_COMMA: return CLAY_KEY_COMMA;
+    case GLFW_KEY_PERIOD: return CLAY_KEY_PERIOD;
+    case GLFW_KEY_SLASH: return CLAY_KEY_SLASH;
+    case GLFW_KEY_SEMICOLON: return CLAY_KEY_SEMICOLON;
+    case GLFW_KEY_MINUS: return CLAY_KEY_MINUS;
+    case GLFW_KEY_EQUAL: return CLAY_KEY_EQUALS;
+    case GLFW_KEY_LEFT_BRACKET: return CLAY_KEY_BRACKET_LEFT;
+    case GLFW_KEY_RIGHT_BRACKET: return CLAY_KEY_BRACKET_RIGHT;
+    case GLFW_KEY_BACKSLASH: return CLAY_KEY_BACKSLASH;
+    case GLFW_KEY_GRAVE_ACCENT: return CLAY_KEY_GRAVE;
     default: break;
     }
     if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
