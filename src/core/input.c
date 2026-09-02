@@ -52,6 +52,38 @@ cl_key cl_key_from_str(cl_str s) {
     return CLAY_KEY_NONE;
 }
 
+const char *cl_mods_name(cl_mods mods) {
+    if (mods == CLAY_MOD_NONE) return "NONE";
+    return "?";
+}
+
+cl_mods cl_mods_from_str(cl_str s) {
+    cl_mods result = CLAY_MOD_NONE;
+    size_t i = 0;
+    while (i < s.len) {
+        size_t start = i;
+        while (i < s.len && s.data[i] != '+') i++;
+        /* trim leading/trailing whitespace from the token */
+        const char *p = s.data + start;
+        size_t plen = i - start;
+        while (plen > 0 && (p[0] == ' ' || p[0] == '\t')) { p++; plen--; }
+        while (plen > 0 && (p[plen - 1] == ' ' || p[plen - 1] == '\t')) plen--;
+        cl_str part = {p, plen};
+        cl_mods bit = CLAY_MOD_NONE;
+        if (cl_str_eq(part, cl_str_c("SHIFT")))
+            bit = CLAY_MOD_SHIFT;
+        else if (cl_str_eq(part, cl_str_c("CTRL")))
+            bit = CLAY_MOD_CTRL;
+        else if (cl_str_eq(part, cl_str_c("ALT")))
+            bit = CLAY_MOD_ALT;
+        else if (cl_str_eq(part, cl_str_c("META")))
+            bit = CLAY_MOD_META;
+        result = (cl_mods)(result | bit);
+        if (i < s.len) i++; /* skip '+' */
+    }
+    return result;
+}
+
 void cl_input_state_begin(cl_input_state *s, uint32_t frame, double time) {
     s->frame = frame;
     s->time = time;
