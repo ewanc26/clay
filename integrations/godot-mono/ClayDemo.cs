@@ -6,7 +6,6 @@ public partial class ClayDemo : Node2D
     private Clay.ClayRuntime? runtime;
     private ImageTexture? texture;
     private Image? image;
-    private uint[]? pixels;
     private byte[]? rgba;
 
     public override void _Ready()
@@ -19,7 +18,6 @@ public partial class ClayDemo : Node2D
 
         image = Image.Create(640, 480, false, Image.Format.Rgba8);
         texture = ImageTexture.CreateFromImage(image);
-        pixels = new uint[640 * 480];
         rgba = new byte[640 * 480 * 4];
     }
 
@@ -31,18 +29,8 @@ public partial class ClayDemo : Node2D
         runtime.FeedMotion(GetGlobalMousePosition().X,
                            GetGlobalMousePosition().Y, 0, 0);
         runtime.Step(delta);
-        runtime.CopyPixelsTo(pixels);
-
         if (rgba == null) return;
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            uint p = pixels[i];
-            int o = i * 4;
-            rgba[o] = (byte)(p >> 16);
-            rgba[o + 1] = (byte)(p >> 8);
-            rgba[o + 2] = (byte)p;
-            rgba[o + 3] = 255;
-        }
+        runtime.CopyRgbaTo(rgba);
         image.SetData(640, 480, false, Image.Format.Rgba8, rgba);
         texture.SetImage(image);
         QueueRedraw();

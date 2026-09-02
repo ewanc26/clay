@@ -33,6 +33,10 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     const uint32_t *pixels = cl_engine_runtime_pixels(runtime, &count);
     CHECK(pixels != nullptr);
     CHECK(count == 32u * 24u);
+    size_t rgba_bytes = 0;
+    const uint8_t *rgba = cl_engine_runtime_pixels_rgba(runtime, &rgba_bytes);
+    CHECK(rgba != nullptr);
+    CHECK(rgba_bytes == 32u * 24u * 4u);
     CHECK(cl_engine_runtime_frame(runtime) == 1);
 
     CHECK(cl_engine_runtime_feed(nullptr, nullptr) == CLAY_ERR_INVALID_ARG);

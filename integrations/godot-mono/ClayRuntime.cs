@@ -82,6 +82,19 @@ public sealed class ClayRuntime : IDisposable
         CopyPixels().CopyTo(destination);
     }
 
+    public void CopyRgbaTo(byte[] destination)
+    {
+        if (destination == null) throw new ArgumentNullException(nameof(destination));
+        int expected = checked(pixelBuffer.Length * 4);
+        if (destination.Length != expected)
+            throw new ArgumentException("Destination has the wrong byte count.",
+                                        nameof(destination));
+        IntPtr pixels = Native.PixelsRgba(handle, out nuint count);
+        if (pixels == IntPtr.Zero || count != (nuint)expected)
+            throw new InvalidOperationException("Clay framebuffer is unavailable.");
+        Marshal.Copy(pixels, destination, 0, destination.Length);
+    }
+
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)
@@ -124,5 +137,7 @@ public sealed class ClayRuntime : IDisposable
         public static extern ulong Frame(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels")]
         public static extern IntPtr Pixels(RuntimeHandle runtime, out nuint count);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels_rgba")]
+        public static extern IntPtr PixelsRgba(RuntimeHandle runtime, out nuint byteCount);
     }
 }

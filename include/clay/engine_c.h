@@ -64,6 +64,10 @@ CLAY_API uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
  * valid until the next step or destruction of the runtime. */
 CLAY_API const uint32_t *cl_engine_runtime_pixels(
     const cl_engine_runtime *runtime, size_t *count);
+/* RGBA8 bytes, row-major, top-left origin. The pointer remains valid until
+ * the next step or destruction of the runtime. */
+CLAY_API const uint8_t *cl_engine_runtime_pixels_rgba(
+    const cl_engine_runtime *runtime, size_t *byte_count);
 
 #ifdef __cplusplus
 }

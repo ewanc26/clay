@@ -160,3 +160,12 @@ extern "C" const uint32_t *cl_engine_runtime_pixels(
     if (count) *count = pixels.size();
     return pixels.data();
 }
+
+extern "C" const uint8_t *cl_engine_runtime_pixels_rgba(
+    const cl_engine_runtime *runtime, size_t *byte_count) {
+    if (byte_count) *byte_count = 0;
+    if (!runtime) return nullptr;
+    const auto &framebuffer = runtime->impl.framebuffer();
+    if (byte_count) *byte_count = framebuffer.pixels.size() * sizeof(uint32_t);
+    return framebuffer.as_rgba();
+}
