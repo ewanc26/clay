@@ -55,6 +55,8 @@ public sealed class ClayRuntime : IDisposable
 
     public void FeedKey(ClayKey key, bool pressed) => FeedKey((int)key, pressed);
 
+    public bool IsKeyDown(ClayKey key) => Native.IsKeyDown(handle, (int)key);
+
     public void FeedMotion(double x, double y, double dx, double dy) => Check(
         Native.FeedMotion(handle, x, y, dx, dy));
 
@@ -131,6 +133,9 @@ public sealed class ClayRuntime : IDisposable
         public static extern int FeedWheel(RuntimeHandle runtime, double x, double y, int wheel);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_focus")]
         public static extern int FeedFocus(RuntimeHandle runtime, [MarshalAs(UnmanagedType.I1)] bool focused);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_is_key_down")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool IsKeyDown(RuntimeHandle runtime, int key);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_time_scale")]
         public static extern void SetTimeScale(RuntimeHandle runtime, double scale);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]
