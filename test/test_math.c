@@ -31,6 +31,19 @@ static int test_math(void) {
     cl_v2 perp = cl_v2_perp(cl_v2_make(1.0f, 0.0f));
     CHECK_EQ_DBL(perp.x, 0.0, 1e-5);
     CHECK_EQ_DBL(perp.y, 1.0, 1e-5);
+
+    /* Perspective: point on the -Z axis in front of the camera. */
+    cl_m4 proj = cl_m4_perspective(0.9f, 1.0f, 0.1f, 10.0f);
+    cl_v4 c = cl_m4_mul_vec4(proj, cl_v4_make(0.0f, 0.0f, -2.0f, 1.0f));
+    CHECK_EQ_DBL(c.w, 2.0, 1e-4); /* w' = -z for -Z forward */
+    CHECK_EQ_DBL(c.x / c.w, 0.0, 1e-4);
+    CHECK_EQ_DBL(c.y / c.w, 0.0, 1e-4);
+    CHECK(c.z / c.w > 0.5f); /* NDC z positive, inside [-1,1] */
+
+    /* Off-axis point should land off-center under projection. */
+    cl_v4 s = cl_m4_mul_vec4(proj, cl_v4_make(0.5f, 0.0f, -2.0f, 1.0f));
+    CHECK(s.x / s.w > 0.0f);
+    CHECK(s.x / s.w < 1.0f);
     return clay_test_failures;
 }
 

@@ -100,12 +100,18 @@ static inline cl_m4 cl_m4_identity(void) {
 cl_m4 cl_m4_mul(cl_m4 a, cl_m4 b);
 cl_m4 cl_m4_ortho(float left, float right, float bottom, float top, float znear,
                   float zfar);
+cl_m4 cl_m4_perspective(float vertical_fov_radians, float aspect, float znear,
+                        float zfar);
 cl_m4 cl_m4_translate(float x, float y, float z);
 cl_m4 cl_m4_scale(float x, float y, float z);
+cl_m4 cl_m4_rotate_x(float radians);
+cl_m4 cl_m4_rotate_y(float radians);
 cl_m4 cl_m4_rotate_z(float radians);
 cl_v3 cl_m4_mul_vec3(cl_m4 m, cl_v3 v);
+cl_v4 cl_m4_mul_vec4(cl_m4 m, cl_v4 v);
 
-/* Deterministic hash helpers (splitmix64-style) shared by rng and containers. */
+/* Deterministic hash helpers (splitmix64-style) shared by rng and containers.
+ */
 uint64_t cl_hash_u64(uint64_t x);
 uint64_t cl_hash_bytes(const void *data, size_t len, uint64_t seed);
 uint64_t cl_hash_str(cl_str s, uint64_t seed);
