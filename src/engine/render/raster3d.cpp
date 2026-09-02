@@ -11,71 +11,93 @@ namespace {
 
 constexpr float kNearEps = 1e-6f;
 
-/* ---------- homogeneous near-plane clipping (in clip space) ----------
- * The view space convention used here (like OpenGL) is -Z forward: after
- * `view`, a point in front of the camera has w = -z > 0. We clip each triangle
- * against w > kNearEps so no vertex behind/at the eye passes to the divide
- * (which would otherwise wrap around at infinity). Triangulates into 0, 1, or
- * 2 output triangles. */
+/* ---------- homogeneous frustum clipping (in clip space) ----------
+ * Clips a convex polygon against the six frustum planes sequentially. Each
+ * plane is defined by a signed distance function d(v) where inside means
+ * d >= 0. The near plane uses w > kNearEps to avoid the divide-by-zero; the
+ * other five planes use the standard NDC [-1,1] inequalities (x >= -w, x <= w,
+ * y >= -w, y <= w, z >= -w, z <= w). */
 
 struct ClipVertex {
     cl_v4 clip;  /* homogeneous clip-space position */
     cl_v3 world; /* world-space for the normal basis */
 };
 
-static int clip_triangle(const ClipVertex in[3], ClipVertex out[2][3],
-                         int *out_count_second) {
-    float w[3] = {in[0].clip.w, in[1].clip.w, in[2].clip.w};
-    int inside_count = 0;
-    for (int i = 0; i < 3; i++) {
-        if (w[i] > kNearEps) inside_count++;
-    }
-    if (inside_count == 0) return 0; /* fully clipped */
-    if (inside_count == 3) {         /* fully inside: no clipping needed */
-        for (int i = 0; i < 3; i++) out[0][i] = in[i];
-        *out_count_second = 0;
-        return 1;
-    }
-
-    /* One or two vertices inside; clip edges against w == kNearEps. */
-    ClipVertex gathered[4];
-    int g = 0;
-    for (int i = 0; i < 3; i++) {
+/* Clip a convex polygon (up to 9 vertices after all planes) against one
+ * plane. `dist` returns the signed distance: inside when >= 0. */
+static int clip_plane(const ClipVertex *in, int n,
+                      float (*dist)(const cl_v4 &),
+                      ClipVertex *out) {
+    int m = 0;
+    for (int i = 0; i < n; i++) {
         const ClipVertex &a = in[i];
-        const ClipVertex &b = in[(i + 1) % 3];
-        float wa = a.clip.w;
-        float wb = b.clip.w;
-        bool a_in = wa > kNearEps;
-        bool b_in = wb > kNearEps;
-        if (a_in) gathered[g++] = a;
+        const ClipVertex &b = in[(i + 1) % n];
+        float da = dist(a.clip);
+        float db = dist(b.clip);
+        bool a_in = da >= 0.0f;
+        bool b_in = db >= 0.0f;
+        if (a_in) {
+            if (m < 9) out[m++] = a;
+        }
         if (a_in != b_in) {
-            float t = (kNearEps - wa) / (wb - wa);
-            ClipVertex m;
-            m.clip.x = a.clip.x + (b.clip.x - a.clip.x) * t;
-            m.clip.y = a.clip.y + (b.clip.y - a.clip.y) * t;
-            m.clip.z = a.clip.z + (b.clip.z - a.clip.z) * t;
-            m.clip.w = kNearEps;
-            m.world = cl_v3_make(a.world.x + (b.world.x - a.world.x) * t,
-                                 a.world.y + (b.world.y - a.world.y) * t,
-                                 a.world.z + (b.world.z - a.world.z) * t);
-            gathered[g++] = m;
+            float t = da / (da - db);
+            ClipVertex v;
+            v.clip.x = a.clip.x + (b.clip.x - a.clip.x) * t;
+            v.clip.y = a.clip.y + (b.clip.y - a.clip.y) * t;
+            v.clip.z = a.clip.z + (b.clip.z - a.clip.z) * t;
+            v.clip.w = a.clip.w + (b.clip.w - a.clip.w) * t;
+            v.world = cl_v3_make(
+                a.world.x + (b.world.x - a.world.x) * t,
+                a.world.y + (b.world.y - a.world.y) * t,
+                a.world.z + (b.world.z - a.world.z) * t);
+            if (m < 9) out[m++] = v;
         }
     }
+    return m;
+}
 
-    /* Fan the gathered polygon (convex, 3 or 4 vertices). */
-    if (g < 3) return 0;
-    out[0][0] = gathered[0];
-    out[0][1] = gathered[1];
-    out[0][2] = gathered[2];
-    if (g == 4) {
-        out[1][0] = gathered[0];
-        out[1][1] = gathered[2];
-        out[1][2] = gathered[3];
-        *out_count_second = 1;
-    } else {
-        *out_count_second = 0;
+static float dist_near(const cl_v4 &v)  { return v.w - kNearEps; }
+static float dist_left(const cl_v4 &v)  { return v.w + v.x; }
+static float dist_right(const cl_v4 &v) { return v.w - v.x; }
+static float dist_bottom(const cl_v4 &v) { return v.w + v.y; }
+static float dist_top(const cl_v4 &v)   { return v.w - v.y; }
+static float dist_far(const cl_v4 &v)   { return v.w + v.z; }
+
+/* Clip a triangle against all six frustum planes. Returns the number of
+ * output triangles (0 = fully clipped) and fills out[] with triangle fans. */
+static int clip_frustum(const ClipVertex in[3], ClipVertex out[8][3]) {
+    ClipVertex buf_a[9], buf_b[9];
+    int na, nb;
+
+    /* Start with the input triangle. */
+    buf_a[0] = in[0];
+    buf_a[1] = in[1];
+    buf_a[2] = in[2];
+    na = 3;
+
+    /* Chain through all six planes: near, left, right, bottom, top, far. */
+    using DistFn = float (*)(const cl_v4 &);
+    DistFn planes[] = {dist_near, dist_left, dist_right,
+                       dist_bottom, dist_top, dist_far};
+
+    for (int p = 0; p < 6; p++) {
+        na = clip_plane(buf_a, na, planes[p], buf_b);
+        /* Swap buffers: next plane reads from buf_b, writes to buf_a. */
+        std::swap(buf_a, buf_b);
+        /* nb is unused but keeps the swap symmetric. */
+        (void)nb;
+        if (na < 3) return 0;
     }
-    return 1;
+
+    /* Fan-triangulate the convex polygon in buf_a. */
+    int count = 0;
+    for (int i = 1; i + 1 < na && count < 8; i++) {
+        out[count][0] = buf_a[0];
+        out[count][1] = buf_a[i];
+        out[count][2] = buf_a[i + 1];
+        count++;
+    }
+    return count;
 }
 
 static inline int32_t round_to_screen(float ndc, int size) {
@@ -236,11 +258,10 @@ Mesh3DStats Renderer3D::draw_mesh(uint32_t *dst, int dst_pitch,
         cv[1].world = w1;
         cv[2].world = w2;
 
-        ClipVertex clipped[2][3];
-        int second = 0;
-        int primary = clip_triangle(cv, clipped, &second);
+        ClipVertex clipped[8][3];
+        int clip_count = clip_frustum(cv, clipped);
 
-        for (int piece = 0; piece < (primary + second); piece++) {
+        for (int piece = 0; piece < clip_count; piece++) {
             ClipVertex *tri = clipped[piece];
             cl_v4 c0 = tri[0].clip;
             cl_v4 c1 = tri[1].clip;
