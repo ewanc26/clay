@@ -55,6 +55,13 @@ ctest --test-dir build            # unit tests, all headless
   record.
 - `examples` — standalone C host using only the stable `engine_c.h` ABI.
 
+## Host integrations
+
+For standalone C/C++ hosts, see [the integration guide](docs/integration.md).
+For Godot Mono, see [`integrations/godot-mono`](integrations/godot-mono/README.md);
+the CMake install also packages the managed sample and platform native
+library layout.
+
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE).
