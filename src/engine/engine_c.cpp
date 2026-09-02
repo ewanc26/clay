@@ -50,6 +50,10 @@ struct cl_engine_runtime {
         : impl(width, height, seed) {}
 };
 
+extern "C" uint32_t cl_engine_runtime_abi_version(void) {
+    return CLAY_ENGINE_ABI_VERSION;
+}
+
 extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                           uint64_t seed) {
     if (width <= 0 || height <= 0) return nullptr;

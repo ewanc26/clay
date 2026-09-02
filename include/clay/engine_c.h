@@ -22,6 +22,11 @@ extern "C" {
  * integrations such as Godot Mono; callers must not inspect its contents. */
 typedef struct cl_engine_runtime cl_engine_runtime;
 
+/* Increment when the host-facing ABI changes incompatibly. */
+#define CLAY_ENGINE_ABI_VERSION 1u
+
+CLAY_API uint32_t cl_engine_runtime_abi_version(void);
+
 CLAY_API cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                       uint64_t seed);
 CLAY_API void cl_engine_runtime_destroy(cl_engine_runtime *runtime);

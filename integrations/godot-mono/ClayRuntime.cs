@@ -6,6 +6,8 @@ namespace Clay;
 /// <summary>Managed owner for a native Clay runtime.</summary>
 public sealed class ClayRuntime : IDisposable
 {
+    public const uint AbiVersion = 1;
+
     private sealed class RuntimeHandle : SafeHandle
     {
         private RuntimeHandle() : base(IntPtr.Zero, true) { }
@@ -22,6 +24,8 @@ public sealed class ClayRuntime : IDisposable
 
     public ClayRuntime(int width, int height, ulong seed)
     {
+        if (Native.AbiVersion() != AbiVersion)
+            throw new InvalidOperationException("Incompatible Clay native ABI.");
         handle = Native.Create(width, height, seed);
         if (handle.IsInvalid)
             throw new InvalidOperationException("Clay runtime creation failed.");
@@ -151,6 +155,8 @@ public sealed class ClayRuntime : IDisposable
 
     private static class Native
     {
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_abi_version")]
+        public static extern uint AbiVersion();
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create")]
         public static extern RuntimeHandle Create(int width, int height, ulong seed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_destroy")]
