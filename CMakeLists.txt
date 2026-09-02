@@ -7,6 +7,9 @@ project(
   DESCRIPTION "A bespoke, self-contained game engine. C23 core, C++23 engine."
   LANGUAGES C CXX)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 # Language standards — the clay divide, enforced here:
 #   src/core  -> plain C23, exposed through one C ABI header (include/clay/clay.h)
 #   src/engine+ -> C++23, consumes clay.h across `extern "C"`
@@ -41,7 +44,8 @@ add_library(clay_third_party INTERFACE)
 # SYSTEM include dir: vendored headers (stb, doctest) are external — warnings
 # emitted from inside them are not ours to fix, so treat them as system headers.
 target_include_directories(
-  clay_third_party SYSTEM INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  clay_third_party SYSTEM INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>)
 
 option(CLAY_USE_SYSTEM_GLFW
        "Prefer the system glfw3 instead of fetching and building one"
@@ -101,7 +105,9 @@ set(CLAY_CORE_SOURCES
 )
 
 add_library(clay_core STATIC ${CLAY_CORE_SOURCES})
-target_include_directories(clay_core PUBLIC include)
+target_include_directories(clay_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(clay_core PROPERTIES C_STANDARD 23 C_STANDARD_REQUIRED ON)
 # On glibc, math functions (sqrtf, cosf, sinf) live in libm, not libc.
 if(NOT APPLE AND NOT MSVC)
@@ -123,13 +129,17 @@ set(CLAY_ENGINE_SOURCES
   src/engine/systems/builtin.cpp
   src/engine/runtime.cpp
   src/engine/imageio.cpp
+  src/engine/engine_c.cpp
 )
 if(CLAY_HAS_GLFW)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/platform/window_glfw.cpp)
 endif()
 
 add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
-target_include_directories(clay_engine PUBLIC include src/engine)
+target_include_directories(clay_engine PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/engine>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/clay/engine>)
 target_link_libraries(clay_engine PUBLIC clay_core clay_third_party)
 
 if(CLAY_HAS_GLFW)
@@ -146,3 +156,38 @@ endif()
 
 # ----------------------------------------------------------------------- demo
 add_subdirectory(demo)
+
+# --------------------------------------------------------------------- install
+# Keep the source tree private: consumers use the stable umbrella header and
+# the installed C++ engine headers, which makes Clay usable as a standalone
+# library or as the native side of a host integration (e.g. Godot Mono).
+install(TARGETS clay_third_party clay_core clay_engine
+  EXPORT clayTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES include/clay/clay.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
+install(FILES include/clay/engine_c.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
+install(DIRECTORY src/core/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay/core
+  FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY src/engine/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay/engine
+  FILES_MATCHING PATTERN "*.hpp")
+install(EXPORT clayTargets
+  FILE clayTargets.cmake
+  NAMESPACE clay::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
+configure_package_config_file(
+  cmake/clayConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/clayConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/clayConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion)
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/clayConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/clayConfigVersion.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/clay)
