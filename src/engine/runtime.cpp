@@ -4,11 +4,27 @@
 
 #include <cmath>
 #include <cstring>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
 namespace clay {
 
 constexpr double kTwoPi = 6.28318530717958647692;
+constexpr size_t kMaxFramebufferPixels = 64u << 20;
+
+static bool valid_dimensions(int width, int height) {
+    return width > 0 && height > 0 &&
+           (size_t)width <= std::numeric_limits<size_t>::max() /
+                                  (size_t)height &&
+           (size_t)width * (size_t)height <= kMaxFramebufferPixels;
+}
+
+static int checked_width(int width, int height) {
+    if (!valid_dimensions(width, height))
+        throw std::invalid_argument("invalid runtime dimensions");
+    return width;
+}
 
 static Rgba u8c(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
     return Rgba{(uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a};
@@ -21,7 +37,7 @@ static Rgba f32c(float r, float g, float b, float a) {
 /* --------------------------------------------------------------- ctor */
 
 Runtime::Runtime(int width, int height, uint64_t seed, size_t arena_bytes)
-    : width_(width),
+    : width_(checked_width(width, height)),
       height_(height),
       seed_(seed),
       arena_(arena_bytes),
@@ -71,7 +87,7 @@ cl_err Runtime::load_recording(const std::string &path) {
 }
 
 bool Runtime::resize(int width, int height) {
-    if (width <= 0 || height <= 0) return false;
+    if (!valid_dimensions(width, height)) return false;
     width_ = width;
     height_ = height;
     renderer_.framebuffer().resize(width, height);

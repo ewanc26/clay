@@ -283,3 +283,8 @@ TEST_CASE("replayer: stale frames do not block later events") {
     replay.begin_frame(1.0 / 60.0);
     CHECK(replay.is_key_down(CLAY_KEY_B));
 }
+
+TEST_CASE("runtime: rejects unsafe framebuffer dimensions before allocation") {
+    CHECK_THROWS_AS(clay::Runtime(8193, 8193, 1), std::invalid_argument);
+    CHECK_THROWS_AS(clay::Runtime(0, 10, 1), std::invalid_argument);
+}

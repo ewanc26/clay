@@ -22,6 +22,9 @@ managed layer at the C ABI boundary and expose an explicit native-library
 lifetime handle; the C++ headers are not a binding ABI.
 The C++ `Runtime::resize` method returns `false` for invalid dimensions and
 `true` after resizing the authoritative framebuffer.
+The C++ constructor and resize path also reject non-positive dimensions,
+integer-overflowing sizes, and surfaces larger than
+`CLAY_ENGINE_MAX_FRAMEBUFFER_PIXELS` before allocating the framebuffer.
 
 The install package is validated with both a C ABI consumer and a C++ consumer;
 the latter includes the public `<clay/engine.hpp>` umbrella, constructs a
