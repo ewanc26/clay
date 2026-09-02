@@ -142,7 +142,18 @@ int main(int argc, char **argv) {
     clay::Garden garden(o.width, o.height, o.seed);
     clay::Runtime &rt = garden.runtime();
 
+    if (o.record && o.replay) {
+        std::fputs("clay_player: --record and --replay are mutually exclusive\n",
+                   stderr);
+        return 1;
+    }
+
     std::string custom = o.rules.empty() ? std::string() : read_file(o.rules);
+    if (!o.rules.empty() && custom.empty()) {
+        std::fprintf(stderr, "clay_player: could not read rules file '%s'\n",
+                     o.rules.c_str());
+        return 1;
+    }
     garden.seed(custom.empty() ? clay::kGardenReactions : custom);
     garden.plant();
 
