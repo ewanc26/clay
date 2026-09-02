@@ -238,8 +238,10 @@ install(FILES
   integrations/godot-mono/ClayKey.cs
   integrations/godot-mono/ClayModifiers.cs
   integrations/godot-mono/ClayGodotSample.csproj
+  integrations/godot-mono/ClayGodotSample.sln
   integrations/godot-mono/ClayDemo.cs
   integrations/godot-mono/ClayDemo.tscn
+  integrations/godot-mono/export_presets.cfg
   integrations/godot-mono/project.godot
   integrations/godot-mono/README.md
   DESTINATION integrations/godot-mono)
