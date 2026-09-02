@@ -14,6 +14,11 @@
   "scene": [
     { "name": "sun", "component": "directional_light",
       "dir": [0.35, 0.6, 0.8], "intensity": 1.0 },
+    { "name": "lamp", "component": "point_light",
+      "pos": [2.5, 2.0, 1.5], "intensity": 0.6, "attenuation": 0.08 },
+    { "name": "cam", "component": "camera",
+      "eye": [3.5, 2.8, 4.5], "target": [0, 0, -2],
+      "fov": 0.8, "znear": 0.1, "zfar": 100 },
     { "name": "floor", "component": "mesh_instance", "mesh": "ground",
       "transform": { "pos": [0, -0.55, 0], "scale": [8, 1, 8] },
       "color": [70, 74, 84] },
