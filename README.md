@@ -37,6 +37,7 @@ ctest --test-dir build            # unit tests, all headless
 ./build/demo/clay_player --headless --frames 120 --dump scene.png
 ./build/demo/clay_player --record out/take.clayrec --frames 90
 ./build/demo/clay_player --replay out/take.clayrec --dump out/replay.png
+./build/examples/clay_host_c
 ```
 
 ## What's inside
@@ -51,6 +52,7 @@ ctest --test-dir build            # unit tests, all headless
   cursor-magnet animals drifts toward the mouse; clicks emit ripples, space
   blooms, scrolling embiggens the rings, and every action lands on the
   record.
+- `examples` — standalone C host using only the stable `engine_c.h` ABI.
 
 ## License
 

@@ -31,6 +31,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
 
 option(CLAY_BUILD_TESTS "Build unit tests" ON)
 option(CLAY_BUILD_INTERACTIVE "Build the interactive `clay_player` app" ON)
+option(CLAY_BUILD_EXAMPLES "Build standalone host examples" ON)
 option(CLAY_BUILD_SHARED "Build clay_engine as a shared library for host bindings" ON)
 
 # ------------------------------------------------------------------ third party
@@ -162,6 +163,9 @@ endif()
 
 # ----------------------------------------------------------------------- demo
 add_subdirectory(demo)
+if(CLAY_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 # --------------------------------------------------------------------- install
 # Keep the source tree private: consumers use the stable umbrella header and
