@@ -72,6 +72,8 @@ struct EventQueue {
     double wheel_remainder = 0.0;
     bool gamepad_down[GLFW_GAMEPAD_BUTTON_LAST + 1] = {};
     bool gamepad_active = false;
+    int resize_width = 0;
+    int resize_height = 0;
 };
 
 EventQueue *queue_for(GLFWwindow *wnd) {
@@ -97,6 +99,13 @@ void focus_cb(GLFWwindow *wnd, int focused) {
     cl_input_event e = cl_input_event_make(CLAY_IN_FOCUS, CLAY_KEY_NONE);
     e.focus = focused != 0;
     q->events.push_back(e);
+}
+
+void window_size_cb(GLFWwindow *wnd, int width, int height) {
+    EventQueue *q = queue_for(wnd);
+    if (!q || width <= 0 || height <= 0) return;
+    q->resize_width = width;
+    q->resize_height = height;
 }
 
 cl_key gamepad_key(int button) {
@@ -212,7 +221,7 @@ WindowGLFW::WindowGLFW(int canvas_width, int canvas_height, const char *title)
         return;
     }
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     impl_->window = glfwCreateWindow(canvas_width, canvas_height, title,
                                      nullptr, nullptr);
     if (!impl_->window) {
@@ -229,6 +238,7 @@ WindowGLFW::WindowGLFW(int canvas_width, int canvas_height, const char *title)
     glfwSetCursorPosCallback(impl_->window, cursor_cb);
     glfwSetScrollCallback(impl_->window, scroll_cb);
     glfwSetWindowFocusCallback(impl_->window, focus_cb);
+    glfwSetWindowSizeCallback(impl_->window, window_size_cb);
 
     glfwGetCursorPos(impl_->window, &impl_->queue.last_cursor_x,
                      &impl_->queue.last_cursor_y);
@@ -262,6 +272,12 @@ bool WindowGLFW::should_close() const {
 void WindowGLFW::poll_events() {
     if (impl_ && impl_->window) {
         glfwPollEvents();
+        if (impl_->queue.resize_width > 0 && impl_->queue.resize_height > 0) {
+            impl_->width = impl_->queue.resize_width;
+            impl_->height = impl_->queue.resize_height;
+            impl_->queue.resize_width = 0;
+            impl_->queue.resize_height = 0;
+        }
         poll_gamepad(&impl_->queue);
     }
 }
@@ -281,9 +297,22 @@ int WindowGLFW::canvas_height() const {
 }
 
 void WindowGLFW::present(const Framebuffer &fb) {
-    if (!impl_ || !impl_->window || fb.width != impl_->width ||
-        fb.height != impl_->height)
+    if (!impl_ || !impl_->window || fb.width <= 0 || fb.height <= 0)
         return;
+
+    if (fb.width != impl_->width || fb.height != impl_->height) {
+        impl_->width = fb.width;
+        impl_->height = fb.height;
+        if (impl_->texture) glDeleteTextures(1, &impl_->texture);
+        glGenTextures(1, &impl_->texture);
+        glBindTexture(GL_TEXTURE_2D, impl_->texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fb.width, fb.height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    }
 
     glBindTexture(GL_TEXTURE_2D, impl_->texture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
