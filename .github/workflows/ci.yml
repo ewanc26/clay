@@ -41,6 +41,10 @@ jobs:
         shell: bash
         run: |
           cmake --install build --prefix "$PWD/build/sdk"
+          test -f build/sdk/integrations/godot-mono/ClayRuntime.cs
+          test -f build/sdk/integrations/godot-mono/ClayKey.cs
+          test -f build/sdk/integrations/godot-mono/ClayGodotSample.csproj
+          test -f build/sdk/integrations/godot-mono/managed/ClayRuntime.csproj
           cmake -S test/package-consumer -B build/package-consumer \
             -DCMAKE_PREFIX_PATH="$PWD/build/sdk"
           cmake --build build/package-consumer
