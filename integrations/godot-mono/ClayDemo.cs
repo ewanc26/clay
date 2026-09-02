@@ -78,7 +78,13 @@ public partial class ClayDemo : Node2D
         if (runtime == null)
             return;
 
-        if (@event is InputEventKey keyEvent &&
+        if (@event is InputEventJoypadButton joypadEvent)
+        {
+            Clay.ClayKey? key = ToClayKey(joypadEvent.ButtonIndex);
+            if (key.HasValue)
+                runtime.FeedKey(key.Value, joypadEvent.Pressed);
+        }
+        else if (@event is InputEventKey keyEvent &&
             (keyEvent.Keycode == Key.Space || keyEvent.Keycode == Key.E ||
              keyEvent.Keycode == Key.R))
         {
@@ -115,6 +121,25 @@ public partial class ClayDemo : Node2D
                                motionEvent.Relative.X, motionEvent.Relative.Y);
         }
     }
+
+    private static Clay.ClayKey? ToClayKey(JoyButton button) => button switch
+    {
+        JoyButton.A => Clay.ClayKey.GamepadA,
+        JoyButton.B => Clay.ClayKey.GamepadB,
+        JoyButton.X => Clay.ClayKey.GamepadX,
+        JoyButton.Y => Clay.ClayKey.GamepadY,
+        JoyButton.LeftShoulder => Clay.ClayKey.GamepadLeftBumper,
+        JoyButton.RightShoulder => Clay.ClayKey.GamepadRightBumper,
+        JoyButton.Back => Clay.ClayKey.GamepadBack,
+        JoyButton.Start => Clay.ClayKey.GamepadStart,
+        JoyButton.LeftStick => Clay.ClayKey.GamepadLeftStick,
+        JoyButton.RightStick => Clay.ClayKey.GamepadRightStick,
+        JoyButton.DpadUp => Clay.ClayKey.GamepadDpadUp,
+        JoyButton.DpadDown => Clay.ClayKey.GamepadDpadDown,
+        JoyButton.DpadLeft => Clay.ClayKey.GamepadDpadLeft,
+        JoyButton.DpadRight => Clay.ClayKey.GamepadDpadRight,
+        _ => null
+    };
 
     public override void _Notification(int what)
     {
