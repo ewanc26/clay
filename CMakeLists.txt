@@ -146,6 +146,7 @@ set(CLAY_ENGINE_SOURCES
   src/engine/systems/reaction.cpp
   src/engine/systems/builtin.cpp
   src/engine/systems/collision.cpp
+  src/engine/ui/imgui.cpp
   src/engine/runtime.cpp
   src/engine/imageio.cpp
   src/engine/engine_c.cpp
