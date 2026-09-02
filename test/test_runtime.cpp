@@ -253,3 +253,21 @@ TEST_CASE("runtime: replay applies input on its recorded frame") {
     CHECK(!replay.is_key_down(CLAY_KEY_SPACE));
     CHECK(cl_input_just_released(&replay.input_state(), CLAY_KEY_SPACE));
 }
+
+TEST_CASE("replayer: stale frames do not block later events") {
+    Runtime source(32, 32, 3);
+    cl_input_event stale = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_A);
+    stale.frame = 0;
+    cl_input_log_append(&source.input_log(), &stale);
+    cl_input_event current = cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_B);
+    current.frame = 2;
+    cl_input_log_append(&source.input_log(), &current);
+
+    Runtime replay(32, 32, 3);
+    replay.input_log() = source.input_log();
+    replay.set_replaying(true);
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(!replay.is_key_down(CLAY_KEY_B));
+    replay.begin_frame(1.0 / 60.0);
+    CHECK(replay.is_key_down(CLAY_KEY_B));
+}
