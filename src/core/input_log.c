@@ -124,6 +124,9 @@ static bool decode_event(FILE *f, cl_input_event *e, double *wheel_value) {
 static bool valid_decoded_event(const cl_input_event *e, double wheel_value) {
     if (e->type < CLAY_IN_PRESS || e->type > CLAY_IN_FOCUS) return false;
     if (e->key < CLAY_KEY_NONE || e->key >= CLAY_KEY_COUNT) return false;
+    if ((e->type == CLAY_IN_PRESS || e->type == CLAY_IN_RELEASE) &&
+        e->key == CLAY_KEY_NONE)
+        return false;
     if (!isfinite(e->time) || !isfinite(e->x) || !isfinite(e->y) ||
         !isfinite(e->dx) || !isfinite(e->dy) || !isfinite(wheel_value))
         return false;
