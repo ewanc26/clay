@@ -28,6 +28,21 @@ class GardenRenderSystem final : public RenderSystem {
     void render(Runtime &rt, IRenderer &renderer) override;
 };
 
+class ClayScene;
+
+/* Renders a loaded ClayScene as the whole frame: clear, set a perspective
+ * camera, and draw every mesh instance through the software 3D pipeline.
+ * Purely a presenter over the .clay data — no garden ECS involvement. */
+class Scene3DRenderSystem final : public RenderSystem {
+  public:
+    explicit Scene3DRenderSystem(ClayScene &scene, float fov_y_rad = 0.9f);
+    void render(Runtime &rt, IRenderer &renderer) override;
+
+  private:
+    ClayScene &scene_;
+    float fov_y_rad_;
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_RENDER_RENDER_SYSTEM_HPP */
