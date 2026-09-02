@@ -14,6 +14,8 @@ SDK project, managed `SafeHandle` wrapper, and configurable shared-library build
 `integrations/godot-mono/`; this issue remains open until those distribution
 pieces are covered.
 
+Upstream tracking: [#5](https://github.com/ewanc26/clay/issues/5).
+
 ## Windows and Godot export validation
 
 The shared C ABI now uses an explicit Windows export macro, but the repository
