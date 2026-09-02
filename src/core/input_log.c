@@ -161,6 +161,11 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         return CLAY_ERR_PARSE;
     }
     size_t capacity = count > 256 ? (size_t)count : 256;
+    if (capacity > cl_arena_remaining_bytes(log->arena) /
+                      sizeof(cl_input_event)) {
+        fclose(f);
+        return CLAY_ERR_PARSE;
+    }
     cl_arena_frame scratch = cl_arena_temp(log->arena);
     cl_input_event *items = (cl_input_event *)cl_arena_alloc(
         log->arena, capacity * sizeof(cl_input_event),

@@ -78,6 +78,23 @@ static int test_input_log(void) {
               CLAY_ERR_PARSE);
         CHECK_EQ_INT(cl_input_log_count(&bad), 0);
     }
+
+    FILE *oversized = fopen("clay_test_input_log_oversized.clayrec", "wb");
+    CHECK(oversized != NULL);
+    if (oversized != NULL) {
+        uint64_t magic = UINT64_C(0x434C415952454301);
+        uint32_t version = 2;
+        uint64_t count = UINT64_MAX;
+        uint64_t stamp = 0;
+        fwrite(&magic, sizeof(magic), 1, oversized);
+        fwrite(&version, sizeof(version), 1, oversized);
+        fwrite(&count, sizeof(count), 1, oversized);
+        fwrite(&stamp, sizeof(stamp), 1, oversized);
+        fclose(oversized);
+        CHECK(cl_input_log_load(&bad, "clay_test_input_log_oversized.clayrec") ==
+              CLAY_ERR_PARSE);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
+    }
     return clay_test_failures;
 }
 
