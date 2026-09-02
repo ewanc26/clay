@@ -25,6 +25,8 @@ requiring hosts to pass numeric ABI values.
 coordinates and modifier bits for positioned key or mouse-button events.
 `ClayRuntime.IsReplaying` reports whether the runtime is currently driven by a
 loaded transcript.
+`ClayRuntime.SimDelta` and `ClayRuntime.TimeScale` expose the effective timing
+values used by the deterministic simulation.
 `RecordingCount` and `RecordingFingerprint` let hosts verify replay data after
 loading a recording.
 The sample also tracks the Godot viewport and recreates its RGBA upload buffer

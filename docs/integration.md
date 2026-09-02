@@ -24,8 +24,10 @@ For texture uploads, `cl_engine_runtime_pixels_rgba` exposes the same frame as
 RGBA8 bytes and avoids a host-side format conversion.
 When the host viewport changes, call `cl_engine_runtime_resize` before the next
 step; the framebuffer dimensions and pixel count then reflect the new size.
-Hosts can query authoritative `frame`, `sim_time`, and cursor coordinates with
-the corresponding `cl_engine_runtime_*` probe functions.
+Hosts can query authoritative `frame`, `sim_time`, scaled simulation delta, and
+cursor coordinates with the corresponding `cl_engine_runtime_*` probe
+functions. `cl_engine_runtime_time_scale` reports the sanitized scale applied
+by the runtime.
 Focus state is available through `cl_engine_runtime_is_focused`; losing focus
 also releases held keys so hosts cannot leave actions latched. For pointer
 buttons and other positioned key events, use
