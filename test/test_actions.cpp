@@ -81,3 +81,30 @@ TEST_CASE("input_system: hold bindings poll, never flood") {
     REQUIRE(holds.size() == 1);
     CHECK(holds[0].name == "move_up");
 }
+
+TEST_CASE("action_map: modifier bindings are distinct from key-only") {
+    ActionMap m;
+    m.bind("undo", CLAY_KEY_Z, CLAY_MOD_CTRL);
+    m.bind("redo", CLAY_KEY_Y, CLAY_MOD_CTRL);
+
+    /* Ctrl+Z finds the undo binding, not the plain-Z binding. */
+    const ActionBinding *cz = m.find(CLAY_KEY_Z, CLAY_MOD_CTRL);
+    REQUIRE(cz != nullptr);
+    CHECK(cz->action == "undo");
+
+    /* Plain Z (no Ctrl) does not match — there is no plain-Z binding. */
+    CHECK(m.find(CLAY_KEY_Z, CLAY_MOD_NONE) == nullptr);
+
+    /* Ctrl+Y finds redo. */
+    const ActionBinding *cy = m.find(CLAY_KEY_Y, CLAY_MOD_CTRL);
+    REQUIRE(cy != nullptr);
+    CHECK(cy->action == "redo");
+}
+
+TEST_CASE("action_map: reversible flag propagates to bindings") {
+    ActionMap m;
+    m.bind("spawn", CLAY_KEY_MOUSE_LEFT, CLAY_MOD_NONE, true);
+    const ActionBinding *b = m.find(CLAY_KEY_MOUSE_LEFT, CLAY_MOD_NONE);
+    REQUIRE(b != nullptr);
+    CHECK(b->reversible);
+}
