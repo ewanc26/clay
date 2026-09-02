@@ -37,11 +37,13 @@ clay_c_test(test_input_log)
 
 clay_cpp_test(test_ecs)
 clay_cpp_test(test_raster)
+clay_cpp_test(test_raster3d)
 clay_cpp_test(test_text)
 clay_cpp_test(test_actions)
 clay_cpp_test(test_command)
 clay_cpp_test(test_reactions)
 clay_cpp_test(test_runtime)
+clay_cpp_test(test_clay_file)
 clay_cpp_test(test_engine_c_api)
 
 # The garden itself must survive a real headless run, not just unit tests:
