@@ -60,6 +60,8 @@ struct EventQueue {
     std::vector<cl_input_event> events;
     double last_cursor_x = 0.0;
     double last_cursor_y = 0.0;
+    bool gamepad_down[GLFW_GAMEPAD_BUTTON_LAST + 1] = {};
+    bool gamepad_active = false;
 };
 
 EventQueue *queue_for(GLFWwindow *wnd) {
@@ -84,6 +86,54 @@ void focus_cb(GLFWwindow *wnd, int focused) {
     cl_input_event e = cl_input_event_make(CLAY_IN_FOCUS, CLAY_KEY_NONE);
     e.focus = focused != 0;
     q->events.push_back(e);
+}
+
+cl_key gamepad_key(int button) {
+    switch (button) {
+    case GLFW_GAMEPAD_BUTTON_A: return CLAY_KEY_GP_A;
+    case GLFW_GAMEPAD_BUTTON_B: return CLAY_KEY_GP_B;
+    case GLFW_GAMEPAD_BUTTON_X: return CLAY_KEY_GP_X;
+    case GLFW_GAMEPAD_BUTTON_Y: return CLAY_KEY_GP_Y;
+    case GLFW_GAMEPAD_BUTTON_LEFT_BUMPER: return CLAY_KEY_GP_LB;
+    case GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER: return CLAY_KEY_GP_RB;
+    case GLFW_GAMEPAD_BUTTON_BACK: return CLAY_KEY_GP_BACK;
+    case GLFW_GAMEPAD_BUTTON_START: return CLAY_KEY_GP_START;
+    case GLFW_GAMEPAD_BUTTON_LEFT_THUMB: return CLAY_KEY_GP_LEFT_STICK;
+    case GLFW_GAMEPAD_BUTTON_RIGHT_THUMB: return CLAY_KEY_GP_RIGHT_STICK;
+    case GLFW_GAMEPAD_BUTTON_DPAD_UP: return CLAY_KEY_GP_DPAD_UP;
+    case GLFW_GAMEPAD_BUTTON_DPAD_DOWN: return CLAY_KEY_GP_DPAD_DOWN;
+    case GLFW_GAMEPAD_BUTTON_DPAD_LEFT: return CLAY_KEY_GP_DPAD_LEFT;
+    case GLFW_GAMEPAD_BUTTON_DPAD_RIGHT: return CLAY_KEY_GP_DPAD_RIGHT;
+    default: return CLAY_KEY_NONE;
+    }
+}
+
+void poll_gamepad(EventQueue *q) {
+    GLFWgamepadstate state;
+    const bool active = glfwJoystickIsGamepad(GLFW_JOYSTICK_1) != 0 &&
+                        glfwGetGamepadState(GLFW_JOYSTICK_1, &state) != 0;
+    if (!active) {
+        if (!q->gamepad_active) return;
+        for (int button = 0; button <= GLFW_GAMEPAD_BUTTON_LAST; button++) {
+            if (!q->gamepad_down[button]) continue;
+            cl_input_event e =
+                cl_input_event_make(CLAY_IN_RELEASE, gamepad_key(button));
+            if (e.key != CLAY_KEY_NONE) q->events.push_back(e);
+            q->gamepad_down[button] = false;
+        }
+        q->gamepad_active = false;
+        return;
+    }
+    q->gamepad_active = true;
+    for (int button = 0; button <= GLFW_GAMEPAD_BUTTON_LAST; button++) {
+        const bool down = state.buttons[button] == GLFW_PRESS;
+        if (down == q->gamepad_down[button]) continue;
+        cl_key key = gamepad_key(button);
+        q->gamepad_down[button] = down;
+        if (key == CLAY_KEY_NONE) continue;
+        q->events.push_back(cl_input_event_make(
+            down ? CLAY_IN_PRESS : CLAY_IN_RELEASE, key));
+    }
 }
 
 void mouse_button_cb(GLFWwindow *wnd, int button, int action, int) {
@@ -195,7 +245,10 @@ bool WindowGLFW::should_close() const {
 }
 
 void WindowGLFW::poll_events() {
-    if (impl_ && impl_->window) glfwPollEvents();
+    if (impl_ && impl_->window) {
+        glfwPollEvents();
+        poll_gamepad(&impl_->queue);
+    }
 }
 
 std::vector<cl_input_event> WindowGLFW::drain_events() {
