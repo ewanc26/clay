@@ -66,3 +66,6 @@ Use the managed `ClayKey` and `ClayModifiers` enums to avoid passing raw ABI
 integers from C#.
 The bundled sample additionally forwards mouse motion, wheel, and application
 focus notifications, providing a complete host-loop reference.
+The GLFW standalone presenter also polls the first connected GLFW-mapped
+gamepad and forwards its digital face, shoulder, menu, stick, and D-pad buttons;
+disconnecting it emits releases for any buttons that were held.
