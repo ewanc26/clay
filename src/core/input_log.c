@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
+#include <string.h>
 #include <stdlib.h>
 
-/* On-disk header. Events are encoded field-by-field (never raw structs), so a
- * .clayrec round-trips across compilers/platforms with the same endianness. */
+/* On-disk header. Events are encoded field-by-field (never raw structs) in a
+ * fixed little-endian representation, so .clayrec is cross-platform. */
 #define CLAYREC_MAGIC UINT64_C(0x434C415952454301) /* "CLAYREC\x01"       */
-#define CLAYREC_VERSION 2u
+#define CLAYREC_VERSION 3u
 
 void cl_input_log_init(cl_input_log *log, cl_arena *a, size_t cap) {
     log->arena = a;
@@ -44,8 +45,7 @@ void cl_input_log_append(cl_input_log *log, const cl_input_event *e) {
     if (log->count == log->cap) {
         size_t cap = log->cap * 2;
         cl_input_event *items = (cl_input_event *)cl_arena_alloc(
-            log->arena, cap * sizeof(cl_input_event),
-            _Alignof(cl_input_event));
+            log->arena, cap * sizeof(cl_input_event), _Alignof(cl_input_event));
         for (size_t i = 0; i < log->count; i++) items[i] = log->items[i];
         log->items = items;
         log->cap = cap;
@@ -67,27 +67,46 @@ uint64_t cl_input_log_fingerprint(const cl_input_log *log) {
 }
 
 static bool write_u32(FILE *f, uint32_t v) {
-    return fwrite(&v, sizeof(v), 1, f) == 1;
+    uint8_t bytes[4] = {(uint8_t)v, (uint8_t)(v >> 8), (uint8_t)(v >> 16),
+                        (uint8_t)(v >> 24)};
+    return fwrite(bytes, sizeof(bytes), 1, f) == 1;
 }
 
 static bool write_u64(FILE *f, uint64_t v) {
-    return fwrite(&v, sizeof(v), 1, f) == 1;
+    uint8_t bytes[8];
+    for (size_t i = 0; i < sizeof(bytes); i++)
+        bytes[i] = (uint8_t)(v >> (i * 8));
+    return fwrite(bytes, sizeof(bytes), 1, f) == 1;
 }
 
 static bool write_f64(FILE *f, double v) {
-    return fwrite(&v, sizeof(v), 1, f) == 1;
+    uint64_t bits = 0;
+    memcpy(&bits, &v, sizeof(bits));
+    return write_u64(f, bits);
 }
 
 static bool read_u32(FILE *f, uint32_t *out) {
-    return fread(out, sizeof(*out), 1, f) == 1;
+    uint8_t bytes[4];
+    if (fread(bytes, sizeof(bytes), 1, f) != 1) return false;
+    *out = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) |
+           ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
+    return true;
 }
 
 static bool read_u64(FILE *f, uint64_t *out) {
-    return fread(out, sizeof(*out), 1, f) == 1;
+    uint8_t bytes[8];
+    if (fread(bytes, sizeof(bytes), 1, f) != 1) return false;
+    *out = 0;
+    for (size_t i = 0; i < sizeof(bytes); i++)
+        *out |= (uint64_t)bytes[i] << (i * 8);
+    return true;
 }
 
 static bool read_f64(FILE *f, double *out) {
-    return fread(out, sizeof(*out), 1, f) == 1;
+    uint64_t bits = 0;
+    if (!read_u64(f, &bits)) return false;
+    memcpy(out, &bits, sizeof(bits));
+    return true;
 }
 
 static bool encode_event(FILE *f, const cl_input_event *e) {
@@ -106,9 +125,8 @@ static bool decode_event(FILE *f, cl_input_event *e, double *wheel_value) {
     double decoded_wheel = 0.0;
     *e = (cl_input_event){0};
     if (!read_u32(f, &e->frame) || !read_f64(f, &e->time) ||
-        !read_u32(f, &type) || !read_u32(f, &key) ||
-        !read_u32(f, &mods) || !read_f64(f, &e->x) ||
-        !read_f64(f, &e->y) || !read_f64(f, &e->dx) ||
+        !read_u32(f, &type) || !read_u32(f, &key) || !read_u32(f, &mods) ||
+        !read_f64(f, &e->x) || !read_f64(f, &e->y) || !read_f64(f, &e->dx) ||
         !read_f64(f, &e->dy) || !read_f64(f, &decoded_wheel) ||
         !read_u32(f, &focus))
         return false;
@@ -172,8 +190,8 @@ cl_err cl_input_log_load(cl_input_log *log, const char *path) {
         return CLAY_ERR_PARSE;
     }
     size_t capacity = count > 256 ? (size_t)count : 256;
-    if (capacity > cl_arena_remaining_bytes(log->arena) /
-                      sizeof(cl_input_event)) {
+    if (capacity >
+        cl_arena_remaining_bytes(log->arena) / sizeof(cl_input_event)) {
         fclose(f);
         return CLAY_ERR_PARSE;
     }
