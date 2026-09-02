@@ -33,6 +33,9 @@ cl_err cl_engine_runtime_spawn_ripple(cl_engine_runtime *runtime, float x,
                                       float b, float a);
 void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
                                       double time_scale);
+/* Installs the deterministic built-in simulation systems. Safe to call once;
+ * repeated calls are rejected so systems cannot accidentally run twice. */
+cl_err cl_engine_runtime_install_builtin_systems(cl_engine_runtime *runtime);
 
 int cl_engine_runtime_width(const cl_engine_runtime *runtime);
 int cl_engine_runtime_height(const cl_engine_runtime *runtime);

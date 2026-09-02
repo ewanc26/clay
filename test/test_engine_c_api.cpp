@@ -15,6 +15,9 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_ERR_PARSE);
     CHECK(cl_engine_runtime_load_reactions(runtime, "{\"rules\": []}") ==
           CLAY_OK);
+    CHECK(cl_engine_runtime_install_builtin_systems(runtime) == CLAY_OK);
+    CHECK(cl_engine_runtime_install_builtin_systems(runtime) ==
+          CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_spawn_species(runtime, "animal", 8, 9, 0.7f,
                                           0.8f, 0.5f, 1.0f, 10.0f) ==
           CLAY_OK);

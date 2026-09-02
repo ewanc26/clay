@@ -24,3 +24,6 @@ pixels are packed `0x00RRGGBB` values in row-major order.
 The host can load reaction JSON and seed a scene through the C ABI with
 `cl_engine_runtime_load_reactions`, `cl_engine_runtime_spawn_species`, and
 `cl_engine_runtime_spawn_ripple`. Invalid JSON returns `CLAY_ERR_PARSE`.
+Call `cl_engine_runtime_install_builtin_systems` once after creation when the
+host wants movement, cursor attraction, lifespans, hue drift, and ripple
+simulation.

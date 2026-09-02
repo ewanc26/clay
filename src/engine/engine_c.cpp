@@ -1,6 +1,7 @@
 #include <clay/engine_c.h>
 
 #include "runtime.hpp"
+#include "systems/builtin.hpp"
 
 #include <new>
 
@@ -64,6 +65,18 @@ extern "C" cl_err cl_engine_runtime_spawn_ripple(
 extern "C" void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
                                                    double time_scale) {
     if (runtime) runtime->impl.set_time_scale(time_scale);
+}
+
+extern "C" cl_err cl_engine_runtime_install_builtin_systems(
+    cl_engine_runtime *runtime) {
+    if (!runtime) return CLAY_ERR_INVALID_ARG;
+    if (runtime->impl.systems().size() != 0) return CLAY_ERR_INVALID_ARG;
+    runtime->impl.systems().add(std::make_unique<clay::MovementSystem>());
+    runtime->impl.systems().add(std::make_unique<clay::CursorMagnetSystem>());
+    runtime->impl.systems().add(std::make_unique<clay::LifespanSystem>());
+    runtime->impl.systems().add(std::make_unique<clay::HueShiftSystem>());
+    runtime->impl.systems().add(std::make_unique<clay::RippleSystem>());
+    return CLAY_OK;
 }
 
 extern "C" int cl_engine_runtime_width(const cl_engine_runtime *runtime) {
