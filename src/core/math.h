@@ -117,4 +117,22 @@ uint64_t cl_hash_u64(uint64_t x);
 uint64_t cl_hash_bytes(const void *data, size_t len, uint64_t seed);
 uint64_t cl_hash_str(cl_str s, uint64_t seed);
 
+/* --- easing functions --- */
+
+typedef enum {
+    CL_EASE_LINEAR,
+    CL_EASE_IN_QUAD,
+    CL_EASE_OUT_QUAD,
+    CL_EASE_IN_OUT_QUAD,
+    CL_EASE_IN_SINE,
+    CL_EASE_OUT_SINE,
+    CL_EASE_IN_OUT_SINE,
+    CL_EASE_IN_BACK,
+    CL_EASE_OUT_BACK,
+    CL_EASE_IN_OUT_BACK,
+} cl_ease;
+
+/* Map t in [0,1] to an eased factor in [0,1] for the given easing type. */
+float cl_ease_apply(cl_ease e, float t);
+
 #endif /* CLAY_CORE_MATH_H */
