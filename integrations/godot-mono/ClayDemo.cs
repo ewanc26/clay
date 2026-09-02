@@ -58,6 +58,18 @@ public partial class ClayDemo : Node2D
             runtime.FeedKeyAt(Clay.ClayKey.MouseLeft, mouseEvent.Pressed,
                               mouseEvent.Position.X, mouseEvent.Position.Y);
         }
+        else if (@event is InputEventMouseButton wheelEvent)
+        {
+            int wheel = wheelEvent.ButtonIndex switch
+            {
+                MouseButton.WheelUp => 1,
+                MouseButton.WheelDown => -1,
+                _ => 0
+            };
+            if (wheel != 0)
+                runtime.FeedWheel(wheelEvent.Position.X, wheelEvent.Position.Y,
+                                  wheel);
+        }
     }
 
     private void ResizeSurface(int width, int height)
