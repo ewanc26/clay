@@ -30,6 +30,8 @@ typedef struct cl_engine_runtime cl_engine_runtime;
 #define CLAY_ENGINE_MAX_FRAMEBUFFER_PIXELS (64u << 20)
 
 CLAY_API uint32_t cl_engine_runtime_abi_version(void);
+/* Returns a stable human-readable name for a C ABI error code. */
+CLAY_API const char *cl_engine_error_string(cl_err error);
 
 CLAY_API cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                       uint64_t seed);

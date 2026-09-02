@@ -174,13 +174,17 @@ public sealed class ClayRuntime : IDisposable
         if (error != 0)
         {
             ClayError code = (ClayError)error;
+            string message = Marshal.PtrToStringAnsi(Native.ErrorString(error))
+                             ?? code.ToString();
             throw new InvalidOperationException(
-                $"Clay error: {error} ({code}).");
+                $"Clay error: {error} ({code}): {message}.");
         }
     }
 
     private static class Native
     {
+        [DllImport("clay_engine", EntryPoint = "cl_engine_error_string")]
+        public static extern IntPtr ErrorString(int error);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_abi_version")]
         public static extern uint AbiVersion();
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create")]

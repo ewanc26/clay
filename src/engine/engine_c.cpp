@@ -49,6 +49,10 @@ extern "C" uint32_t cl_engine_runtime_abi_version(void) {
     return CLAY_ENGINE_ABI_VERSION;
 }
 
+extern "C" const char *cl_engine_error_string(cl_err error) {
+    return cl_err_str(error);
+}
+
 extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                           uint64_t seed) {
     return cl_engine_runtime_create_with_arena(width, height, seed,
