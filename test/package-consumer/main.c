@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 int main(void) {
+    if (cl_engine_runtime_abi_version() != CLAY_ENGINE_ABI_VERSION) return 1;
     cl_engine_runtime *runtime = cl_engine_runtime_create(16, 16, 42);
     if (!runtime) return 1;
 
