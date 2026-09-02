@@ -14,6 +14,12 @@ supported platform, and a CI smoke project. A minimal sample project, managed
 `integrations/godot-mono/`; this issue remains open until those distribution
 pieces are covered.
 
+## Windows and Godot export validation
+
+The shared C ABI now uses an explicit Windows export macro, but the repository
+still needs a Windows CI job and an exported Godot Mono sample run to validate
+DLL naming, dependent runtime loading, and architecture selection.
+
 ## Godot GDExtension adapter
 
 The current Mono integration uses a stable C ABI and P/Invoke. It does not

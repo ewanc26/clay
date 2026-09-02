@@ -6,6 +6,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(_WIN32) && defined(CLAY_BUILDING_SHARED)
+#define CLAY_API __declspec(dllexport)
+#elif defined(_WIN32)
+#define CLAY_API __declspec(dllimport)
+#else
+#define CLAY_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,47 +22,53 @@ extern "C" {
  * integrations such as Godot Mono; callers must not inspect its contents. */
 typedef struct cl_engine_runtime cl_engine_runtime;
 
-cl_engine_runtime *cl_engine_runtime_create(int width, int height,
-                                             uint64_t seed);
-void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
+CLAY_API cl_engine_runtime *cl_engine_runtime_create(int width, int height,
+                                                      uint64_t seed);
+CLAY_API void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
 
 /* Advances one deterministic frame and renders the authoritative framebuffer. */
-cl_err cl_engine_runtime_step(cl_engine_runtime *runtime, double dt_seconds);
-cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
-                              const cl_input_event *event);
-cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime, cl_key key,
-                                  bool pressed);
-cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime, double x,
-                                     double y, double dx, double dy);
-cl_err cl_engine_runtime_feed_wheel(cl_engine_runtime *runtime, double x,
-                                    double y, int wheel);
-cl_err cl_engine_runtime_feed_focus(cl_engine_runtime *runtime, bool focused);
-cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
-                                        const char *json);
-cl_err cl_engine_runtime_spawn_species(cl_engine_runtime *runtime,
-                                       const char *species, float x, float y,
-                                       float r, float g, float b, float a,
-                                       float life);
-cl_err cl_engine_runtime_spawn_ripple(cl_engine_runtime *runtime, float x,
-                                      float y, float radius, float r, float g,
-                                      float b, float a);
-void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
-                                      double time_scale);
+CLAY_API cl_err cl_engine_runtime_step(cl_engine_runtime *runtime,
+                                       double dt_seconds);
+CLAY_API cl_err cl_engine_runtime_feed(cl_engine_runtime *runtime,
+                                       const cl_input_event *event);
+CLAY_API cl_err cl_engine_runtime_feed_key(cl_engine_runtime *runtime,
+                                           cl_key key, bool pressed);
+CLAY_API cl_err cl_engine_runtime_feed_motion(cl_engine_runtime *runtime,
+                                              double x, double y, double dx,
+                                              double dy);
+CLAY_API cl_err cl_engine_runtime_feed_wheel(cl_engine_runtime *runtime,
+                                             double x, double y, int wheel);
+CLAY_API cl_err cl_engine_runtime_feed_focus(cl_engine_runtime *runtime,
+                                             bool focused);
+CLAY_API cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
+                                                 const char *json);
+CLAY_API cl_err cl_engine_runtime_spawn_species(
+    cl_engine_runtime *runtime, const char *species, float x, float y, float r,
+    float g, float b, float a, float life);
+CLAY_API cl_err cl_engine_runtime_spawn_ripple(cl_engine_runtime *runtime,
+                                               float x, float y, float radius,
+                                               float r, float g, float b,
+                                               float a);
+CLAY_API void cl_engine_runtime_set_time_scale(cl_engine_runtime *runtime,
+                                               double time_scale);
 /* Installs the deterministic built-in simulation systems. Safe to call once;
  * repeated calls are rejected so systems cannot accidentally run twice. */
-cl_err cl_engine_runtime_install_builtin_systems(cl_engine_runtime *runtime);
+CLAY_API cl_err cl_engine_runtime_install_builtin_systems(
+    cl_engine_runtime *runtime);
 
-int cl_engine_runtime_width(const cl_engine_runtime *runtime);
-int cl_engine_runtime_height(const cl_engine_runtime *runtime);
-uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
+CLAY_API int cl_engine_runtime_width(const cl_engine_runtime *runtime);
+CLAY_API int cl_engine_runtime_height(const cl_engine_runtime *runtime);
+CLAY_API uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
 
 /* Packed 0x00RRGGBB pixels, row-major, top-left origin. The pointer remains
  * valid until the next step or destruction of the runtime. */
-const uint32_t *cl_engine_runtime_pixels(const cl_engine_runtime *runtime,
-                                         size_t *count);
+CLAY_API const uint32_t *cl_engine_runtime_pixels(
+    const cl_engine_runtime *runtime, size_t *count);
 
 #ifdef __cplusplus
 }
 #endif
+
+#undef CLAY_API
 
 #endif /* CLAY_ENGINE_C_H */
