@@ -52,6 +52,10 @@ static int test_input_log(void) {
 
     cl_input_log bad;
     cl_input_log_init(&bad, &arena, 0);
+    cl_input_event preserved = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
+    preserved.x = 9.0;
+    cl_input_log_append(&bad, &preserved);
+    uint64_t preserved_fp = cl_input_log_fingerprint(&bad);
 
     FILE *corrupt = fopen(path, "r+b");
     CHECK(corrupt != NULL);
@@ -63,7 +67,8 @@ static int test_input_log(void) {
         CHECK(fputc(first ^ 1, corrupt) != EOF);
         fclose(corrupt);
         CHECK(cl_input_log_load(&bad, path) == CLAY_ERR_PARSE);
-        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 1);
+        CHECK(cl_input_log_fingerprint(&bad) == preserved_fp);
     }
 
     /* Loading a bad file must be a clean, reported failure. */
@@ -76,7 +81,8 @@ static int test_input_log(void) {
         fclose(truncated);
         CHECK(cl_input_log_load(&bad, "clay_test_input_log_truncated.clayrec") ==
               CLAY_ERR_PARSE);
-        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 1);
+        CHECK(cl_input_log_fingerprint(&bad) == preserved_fp);
     }
 
     FILE *oversized = fopen("clay_test_input_log_oversized.clayrec", "wb");
@@ -93,7 +99,8 @@ static int test_input_log(void) {
         fclose(oversized);
         CHECK(cl_input_log_load(&bad, "clay_test_input_log_oversized.clayrec") ==
               CLAY_ERR_PARSE);
-        CHECK_EQ_INT(cl_input_log_count(&bad), 0);
+        CHECK_EQ_INT(cl_input_log_count(&bad), 1);
+        CHECK(cl_input_log_fingerprint(&bad) == preserved_fp);
     }
     return clay_test_failures;
 }
