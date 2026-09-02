@@ -74,6 +74,14 @@ jobs:
           mkdir -p build/smoke
           ./build/demo/clay_player --headless --frames 30 --dump build/smoke/garden.png
 
+      - name: Verify explicit offline GLFW disable
+        shell: bash
+        run: |
+          cmake -S . -B build-no-glfw \
+            -DCLAY_BUILD_INTERACTIVE=ON -DCLAY_USE_SYSTEM_GLFW=OFF \
+            -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_EXAMPLES=OFF
+          cmake --build build-no-glfw --parallel
+
   managed-wrapper:
     strategy:
       fail-fast: false
