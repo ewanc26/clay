@@ -84,24 +84,18 @@ public partial class ClayDemo : Node2D
             if (key.HasValue)
                 runtime.FeedKey(key.Value, joypadEvent.Pressed);
         }
-        else if (@event is InputEventKey keyEvent &&
-            (keyEvent.Keycode == Key.Space || keyEvent.Keycode == Key.E ||
-             keyEvent.Keycode == Key.R))
+        else if (@event is InputEventKey keyEvent)
         {
-            Clay.ClayKey key = keyEvent.Keycode switch
-            {
-                Key.E => Clay.ClayKey.E,
-                Key.R => Clay.ClayKey.R,
-                _ => Clay.ClayKey.Space
-            };
-            runtime.FeedKeyAt(key, keyEvent.Pressed,
-                              runtime.CursorX, runtime.CursorY,
-                              ToClayModifiers(keyEvent));
+            Clay.ClayKey? key = ToClayKey(keyEvent.Keycode);
+            if (key.HasValue)
+                runtime.FeedKeyAt(key.Value, keyEvent.Pressed,
+                                  runtime.CursorX, runtime.CursorY,
+                                  ToClayModifiers(keyEvent));
         }
         else if (@event is InputEventMouseButton mouseEvent &&
-                 mouseEvent.ButtonIndex == MouseButton.Left)
+                 ToClayKey(mouseEvent.ButtonIndex) is Clay.ClayKey mouseKey)
         {
-            runtime.FeedKeyAt(Clay.ClayKey.MouseLeft, mouseEvent.Pressed,
+            runtime.FeedKeyAt(mouseKey, mouseEvent.Pressed,
                               mouseEvent.Position.X, mouseEvent.Position.Y,
                               ToClayModifiers(mouseEvent));
         }
@@ -140,6 +134,71 @@ public partial class ClayDemo : Node2D
         JoyButton.DpadDown => Clay.ClayKey.GamepadDpadDown,
         JoyButton.DpadLeft => Clay.ClayKey.GamepadDpadLeft,
         JoyButton.DpadRight => Clay.ClayKey.GamepadDpadRight,
+        _ => null
+    };
+
+    private static Clay.ClayKey? ToClayKey(Key key)
+    {
+        int value = (int)key;
+        if (value >= (int)Key.A && value <= (int)Key.Z)
+            return Clay.ClayKey.A + (value - (int)Key.A);
+        if (value >= (int)Key.Key0 && value <= (int)Key.Key9)
+            return Clay.ClayKey.Digit0 + (value - (int)Key.Key0);
+
+        return key switch
+        {
+            Key.Escape => Clay.ClayKey.Escape,
+            Key.Enter => Clay.ClayKey.Enter,
+            Key.Tab => Clay.ClayKey.Tab,
+            Key.Space => Clay.ClayKey.Space,
+            Key.Backspace => Clay.ClayKey.Backspace,
+            Key.Delete => Clay.ClayKey.Delete,
+            Key.Home => Clay.ClayKey.Home,
+            Key.End => Clay.ClayKey.End,
+            Key.Pageup => Clay.ClayKey.PageUp,
+            Key.Pagedown => Clay.ClayKey.PageDown,
+            Key.Up => Clay.ClayKey.ArrowUp,
+            Key.Down => Clay.ClayKey.ArrowDown,
+            Key.Left => Clay.ClayKey.ArrowLeft,
+            Key.Right => Clay.ClayKey.ArrowRight,
+            Key.F1 => Clay.ClayKey.F1,
+            Key.F2 => Clay.ClayKey.F2,
+            Key.F3 => Clay.ClayKey.F3,
+            Key.F4 => Clay.ClayKey.F4,
+            Key.F5 => Clay.ClayKey.F5,
+            Key.F6 => Clay.ClayKey.F6,
+            Key.F7 => Clay.ClayKey.F7,
+            Key.F8 => Clay.ClayKey.F8,
+            Key.F9 => Clay.ClayKey.F9,
+            Key.F10 => Clay.ClayKey.F10,
+            Key.F11 => Clay.ClayKey.F11,
+            Key.F12 => Clay.ClayKey.F12,
+            Key.Apostrophe => Clay.ClayKey.Quote,
+            Key.Comma => Clay.ClayKey.Comma,
+            Key.Period => Clay.ClayKey.Period,
+            Key.Slash => Clay.ClayKey.Slash,
+            Key.Semicolon => Clay.ClayKey.Semicolon,
+            Key.Minus => Clay.ClayKey.Minus,
+            Key.Equal => Clay.ClayKey.Equals,
+            Key.Bracketleft => Clay.ClayKey.BracketLeft,
+            Key.Bracketright => Clay.ClayKey.BracketRight,
+            Key.Backslash => Clay.ClayKey.Backslash,
+            Key.Quoteleft => Clay.ClayKey.Grave,
+            Key.Shift => Clay.ClayKey.LeftShift,
+            Key.Ctrl => Clay.ClayKey.LeftControl,
+            Key.Alt => Clay.ClayKey.LeftAlt,
+            Key.Meta => Clay.ClayKey.LeftMeta,
+            _ => null
+        };
+    }
+
+    private static Clay.ClayKey? ToClayKey(MouseButton button) => button switch
+    {
+        MouseButton.Left => Clay.ClayKey.MouseLeft,
+        MouseButton.Right => Clay.ClayKey.MouseRight,
+        MouseButton.Middle => Clay.ClayKey.MouseMiddle,
+        MouseButton.Xbutton1 => Clay.ClayKey.MouseX1,
+        MouseButton.Xbutton2 => Clay.ClayKey.MouseX2,
         _ => null
     };
 
