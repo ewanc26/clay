@@ -7,7 +7,7 @@ the platform's native library location, open the directory in a Godot Mono
 editor, and run the project. Configure Clay with `-DCLAY_BUILD_SHARED=ON`
 (the default) to produce that library.
 
-`ClayRuntime.csproj` builds the wrapper independently as a `netstandard2.1`
+`ClayRuntime.csproj` builds the wrapper independently as a `net8.0`
 library, which is useful for checking the binding without the Godot editor.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
