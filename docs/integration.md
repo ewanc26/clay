@@ -20,6 +20,8 @@ their own update loop, feed raw `cl_input_event` values, call `update`, and
 consume the framebuffer after `render`. A Godot Mono binding should keep the
 managed layer at the C ABI boundary and expose an explicit native-library
 lifetime handle; the C++ headers are not a binding ABI.
+The C++ `Runtime::resize` method returns `false` for invalid dimensions and
+`true` after resizing the authoritative framebuffer.
 
 The install package is validated with both a C ABI consumer and a C++ consumer;
 the latter includes the public `<clay/engine.hpp>` umbrella, constructs a
