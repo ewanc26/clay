@@ -95,6 +95,10 @@ public sealed class ClayRuntime : IDisposable
         Marshal.Copy(pixels, destination, 0, destination.Length);
     }
 
+    /// <summary>Writes the latest rendered frame as an RGB PNG.</summary>
+    public void SavePng(string path) => Check(
+        Native.SavePng(handle, path ?? throw new ArgumentNullException(nameof(path))));
+
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)
@@ -139,5 +143,7 @@ public sealed class ClayRuntime : IDisposable
         public static extern IntPtr Pixels(RuntimeHandle runtime, out nuint count);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels_rgba")]
         public static extern IntPtr PixelsRgba(RuntimeHandle runtime, out nuint byteCount);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_save_png")]
+        public static extern int SavePng(RuntimeHandle runtime, string path);
     }
 }
