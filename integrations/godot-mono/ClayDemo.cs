@@ -23,13 +23,12 @@ public partial class ClayDemo : Node2D
 
     public override void _Process(double delta)
     {
-        if (runtime == null || image == null || texture == null || pixels == null)
+        if (runtime == null || image == null || texture == null || rgba == null)
             return;
 
         runtime.FeedMotion(GetGlobalMousePosition().X,
                            GetGlobalMousePosition().Y, 0, 0);
         runtime.Step(delta);
-        if (rgba == null) return;
         runtime.CopyRgbaTo(rgba);
         image.SetData(640, 480, false, Image.Format.Rgba8, rgba);
         texture.SetImage(image);
