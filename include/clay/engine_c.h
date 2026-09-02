@@ -29,6 +29,8 @@ CLAY_API uint32_t cl_engine_runtime_abi_version(void);
 
 CLAY_API cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                       uint64_t seed);
+CLAY_API cl_engine_runtime *cl_engine_runtime_create_with_arena(
+    int width, int height, uint64_t seed, size_t arena_bytes);
 CLAY_API void cl_engine_runtime_destroy(cl_engine_runtime *runtime);
 
 /* Advances one deterministic frame and renders the authoritative framebuffer. */

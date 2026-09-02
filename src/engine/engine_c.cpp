@@ -34,8 +34,8 @@ template <typename Fn> cl_err guarded(Fn &&fn) {
 struct cl_engine_runtime {
     clay::Runtime impl;
 
-    cl_engine_runtime(int width, int height, uint64_t seed)
-        : impl(width, height, seed) {}
+    cl_engine_runtime(int width, int height, uint64_t seed, size_t arena_bytes)
+        : impl(width, height, seed, arena_bytes) {}
 };
 
 extern "C" uint32_t cl_engine_runtime_abi_version(void) {
@@ -44,9 +44,15 @@ extern "C" uint32_t cl_engine_runtime_abi_version(void) {
 
 extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                           uint64_t seed) {
-    if (width <= 0 || height <= 0) return nullptr;
+    return cl_engine_runtime_create_with_arena(width, height, seed,
+                                                4u << 20);
+}
+
+extern "C" cl_engine_runtime *cl_engine_runtime_create_with_arena(
+    int width, int height, uint64_t seed, size_t arena_bytes) {
+    if (width <= 0 || height <= 0 || arena_bytes == 0) return nullptr;
     try {
-        return new cl_engine_runtime(width, height, seed);
+        return new cl_engine_runtime(width, height, seed, arena_bytes);
     } catch (const std::bad_alloc &) {
         return nullptr;
     } catch (...) {

@@ -37,10 +37,13 @@ public sealed class ClayRuntime : IDisposable
     private uint[] pixelBuffer;
 
     public ClayRuntime(int width, int height, ulong seed)
+        : this(width, height, seed, 4u << 20) { }
+
+    public ClayRuntime(int width, int height, ulong seed, nuint arenaBytes)
     {
         if (Native.AbiVersion() != AbiVersion)
             throw new InvalidOperationException("Incompatible Clay native ABI.");
-        handle = Native.Create(width, height, seed);
+        handle = Native.CreateWithArena(width, height, seed, arenaBytes);
         if (handle.IsInvalid)
             throw new InvalidOperationException("Clay runtime creation failed.");
         pixelBuffer = new uint[checked(width * height)];
@@ -182,6 +185,10 @@ public sealed class ClayRuntime : IDisposable
         public static extern uint AbiVersion();
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create")]
         public static extern RuntimeHandle Create(int width, int height, ulong seed);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create_with_arena")]
+        public static extern RuntimeHandle CreateWithArena(int width, int height,
+                                                            ulong seed,
+                                                            nuint arenaBytes);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_destroy")]
         public static extern void Destroy(IntPtr runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_step")]
