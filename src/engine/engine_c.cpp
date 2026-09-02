@@ -279,6 +279,8 @@ extern "C" cl_err cl_engine_runtime_install_builtin_systems(
         runtime->impl.systems().add(std::make_unique<clay::LifespanSystem>());
         runtime->impl.systems().add(std::make_unique<clay::HueShiftSystem>());
         runtime->impl.systems().add(std::make_unique<clay::RippleSystem>());
+        runtime->impl.systems().add(
+            std::make_unique<clay::SceneGraphSystem>());
     });
 }
 

@@ -21,6 +21,21 @@ bool is_wanderer(Species s) {
     return s == Species::Animal || s == Species::Pebble;
 }
 
+/* Compose a local Transform2D with a parent WorldTransform2D into a child
+ * WorldTransform2D: world = parent * local. */
+WorldTransform2D compose_transform(const Transform2D &child,
+                                   const WorldTransform2D &parent) {
+    float cr = std::cos(parent.rotation);
+    float sr = std::sin(parent.rotation);
+    float ps = parent.scale;
+    WorldTransform2D wt;
+    wt.x = parent.x + child.x * ps * cr - child.y * ps * sr;
+    wt.y = parent.y + child.x * ps * sr + child.y * ps * cr;
+    wt.rotation = parent.rotation + child.rotation;
+    wt.scale = parent.scale * child.scale;
+    return wt;
+}
+
 } // namespace
 
 void MovementSystem::update(Runtime &rt, double dt) {
@@ -145,6 +160,57 @@ void RippleSystem::update(Runtime &rt, double dt) {
         note_reaction(rt);
     }
     (void)dt;
+}
+
+void SceneGraphSystem::update(Runtime &rt, double dt) {
+    (void)dt;
+    World &world = rt.world();
+    ComponentStorage<Transform2D> &locals = world.storage<Transform2D>();
+    ComponentStorage<Parent> &parents = world.storage<Parent>();
+    ComponentStorage<WorldTransform2D> &world_ts =
+        world.storage<WorldTransform2D>();
+
+    /* Multi-pass resolution: each pass resolves one level of hierarchy depth.
+     * Deterministic because ComponentStorage iterates in insertion order. */
+    constexpr int kMaxPasses = 16;
+    for (int pass = 0; pass < kMaxPasses; pass++) {
+        bool changed = false;
+
+        /* Pass 1: copy local -> world for entities without a Parent. */
+        for (size_t i = 0; i < locals.count(); i++) {
+            Entity e = locals.owner[i];
+            if (parents.find(e)) continue; /* has parent, defer */
+            WorldTransform2D *prev = world_ts.find(e);
+            WorldTransform2D wt{
+                locals.dense[i].x, locals.dense[i].y, locals.dense[i].rotation,
+                locals.dense[i].scale};
+            if (!prev || prev->x != wt.x || prev->y != wt.y ||
+                prev->rotation != wt.rotation || prev->scale != wt.scale) {
+                world_ts.set(e, wt);
+                changed = true;
+            }
+        }
+
+        /* Pass 2: resolve children whose parent already has a world transform. */
+        for (size_t i = 0; i < parents.count(); i++) {
+            Entity child = parents.owner[i];
+            Entity parent = parents.dense[i].parent;
+
+            Transform2D *local = locals.find(child);
+            WorldTransform2D *parent_wt = world_ts.find(parent);
+            if (!local || !parent_wt) continue;
+
+            WorldTransform2D wt = compose_transform(*local, *parent_wt);
+            WorldTransform2D *prev = world_ts.find(child);
+            if (!prev || prev->x != wt.x || prev->y != wt.y ||
+                prev->rotation != wt.rotation || prev->scale != wt.scale) {
+                world_ts.set(child, wt);
+                changed = true;
+            }
+        }
+
+        if (!changed) break;
+    }
 }
 
 } // namespace clay

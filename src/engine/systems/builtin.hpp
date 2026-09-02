@@ -65,6 +65,19 @@ class RippleSystem final : public System {
     bool saw_wheel_ = false;
 };
 
+/* SceneGraphSystem resolves hierarchical transforms each frame: it composes
+ * each entity's local Transform2D with its parent chain (via the Parent
+ * component) and writes the result into WorldTransform2D. Entities with no
+ * Parent get a direct copy. Runs last so all transform mutations are settled
+ * before the resolved world transform is read by the renderer. */
+class SceneGraphSystem final : public System {
+  public:
+    const char *name() const override {
+        return "scene_graph";
+    }
+    void update(Runtime &rt, double dt) override;
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_SYSTEMS_BUILTIN_HPP */
