@@ -61,9 +61,9 @@ This is the Mono/P/Invoke integration path, not a Godot GDExtension. A
 GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
 addition to a shared library; that adapter is a separate future integration.
 
-The committed `export_presets.cfg` provides a reproducible macOS export. After
-exporting, use the bundled macOS helper to stage the platform library into the
-app's native search path:
+The committed `export_presets.cfg` provides reproducible macOS and Windows
+Desktop exports. After exporting on macOS, use the bundled helper to stage the
+platform library into the app's native search path:
 
 ```sh
 ./scripts/godot_mono_export_macos.sh build/ClayGodotSample.app
@@ -78,11 +78,25 @@ bundle:
 ./godot_mono_stage_native.sh build/ClayGodotSample.app build/libclay_engine.dylib
 ```
 
+Windows x86_64 export and native loading are validated by
+`.github/workflows/godot-windows-export.yml`. The workflow pins the official
+Godot .NET editor and matching export templates, exports the `Windows Desktop`
+preset, stages `clay_engine.dll` beside the player, launches it headlessly, and
+requires the sample to report a frame rendered through the native Clay runtime.
+The same check can be run from PowerShell when the editor and native DLL paths
+are available:
+
+```powershell
+$env:GODOT_MONO_BIN = 'C:\path\to\Godot_v4.7.2-stable_mono_win64.exe'
+$env:CLAY_NATIVE_LIBRARY = "$PWD\build\Debug\clay_engine.dll"
+./scripts/godot_mono_windows_export_smoke.ps1
+```
+
 Godot currently packs arbitrary `.dylib` files as project resources; macOS
 cannot resolve a P/Invoke library from inside that resource pack. The helper
-keeps the macOS export and staging steps together. Linux and Windows exported
-players still require platform-specific validation and staging coverage; see
-`docs/issues.md`.
+keeps the macOS export and staging steps together. Windows is covered by the
+exported-player smoke test above; Linux runtime/export validation remains
+outstanding and is tracked in `docs/issues.md`.
 
 The sample reuses its managed pixel and RGBA conversion buffers each frame;
 production hosts can upload through a native texture bridge for further
