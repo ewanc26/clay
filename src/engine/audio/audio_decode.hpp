@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <span>
 #include <vector>
@@ -56,21 +55,22 @@ decode_sample(std::span<const std::uint8_t> bytes, std::size_t offset,
         case 8:
             return (static_cast<float>(bytes[offset]) - 128.0F) / 128.0F;
         case 16: {
-            const auto raw = static_cast<std::int16_t>(read_u16_le(bytes, offset));
+            const auto raw = std::bit_cast<std::int16_t>(read_u16_le(bytes, offset));
             return static_cast<float>(raw) / 32768.0F;
         }
         case 24: {
-            std::uint32_t raw = static_cast<std::uint32_t>(bytes[offset]) |
-                                (static_cast<std::uint32_t>(bytes[offset + 1]) << 8U) |
-                                (static_cast<std::uint32_t>(bytes[offset + 2]) << 16U);
-            if ((raw & 0x00800000U) != 0) {
-                raw |= 0xFF000000U;
-            }
-            return static_cast<float>(static_cast<std::int32_t>(raw)) /
-                   8388608.0F;
+            const std::uint32_t raw =
+                static_cast<std::uint32_t>(bytes[offset]) |
+                (static_cast<std::uint32_t>(bytes[offset + 1]) << 8U) |
+                (static_cast<std::uint32_t>(bytes[offset + 2]) << 16U);
+            const std::int32_t signed_raw =
+                (raw & 0x00800000U) != 0
+                    ? static_cast<std::int32_t>(raw) - 0x01000000
+                    : static_cast<std::int32_t>(raw);
+            return static_cast<float>(signed_raw) / 8388608.0F;
         }
         case 32: {
-            const auto raw = static_cast<std::int32_t>(read_u32_le(bytes, offset));
+            const auto raw = std::bit_cast<std::int32_t>(read_u32_le(bytes, offset));
             return static_cast<float>(static_cast<double>(raw) / 2147483648.0);
         }
         default:
