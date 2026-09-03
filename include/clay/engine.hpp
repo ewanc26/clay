@@ -3,6 +3,7 @@
 
 /* Public C++ engine surface for standalone hosts. */
 #include <clay/engine/action.hpp>
+#include <clay/engine/audio/audio_decode.hpp>
 #include <clay/engine/audio/audio_mixer.hpp>
 #include <clay/engine/command.hpp>
 #include <clay/engine/ecs/components.hpp>
