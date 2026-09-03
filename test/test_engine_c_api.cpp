@@ -3,10 +3,29 @@
 
 #include <clay/engine_c.h>
 
+#include <filesystem>
 #include <limits>
 #include <string>
 
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
+    const std::filesystem::path temp_dir = std::filesystem::temp_directory_path();
+    const std::string recording_path =
+        (temp_dir / "clay-engine-c-api.clayrec").string();
+    const std::string replay_path =
+        (temp_dir / "clay-engine-c-api-replay.clayrec").string();
+    const std::string png_path =
+        (temp_dir / "clay-engine-c-api.png").string();
+    const std::filesystem::path missing_dir =
+        temp_dir / "clay-engine-c-api-missing";
+    const std::string missing_recording_path =
+        (missing_dir / "missing.clayrec").string();
+    const std::string missing_png_path =
+        (missing_dir / "frame.png").string();
+    std::filesystem::remove(recording_path);
+    std::filesystem::remove(replay_path);
+    std::filesystem::remove(png_path);
+    std::filesystem::remove_all(missing_dir);
+
     CHECK(cl_engine_runtime_abi_version() == CLAY_ENGINE_ABI_VERSION);
     CHECK(std::string(cl_engine_error_string(CLAY_OK)) == "ok");
     CHECK(std::string(cl_engine_error_string(CLAY_ERR_PARSE)) == "parse error");
@@ -41,12 +60,12 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
           CLAY_OK);
     CHECK(cl_engine_runtime_load_actions(runtime, "not json") == CLAY_ERR_PARSE);
     CHECK(cl_engine_runtime_load_actions(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
-    CHECK(cl_engine_runtime_save_recording(runtime,
-                                           "/tmp/clay-engine-c-api.clayrec") ==
+    CHECK(cl_engine_runtime_save_recording(runtime, recording_path.c_str()) ==
           CLAY_OK);
-    CHECK(cl_engine_runtime_load_recording(
-              runtime, "/tmp/clay-engine-c-api.clayrec") == CLAY_OK);
-    CHECK(cl_engine_runtime_load_recording(runtime, "/no/such/file.clayrec") ==
+    CHECK(cl_engine_runtime_load_recording(runtime, recording_path.c_str()) ==
+          CLAY_OK);
+    CHECK(cl_engine_runtime_load_recording(runtime,
+                                           missing_recording_path.c_str()) ==
           CLAY_ERR_IO);
     cl_engine_runtime_set_replaying(runtime, true);
     CHECK(cl_engine_runtime_is_replaying(runtime));
@@ -57,14 +76,14 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     REQUIRE(recorded != nullptr);
     CHECK(cl_engine_runtime_step(recorded, 1.0 / 60.0) == CLAY_OK);
     CHECK(cl_engine_runtime_feed_key(recorded, CLAY_KEY_A, true) == CLAY_OK);
-    CHECK(cl_engine_runtime_save_recording(
-              recorded, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    CHECK(cl_engine_runtime_save_recording(recorded, replay_path.c_str()) ==
+          CLAY_OK);
     CHECK(cl_engine_runtime_recording_count(recorded) == 1);
     CHECK(cl_engine_runtime_recording_fingerprint(recorded) != 0);
     cl_engine_runtime *replayed = cl_engine_runtime_create(16, 16, 42);
     REQUIRE(replayed != nullptr);
-    CHECK(cl_engine_runtime_load_recording(
-              replayed, "/tmp/clay-engine-c-api-replay.clayrec") == CLAY_OK);
+    CHECK(cl_engine_runtime_load_recording(replayed, replay_path.c_str()) ==
+          CLAY_OK);
     CHECK(cl_engine_runtime_recording_count(replayed) == 1);
     CHECK(cl_engine_runtime_recording_fingerprint(replayed) ==
           cl_engine_runtime_recording_fingerprint(recorded));
@@ -142,11 +161,10 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_pixels_rgba(runtime, nullptr) == rgba);
     CHECK(cl_engine_runtime_pixels(nullptr, nullptr) == nullptr);
     CHECK(cl_engine_runtime_pixels_rgba(nullptr, nullptr) == nullptr);
-    CHECK(cl_engine_runtime_save_png(runtime, "/tmp/clay-engine-c-api.png") ==
-          CLAY_OK);
+    CHECK(cl_engine_runtime_save_png(runtime, png_path.c_str()) == CLAY_OK);
     CHECK(cl_engine_runtime_save_png(runtime, nullptr) == CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_save_png(runtime, "") == CLAY_ERR_INVALID_ARG);
-    CHECK(cl_engine_runtime_save_png(runtime, "/no/such/directory/frame.png") ==
+    CHECK(cl_engine_runtime_save_png(runtime, missing_png_path.c_str()) ==
           CLAY_ERR_IO);
     CHECK(cl_engine_runtime_frame(runtime) == 1);
     CHECK(cl_engine_runtime_sim_time(runtime) == doctest::Approx(1.0 / 60.0));
@@ -169,6 +187,10 @@ TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     CHECK(cl_engine_runtime_load_reactions(runtime, nullptr) ==
           CLAY_ERR_INVALID_ARG);
     cl_engine_runtime_destroy(runtime);
+
+    std::filesystem::remove(recording_path);
+    std::filesystem::remove(replay_path);
+    std::filesystem::remove(png_path);
 }
 
 TEST_CASE("C ABI rejects invalid construction") {
