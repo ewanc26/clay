@@ -276,7 +276,8 @@ struct AudioSystem::Impl {
         }
         std::vector<std::uint8_t> encoded(static_cast<std::size_t>(size));
         input.seekg(0, std::ios::beg);
-        if (!input.read(reinterpret_cast<char *>(encoded.data()), size))
+        if (!input.read(reinterpret_cast<char *>(encoded.data()),
+                        static_cast<std::streamsize>(size)))
             return std::nullopt;
         return load_clip_memory(encoded);
     }
@@ -315,6 +316,7 @@ struct AudioSystem::Impl {
         std::scoped_lock lock(mutex);
         mixer.stop_all();
         spatial.clear();
+        music.clear();
     }
 
     void stop_music(float seconds) noexcept {
@@ -398,6 +400,8 @@ struct AudioSystem::Impl {
         }
         std::scoped_lock lock(mutex);
         if (!mixer.mix_stereo(output)) return false;
+        if (music.empty()) return true;
+
         const std::size_t frames = output.size() / 2;
         stream_scratch.resize(output.size());
 
