@@ -39,13 +39,22 @@ cp "$repo_dir/integrations/godot-mono/ClayDemo.cs" \
    "$repo_dir/integrations/godot-mono/project.godot" "$stage_dir/"
 cp "$native_lib" "$stage_dir/"
 
+# Linux does not search the project/current directory for P/Invoke libraries by
+# default. The smoke project deliberately stages libclay_engine.so beside its
+# project files, so expose that directory to the dynamic loader for both the
+# editor import and the headless game run. Exported players use the platform
+# staging helper instead.
+if [[ "$native_lib" == *.so ]]; then
+    export LD_LIBRARY_PATH="$stage_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+
 dotnet build "$stage_dir/ClayGodotSample.csproj" --nologo --ignore-failed-sources
 "$godot_bin" --headless --path "$stage_dir" --editor \
     --build-solutions --quit-after 10
 run_log="$stage_dir/game.log"
 "$godot_bin" --headless --path "$stage_dir" --quit-after 30 \
     2>&1 | tee "$run_log"
-if grep -Eq 'Cannot instantiate C# script|Cannot load|Unable to load|DllNotFoundException|EntryPointNotFoundException|Clay runtime creation failed|Clay error:' "$run_log"; then
+if grep -Eq 'Cannot instantiate C# script|Cannot load|Unable to load|DllNotFoundException|EntryPointNotFoundException|BadImageFormatException|Clay runtime creation failed|Clay error:' "$run_log"; then
     echo "Godot Mono smoke test reported a runtime loading error" >&2
     exit 1
 fi

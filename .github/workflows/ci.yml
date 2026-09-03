@@ -35,7 +35,7 @@ jobs:
         run: cmake --build build --config Debug -j
 
       - name: Test
-        run: ctest --test-dir build -C Debug --timeout 30 --stop-on-failure --output-on-failure
+        run: ctest --test-dir build -C Debug --timeout 30 --output-on-failure
 
       - name: Verify installed CMake package
         shell: bash
@@ -106,16 +106,49 @@ jobs:
         run: dotnet build integrations/godot-mono/ClayGodotSample.csproj --nologo
 
   godot-mono-runtime:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GODOT_VERSION: '4.7.2'
+      GODOT_LINUX_SHA256: '129f82db7bafd54ae14bb5bb284041c73860e8c7a009a3a026ca5e946cbff247'
     steps:
       - uses: actions/checkout@v4
-      - name: Install Godot Mono
-        run: brew install --cask godot-mono
+
+      - name: Install Godot Mono (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install --cask godot-mono
+          echo "GODOT_MONO_BIN=$(command -v godot-mono)" >> "$GITHUB_ENV"
+
+      - name: Install pinned Godot .NET (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/godot-mono-linux.zip"
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_mono_linux_x86_64.zip"
+          curl --fail --location --retry 3 "$url" --output "$archive"
+          actual="$(sha256sum "$archive" | awk '{print $1}')"
+          if [[ "$actual" != "$GODOT_LINUX_SHA256" ]]; then
+            echo "Godot editor SHA-256 mismatch: $actual" >&2
+            exit 1
+          fi
+          dest="$RUNNER_TEMP/godot-mono-linux"
+          unzip -q "$archive" -d "$dest"
+          godot="$(find "$dest" -type f -name 'Godot_v*-stable_mono_linux.x86_64' -print -quit)"
+          if [[ -z "$godot" ]]; then
+            echo "Godot .NET Linux executable not found after extraction" >&2
+            exit 1
+          fi
+          chmod +x "$godot"
+          echo "GODOT_MONO_BIN=$godot" >> "$GITHUB_ENV"
+
       - name: Build Clay shared library
         run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
       - name: Compile Clay shared library
         run: cmake --build build --config Debug -j
       - name: Run Godot Mono smoke test
-        env:
-          GODOT_MONO_BIN: godot-mono
         run: ./scripts/godot_mono_smoke.sh

@@ -9,7 +9,8 @@ editor, and run the project. Configure Clay with `-DCLAY_BUILD_SHARED=ON`
 
 `cmake --install build --prefix sdk` places the shared library beside the
 sample project at `sdk/integrations/godot-mono/`, where
-`DllImport("clay_engine")` can resolve it immediately. It also keeps a copy at
+`DllImport("clay_engine")` can resolve it immediately on platforms whose native
+loader searches that location. It also keeps a copy at
 `sdk/integrations/godot-mono/native/<platform>/` (`macos`, `linux`, or
 `windows`) for platform-specific export staging.
 
@@ -28,8 +29,8 @@ managed facade, so invalid arguments, parse errors, I/O failures, and arena
 exhaustion are distinguishable in host exceptions.
 
 After building Clay and installing Godot Mono, the bundled smoke test stages a
-temporary project and verifies the managed build, Godot solution import, and
-headless game startup:
+temporary project and verifies the managed build, Godot solution import, native
+library loading, and headless game startup:
 
 ```sh
 GODOT_MONO_BIN=/path/to/godot-mono ./scripts/godot_mono_smoke.sh
@@ -37,7 +38,9 @@ GODOT_MONO_BIN=/path/to/godot-mono ./scripts/godot_mono_smoke.sh
 
 The script defaults to `godot-mono` on `PATH` and auto-detects the standard
 macOS, Linux, or Windows library in `build/`; set `CLAY_NATIVE_LIBRARY` for a
-custom platform or build directory.
+custom platform or build directory. On Linux the temporary staging directory is
+added to `LD_LIBRARY_PATH` for the editor/runtime process because the dynamic
+loader does not search the project directory by default.
 `ClayRuntime.IsKeyDown` exposes the authoritative held-key state.
 `ClayRuntime.IsFocused` exposes focus state, and `FeedKeyAt` preserves canvas
 coordinates and modifier bits for positioned key or mouse-button events.
@@ -54,16 +57,18 @@ managed facade. Joypad A/B/X/Y, shoulders, start/back, stick buttons, and the
 four D-pad directions map to Clay's corresponding `ClayKey` values.
 
 The wrapper owns the native handle with `SafeHandle`; framebuffer data is
-copied out as packed `0x00RRGGBB` pixels. The wrapper deliberately does not
-marshal Clay's C++ headers or expose native pointers to managed code.
+copied out as packed `0x00RRGGBB` pixels. The sample reuses its managed pixel
+and RGBA conversion buffers each frame, reallocating only when the render
+surface changes. The wrapper deliberately does not marshal Clay's C++ headers
+or expose native pointers to managed code.
 
 This is the Mono/P/Invoke integration path, not a Godot GDExtension. A
 GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
 addition to a shared library; that adapter is a separate future integration.
 
-The committed `export_presets.cfg` provides reproducible macOS and Windows
-Desktop exports. After exporting on macOS, use the bundled helper to stage the
-platform library into the app's native search path:
+The committed `export_presets.cfg` provides reproducible macOS, Windows Desktop
+and Linux/X11 exports. After exporting on macOS, use the bundled helper to stage
+the platform library into the app's native search path:
 
 ```sh
 ./scripts/godot_mono_export_macos.sh build/ClayGodotSample.app
@@ -92,13 +97,27 @@ $env:CLAY_NATIVE_LIBRARY = "$PWD\build\Debug\clay_engine.dll"
 ./scripts/godot_mono_windows_export_smoke.ps1
 ```
 
-Godot currently packs arbitrary `.dylib` files as project resources; macOS
-cannot resolve a P/Invoke library from inside that resource pack. The helper
-keeps the macOS export and staging steps together. Windows is covered by the
-exported-player smoke test above; Linux runtime/export validation remains
-outstanding and is tracked in `docs/issues.md`.
+Linux x86_64 export and native loading are validated by
+`.github/workflows/godot-linux-export.yml`. It uses the pinned official Godot
+.NET editor and matching export templates, exports the `Linux/X11` preset,
+stages `libclay_engine.so` beside the player, supplies that directory to the
+Linux dynamic loader, launches the export headlessly, and requires a frame
+rendered through Clay. With the editor/templates installed, the same check is:
 
-The sample reuses its managed pixel and RGBA conversion buffers each frame;
-production hosts can upload through a native texture bridge for further
-optimization. CI coverage and platform packaging are tracked in
-`docs/issues.md`.
+```sh
+GODOT_MONO_BIN=/path/to/Godot_v4.7.2-stable_mono_linux.x86_64 \
+CLAY_NATIVE_LIBRARY="$PWD/build/libclay_engine.so" \
+./scripts/godot_mono_linux_export_smoke.sh
+```
+
+Godot currently packs arbitrary `.dylib` files as project resources; macOS
+cannot resolve a P/Invoke library from inside that resource pack. The macOS
+helper keeps the export and staging steps together. Linux likewise needs an
+explicit native-loader search path when running a loose staged `.so`; the
+runtime and exported-player smoke scripts set that path for their child
+processes. Windows resolves the staged DLL from the executable directory.
+
+Desktop Mono validation now covers real native loading on macOS, Linux, and
+Windows, including exported players on Linux and Windows. A first-class
+GDExtension remains a separate integration decision rather than a prerequisite
+for the Mono/P/Invoke package.
