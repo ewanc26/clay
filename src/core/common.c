@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 const char *cl_err_str(cl_err e) {
     switch (e) {
@@ -21,7 +22,7 @@ const char *cl_err_str(cl_err e) {
 int cl_str_cmp(cl_str a, cl_str b) {
     size_t n = a.len < b.len ? a.len : b.len;
     int c = 0;
-    if (n > 0) c = __builtin_memcmp(a.data, b.data, n);
+    if (n > 0) c = memcmp(a.data, b.data, n);
     if (c != 0) return c;
     return a.len < b.len ? -1 : (a.len > b.len ? 1 : 0);
 }
