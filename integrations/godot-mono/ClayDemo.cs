@@ -39,6 +39,7 @@ public partial class ClayDemo : Node2D
     private byte[]? rgba;
     private int surfaceWidth;
     private int surfaceHeight;
+    private bool reportedNativeFrame;
 
     public override void _Ready()
     {
@@ -71,6 +72,12 @@ public partial class ClayDemo : Node2D
                       rgba);
         texture.SetImage(image);
         QueueRedraw();
+
+        if (!reportedNativeFrame)
+        {
+            reportedNativeFrame = true;
+            GD.Print("Clay Godot sample rendered native frame");
+        }
     }
 
     public override void _Input(InputEvent @event)
