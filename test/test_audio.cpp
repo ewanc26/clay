@@ -1,12 +1,92 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include "audio/audio_decode.hpp"
 #include "audio/audio_mixer.hpp"
 
 #include <array>
+#include <bit>
+#include <cstdint>
+#include <limits>
 #include <vector>
 
 using namespace clay;
+
+namespace {
+
+void append_u16(std::vector<std::uint8_t> &bytes, std::uint16_t value) {
+    bytes.push_back(static_cast<std::uint8_t>(value & 0xFFU));
+    bytes.push_back(static_cast<std::uint8_t>((value >> 8U) & 0xFFU));
+}
+
+void append_u32(std::vector<std::uint8_t> &bytes, std::uint32_t value) {
+    bytes.push_back(static_cast<std::uint8_t>(value & 0xFFU));
+    bytes.push_back(static_cast<std::uint8_t>((value >> 8U) & 0xFFU));
+    bytes.push_back(static_cast<std::uint8_t>((value >> 16U) & 0xFFU));
+    bytes.push_back(static_cast<std::uint8_t>((value >> 24U) & 0xFFU));
+}
+
+void append_fourcc(std::vector<std::uint8_t> &bytes, const char (&id)[5]) {
+    for (std::size_t i = 0; i < 4; ++i) {
+        bytes.push_back(static_cast<std::uint8_t>(id[i]));
+    }
+}
+
+void patch_u32(std::vector<std::uint8_t> &bytes, std::size_t offset,
+               std::uint32_t value) {
+    bytes[offset] = static_cast<std::uint8_t>(value & 0xFFU);
+    bytes[offset + 1] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
+    bytes[offset + 2] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
+    bytes[offset + 3] = static_cast<std::uint8_t>((value >> 24U) & 0xFFU);
+}
+
+std::vector<std::uint8_t>
+make_wav(std::uint16_t encoding, std::uint16_t channels,
+         std::uint32_t sample_rate, std::uint16_t bits_per_sample,
+         std::vector<std::uint8_t> data, bool add_odd_junk = false,
+         std::uint16_t block_align_override = 0) {
+    std::vector<std::uint8_t> bytes;
+    append_fourcc(bytes, "RIFF");
+    append_u32(bytes, 0);
+    append_fourcc(bytes, "WAVE");
+
+    if (add_odd_junk) {
+        append_fourcc(bytes, "JUNK");
+        append_u32(bytes, 3);
+        bytes.insert(bytes.end(), {0xAA, 0xBB, 0xCC, 0x00});
+    }
+
+    const std::uint16_t bytes_per_sample = bits_per_sample / 8;
+    const std::uint16_t block_align =
+        block_align_override != 0
+            ? block_align_override
+            : static_cast<std::uint16_t>(channels * bytes_per_sample);
+
+    append_fourcc(bytes, "fmt ");
+    append_u32(bytes, 16);
+    append_u16(bytes, encoding);
+    append_u16(bytes, channels);
+    append_u32(bytes, sample_rate);
+    append_u32(bytes, sample_rate * block_align);
+    append_u16(bytes, block_align);
+    append_u16(bytes, bits_per_sample);
+
+    append_fourcc(bytes, "data");
+    append_u32(bytes, static_cast<std::uint32_t>(data.size()));
+    bytes.insert(bytes.end(), data.begin(), data.end());
+    if ((data.size() & 1U) != 0) {
+        bytes.push_back(0);
+    }
+
+    patch_u32(bytes, 4, static_cast<std::uint32_t>(bytes.size() - 8));
+    return bytes;
+}
+
+void append_float32(std::vector<std::uint8_t> &bytes, float value) {
+    append_u32(bytes, std::bit_cast<std::uint32_t>(value));
+}
+
+} // namespace
 
 TEST_CASE("audio mixer rejects incompatible clips") {
     AudioMixer mixer(48000);
@@ -128,4 +208,84 @@ TEST_CASE("audio mixer rejects non-stereo output spans") {
     CHECK(output[0] == 0.0F);
     CHECK(output[1] == 0.0F);
     CHECK(output[2] == 0.0F);
+}
+
+TEST_CASE("WAV decoder converts signed 16-bit mono PCM") {
+    auto wav = make_wav(1, 1, 48000, 16,
+                        {0x00, 0x80, 0x00, 0x00, 0xFF, 0x7F});
+    auto clip = decode_wav(wav);
+    REQUIRE(clip.has_value());
+    CHECK(clip->sample_rate == 48000);
+    CHECK(clip->channels == 1);
+    REQUIRE(clip->samples.size() == 3);
+    CHECK(clip->samples[0] == doctest::Approx(-1.0F));
+    CHECK(clip->samples[1] == doctest::Approx(0.0F));
+    CHECK(clip->samples[2] == doctest::Approx(32767.0F / 32768.0F));
+}
+
+TEST_CASE("WAV decoder handles stereo PCM and padded unknown chunks") {
+    auto wav = make_wav(1, 2, 22050, 8, {0x00, 0xFF, 0x80, 0x40}, true);
+    auto clip = decode_wav(wav);
+    REQUIRE(clip.has_value());
+    CHECK(clip->sample_rate == 22050);
+    CHECK(clip->channels == 2);
+    REQUIRE(clip->samples.size() == 4);
+    CHECK(clip->samples[0] == doctest::Approx(-1.0F));
+    CHECK(clip->samples[1] == doctest::Approx(127.0F / 128.0F));
+    CHECK(clip->samples[2] == doctest::Approx(0.0F));
+    CHECK(clip->samples[3] == doctest::Approx(-0.5F));
+}
+
+TEST_CASE("WAV decoder supports 24-bit PCM and 32-bit float") {
+    auto pcm24 = make_wav(1, 1, 48000, 24,
+                          {0x00, 0x00, 0x80, 0xFF, 0xFF, 0x7F});
+    auto int_clip = decode_wav(pcm24);
+    REQUIRE(int_clip.has_value());
+    REQUIRE(int_clip->samples.size() == 2);
+    CHECK(int_clip->samples[0] == doctest::Approx(-1.0F));
+    CHECK(int_clip->samples[1] == doctest::Approx(8388607.0F / 8388608.0F));
+
+    std::vector<std::uint8_t> float_data;
+    append_float32(float_data, -0.25F);
+    append_float32(float_data, 0.75F);
+    auto float_wav = make_wav(3, 2, 48000, 32, std::move(float_data));
+    auto float_clip = decode_wav(float_wav);
+    REQUIRE(float_clip.has_value());
+    REQUIRE(float_clip->samples.size() == 2);
+    CHECK(float_clip->samples[0] == doctest::Approx(-0.25F));
+    CHECK(float_clip->samples[1] == doctest::Approx(0.75F));
+}
+
+TEST_CASE("WAV decoder preserves native rate for mixer validation") {
+    auto wav = make_wav(1, 1, 44100, 16, {0x00, 0x20});
+    auto clip = decode_wav(wav);
+    REQUIRE(clip.has_value());
+    CHECK(clip->sample_rate == 44100);
+
+    AudioMixer mixer(48000);
+    CHECK_FALSE(mixer.add_clip(std::move(*clip)).has_value());
+}
+
+TEST_CASE("WAV decoder rejects malformed and unsupported files") {
+    auto truncated = make_wav(1, 1, 48000, 16, {0x00, 0x00});
+    truncated.pop_back();
+    CHECK_FALSE(decode_wav(truncated).has_value());
+
+    auto compressed = make_wav(6, 1, 48000, 16, {0x00, 0x00});
+    CHECK_FALSE(decode_wav(compressed).has_value());
+
+    auto bad_channels = make_wav(1, 3, 48000, 16,
+                                 {0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+    CHECK_FALSE(decode_wav(bad_channels).has_value());
+
+    auto bad_align = make_wav(1, 2, 48000, 16,
+                              {0x00, 0x00, 0x00, 0x00}, false, 2);
+    CHECK_FALSE(decode_wav(bad_align).has_value());
+}
+
+TEST_CASE("WAV decoder rejects non-finite float samples") {
+    std::vector<std::uint8_t> data;
+    append_float32(data, std::numeric_limits<float>::infinity());
+    auto wav = make_wav(3, 1, 48000, 32, std::move(data));
+    CHECK_FALSE(decode_wav(wav).has_value());
 }
