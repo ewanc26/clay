@@ -1,0 +1,75 @@
+name: godot-windows-export
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/godot-windows-export.yml'
+      - 'CMakeLists.txt'
+      - 'include/**'
+      - 'src/**'
+      - 'integrations/godot-mono/**'
+      - 'scripts/godot_mono_windows_export_smoke.ps1'
+  pull_request:
+    paths:
+      - '.github/workflows/godot-windows-export.yml'
+      - 'CMakeLists.txt'
+      - 'include/**'
+      - 'src/**'
+      - 'integrations/godot-mono/**'
+      - 'scripts/godot_mono_windows_export_smoke.ps1'
+  workflow_dispatch:
+
+jobs:
+  exported-player:
+    runs-on: windows-latest
+    env:
+      GODOT_VERSION: '4.7.2'
+      GODOT_EDITOR_SHA256: 'a2a48473a7414c5f19fab690518caebb738c09ef9601f6bd2388676a7f53b3c0'
+      GODOT_TEMPLATES_SHA256: '92f8681e349ef1f90891b792da95e3b2b0bd1ed610b78018c58feb2d87e15a9d'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Clay x64
+        run: cmake -S . -B build -A x64 -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
+
+      - name: Build Clay DLL
+        run: cmake --build build --config Debug -j
+
+      - name: Download pinned Godot .NET editor
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'godot-mono.zip'
+          $url = "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION-stable/Godot_v$env:GODOT_VERSION-stable_mono_win64.zip"
+          curl.exe --fail --location --retry 3 $url --output $archive
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:GODOT_EDITOR_SHA256) { throw "Godot editor SHA-256 mismatch: $actual" }
+          $dest = Join-Path $env:RUNNER_TEMP 'godot-mono'
+          Expand-Archive -Path $archive -DestinationPath $dest -Force
+          $exe = Get-ChildItem $dest -Recurse -Filter 'Godot_v*-stable_mono_win64.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Godot .NET editor executable not found after extraction' }
+          "GODOT_MONO_BIN=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install pinned Godot .NET export templates
+        shell: pwsh
+        run: |
+          $tpz = Join-Path $env:RUNNER_TEMP 'godot-mono-templates.tpz'
+          $url = "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION-stable/Godot_v$env:GODOT_VERSION-stable_mono_export_templates.tpz"
+          curl.exe --fail --location --retry 3 $url --output $tpz
+          $actual = (Get-FileHash $tpz -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:GODOT_TEMPLATES_SHA256) { throw "Godot templates SHA-256 mismatch: $actual" }
+          $zip = Join-Path $env:RUNNER_TEMP 'godot-mono-templates.zip'
+          Copy-Item $tpz $zip
+          $unpacked = Join-Path $env:RUNNER_TEMP 'godot-mono-templates'
+          Expand-Archive -Path $zip -DestinationPath $unpacked -Force
+          $template = Get-ChildItem $unpacked -Recurse -Filter 'windows_debug_x86_64.exe' | Select-Object -First 1
+          if (-not $template) { throw 'Windows x86_64 debug export template not found' }
+          $target = Join-Path $env:APPDATA "Godot\export_templates\$env:GODOT_VERSION.stable.mono"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          Copy-Item (Join-Path $template.Directory.FullName '*') $target -Recurse -Force
+
+      - name: Export and run Windows Godot sample
+        shell: pwsh
+        env:
+          CLAY_NATIVE_LIBRARY: ${{ github.workspace }}\build\Debug\clay_engine.dll
+        run: ./scripts/godot_mono_windows_export_smoke.ps1
