@@ -159,6 +159,12 @@ if(CLAY_BUILD_SHARED)
   add_library(clay_engine SHARED ${CLAY_ENGINE_SOURCES})
   target_compile_definitions(clay_engine PRIVATE CLAY_BUILDING_SHARED=1)
   target_compile_definitions(clay_engine INTERFACE CLAY_USING_SHARED=1)
+  # MSVC does not export C++ symbols from a DLL unless they are explicitly
+  # annotated. Clay's public C++ API predates export annotations, so have CMake
+  # generate the DLL export table from the object files for Windows builds.
+  if(WIN32)
+    set_target_properties(clay_engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
 else()
   add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
 endif()
