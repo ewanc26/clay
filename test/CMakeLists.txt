@@ -5,7 +5,7 @@
 #   test_input/test_event/test_input_log
 #
 # C++ engine tests (doctest, link clay_engine):
-#   test_ecs/test_raster/test_actions/test_command
+#   test_ecs/test_raster/test_actions/test_command/test_audio
 #   test_collision
 #   test_reactions/test_runtime   (the pipeline + replay determinism)
 
@@ -49,6 +49,7 @@ clay_cpp_test(test_scene3d)
 clay_cpp_test(test_text)
 clay_cpp_test(test_actions)
 clay_cpp_test(test_command)
+clay_cpp_test(test_audio)
 clay_cpp_test(test_collision)
 clay_cpp_test(test_animation)
 clay_cpp_test(test_ui)
