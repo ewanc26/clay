@@ -23,6 +23,12 @@ function(clay_cpp_test name)
   add_executable(${name} ${name}.cpp)
   target_include_directories(${name} PRIVATE ${PROJECT_SOURCE_DIR}/src/engine)
   target_link_libraries(${name} PRIVATE clay_engine)
+  if(WIN32 AND CLAY_BUILD_SHARED)
+    add_custom_command(TARGET ${name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              $<TARGET_FILE:clay_engine> $<TARGET_FILE_DIR:${name}>
+      VERBATIM)
+  endif()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
