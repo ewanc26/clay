@@ -6,9 +6,13 @@
 #include "event.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <string>
+#include <string_view>
 #include <vector>
 
 using namespace clay;
@@ -42,6 +46,43 @@ std::vector<std::uint8_t> wav16(std::uint32_t rate,
     return out;
 }
 
+int base64_value(char c) {
+    if (c >= 'A' && c <= 'Z') return c - 'A';
+    if (c >= 'a' && c <= 'z') return c - 'a' + 26;
+    if (c >= '0' && c <= '9') return c - '0' + 52;
+    if (c == '+') return 62;
+    if (c == '/') return 63;
+    return -1;
+}
+
+std::vector<std::uint8_t> decode_base64(std::string_view text) {
+    std::vector<std::uint8_t> out;
+    int accumulator = 0;
+    int bits = -8;
+    for (char c : text) {
+        if (c == '=') break;
+        const int value = base64_value(c);
+        if (value < 0) continue;
+        accumulator = (accumulator << 6) | value;
+        bits += 6;
+        if (bits >= 0) {
+            out.push_back(static_cast<std::uint8_t>((accumulator >> bits) & 0xFF));
+            bits -= 8;
+        }
+    }
+    return out;
+}
+
+std::vector<std::uint8_t> vorbis_fixture() {
+    const auto path = std::filesystem::path(__FILE__).parent_path() / "data" /
+                      "tiny-vorbis.ogg.b64";
+    std::ifstream file(path);
+    if (!file) return {};
+    const std::string encoded((std::istreambuf_iterator<char>(file)),
+                              std::istreambuf_iterator<char>());
+    return decode_base64(encoded);
+}
+
 struct Fixture {
     std::vector<std::uint8_t> arena_storage = std::vector<std::uint8_t>(64u << 10);
     cl_arena arena{};
@@ -69,11 +110,10 @@ TEST_CASE("audio system stays headless until device start is requested") {
     CHECK(silence[3] == 0.0F);
 }
 
-TEST_CASE("audio system decodes and resamples short effects") {
+TEST_CASE("audio system decodes and resamples short WAV effects") {
     Fixture f;
-    // Give the resampler enough source material to move beyond its filter
-    // startup latency; the first output frame is not guaranteed to contain
-    // steady-state audio for a rate-converted stream.
+    // Give miniaudio enough source material to move beyond resampler filter
+    // startup latency; the first frame is not guaranteed to be steady state.
     const auto encoded = wav16(24000, std::vector<std::int16_t>(1024, 16384));
     auto clip = f.audio.load_clip_memory(encoded);
     REQUIRE(clip.has_value());
@@ -90,6 +130,30 @@ TEST_CASE("audio system decodes and resamples short effects") {
         }
     }
     CHECK(heard_steady_state);
+}
+
+TEST_CASE("audio system decodes and resamples real OGG Vorbis effects") {
+    Fixture f;
+    const auto encoded = vorbis_fixture();
+    REQUIRE(encoded.size() > 1000);
+    CHECK(encoded[0] == static_cast<std::uint8_t>('O'));
+    CHECK(encoded[1] == static_cast<std::uint8_t>('g'));
+    CHECK(encoded[2] == static_cast<std::uint8_t>('g'));
+    CHECK(encoded[3] == static_cast<std::uint8_t>('S'));
+
+    auto clip = f.audio.load_clip_memory(encoded);
+    REQUIRE(clip.has_value());
+    REQUIRE(f.audio.play(*clip).has_value());
+    std::array<float, 512> output{};
+    REQUIRE(f.audio.mix_stereo(output));
+    bool heard_signal = false;
+    for (float sample : output) {
+        if (std::abs(sample) > 0.01F) {
+            heard_signal = true;
+            break;
+        }
+    }
+    CHECK(heard_signal);
 }
 
 TEST_CASE("audio event channel triggers loaded effects") {
