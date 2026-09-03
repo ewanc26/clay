@@ -2,8 +2,15 @@
 
 #include <clay/clay.h>
 
-#include <math.h>
+#include <stdint.h>
 #include <string.h>
+
+static double test_nan(void) {
+    const uint64_t bits = UINT64_C(0x7ff8000000000000);
+    double value;
+    memcpy(&value, &bits, sizeof value);
+    return value;
+}
 
 static int test_input(void) {
     cl_input_state s;
@@ -66,7 +73,7 @@ static int test_input(void) {
     CHECK_EQ_DBL(s.cursor_y, 90.0, 1e-9);
 
     cl_input_event invalid = cl_input_event_make(CLAY_IN_MOTION, CLAY_KEY_NONE);
-    invalid.x = __builtin_nan("");
+    invalid.x = test_nan();
     CHECK(!cl_input_event_valid(&invalid));
     CHECK(!cl_input_state_feed(&s, &invalid));
     CHECK_EQ_DBL(s.cursor_x, 210.0, 1e-9);

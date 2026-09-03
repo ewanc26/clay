@@ -51,6 +51,13 @@ clay_cpp_test(test_runtime)
 clay_cpp_test(test_clay_file)
 clay_cpp_test(test_engine_c_api)
 
+# MSVC does not expose the non-standard M_PI constant by default. The runtime
+# test predates the portable CL_PI constant, so enable Microsoft's compatibility
+# definition only for that test until the fixture is migrated.
+if(MSVC)
+  target_compile_definitions(test_runtime PRIVATE _USE_MATH_DEFINES)
+endif()
+
 # The garden itself must survive a real headless run, not just unit tests:
 # every frame it renders deterministically and the dump is a non-degenerate
 # PNG. Guards the CLI + reaction-rules + presenter plumbing end to end.
