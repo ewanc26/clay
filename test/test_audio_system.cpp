@@ -57,16 +57,16 @@ int base64_value(char c) {
 
 std::vector<std::uint8_t> decode_base64(std::string_view text) {
     std::vector<std::uint8_t> out;
-    int accumulator = 0;
+    std::uint32_t accumulator = 0;
     int bits = -8;
     for (char c : text) {
         if (c == '=') break;
         const int value = base64_value(c);
         if (value < 0) continue;
-        accumulator = (accumulator << 6) | value;
+        accumulator = (accumulator << 6U) | static_cast<std::uint32_t>(value);
         bits += 6;
         if (bits >= 0) {
-            out.push_back(static_cast<std::uint8_t>((accumulator >> bits) & 0xFF));
+            out.push_back(static_cast<std::uint8_t>((accumulator >> bits) & 0xFFU));
             bits -= 8;
         }
     }
@@ -81,6 +81,19 @@ std::vector<std::uint8_t> vorbis_fixture() {
     const std::string encoded((std::istreambuf_iterator<char>(file)),
                               std::istreambuf_iterator<char>());
     return decode_base64(encoded);
+}
+
+std::filesystem::path write_temp_wav(std::string_view name,
+                                     std::int16_t sample) {
+    const auto path = std::filesystem::temp_directory_path() /
+                      std::filesystem::path(name);
+    const auto bytes = wav16(48000, std::vector<std::int16_t>(512, sample));
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file) return {};
+    file.write(reinterpret_cast<const char *>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+    if (!file) return {};
+    return path;
 }
 
 struct Fixture {
@@ -203,4 +216,35 @@ TEST_CASE("music is streamed and can fade out without a device") {
     CHECK_FALSE(f.audio.music_playing());
     std::error_code ignored;
     std::filesystem::remove(path, ignored);
+}
+
+TEST_CASE("streamed music crossfades between tracks by audio frames") {
+    Fixture f;
+    const auto first = write_temp_wav("clay_audio_crossfade_a.wav", 8192);
+    const auto second = write_temp_wav("clay_audio_crossfade_b.wav", -8192);
+    REQUIRE_FALSE(first.empty());
+    REQUIRE_FALSE(second.empty());
+
+    REQUIRE(f.audio.play_music_file(first.string(), 0.0F));
+    std::array<float, 4> initial{};
+    REQUIRE(f.audio.mix_stereo(initial));
+    CHECK(initial[0] == doctest::Approx(0.25F).epsilon(0.01));
+
+    // 1 ms at 48 kHz gives a 48-frame transition. The beginning must still
+    // favour the old positive track; after more than 48 frames the new
+    // negative track must be the only audible stream.
+    REQUIRE(f.audio.play_music_file(second.string(), 0.001F));
+    std::array<float, 16> early{};
+    REQUIRE(f.audio.mix_stereo(early));
+    CHECK(early[0] > 0.0F);
+
+    std::array<float, 128> settled{};
+    REQUIRE(f.audio.mix_stereo(settled));
+    CHECK(settled[settled.size() - 2] == doctest::Approx(-0.25F).epsilon(0.02));
+    CHECK(settled[settled.size() - 1] == doctest::Approx(-0.25F).epsilon(0.02));
+
+    f.audio.stop_music(0.0F);
+    std::error_code ignored;
+    std::filesystem::remove(first, ignored);
+    std::filesystem::remove(second, ignored);
 }
