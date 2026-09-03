@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0077 NEW)
+if(POLICY CMP0169)
+  cmake_policy(SET CMP0169 OLD)
+endif()
 
 project(
   clay
@@ -160,11 +163,19 @@ if(CLAY_BUILD_SHARED)
 else()
   add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
 endif()
+if(WIN32)
+  # miniaudio includes windows.h; prevent its legacy min/max macros from
+  # rewriting std::min/std::max and numeric_limits::max in engine code.
+  target_compile_definitions(clay_engine PRIVATE NOMINMAX)
+endif()
 target_include_directories(clay_engine PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/engine>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/clay/engine>)
 target_link_libraries(clay_engine PUBLIC clay_core clay_third_party)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(clay_engine PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 if(NOT CLAY_BUILD_SHARED AND NOT MSVC)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(clay_engine PUBLIC "$<$<LINK_LANGUAGE:C>:stdc++>")
