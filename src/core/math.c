@@ -3,6 +3,15 @@
 #include <math.h>
 #include <string.h>
 
+float cl_v2_length(cl_v2 a) {
+    return a.x == 0.0f && a.y == 0.0f ? 0.0f
+                                      : sqrtf(a.x * a.x + a.y * a.y);
+}
+
+float cl_v3_length(cl_v3 a) {
+    return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
 cl_m4 cl_m4_mul(cl_m4 a, cl_m4 b) {
     cl_m4 r = {{{0}}};
     for (int row = 0; row < 4; row++) {
@@ -32,7 +41,7 @@ cl_m4 cl_m4_perspective(float vertical_fov_radians, float aspect, float znear,
     /* Row-vector convention (v' = v * M), so the projection sits in column 2
      * (the z/z-homogeneous column) and w' = -z. NDC z maps to [-1, 1]. */
     cl_m4 m = {{0}};
-    float f = 1.0f / __builtin_tanf(vertical_fov_radians * 0.5f);
+    float f = 1.0f / tanf(vertical_fov_radians * 0.5f);
     float zrange = znear - zfar;
     m.m[0][0] = f / aspect;
     m.m[1][1] = f;
@@ -60,8 +69,8 @@ cl_m4 cl_m4_scale(float x, float y, float z) {
 
 cl_m4 cl_m4_rotate_z(float radians) {
     cl_m4 m = cl_m4_identity();
-    float c = __builtin_cosf(radians);
-    float s = __builtin_sinf(radians);
+    float c = cosf(radians);
+    float s = sinf(radians);
     m.m[0][0] = c;
     m.m[0][1] = s;
     m.m[1][0] = -s;
@@ -71,8 +80,8 @@ cl_m4 cl_m4_rotate_z(float radians) {
 
 cl_m4 cl_m4_rotate_x(float radians) {
     cl_m4 m = cl_m4_identity();
-    float c = __builtin_cosf(radians);
-    float s = __builtin_sinf(radians);
+    float c = cosf(radians);
+    float s = sinf(radians);
     m.m[1][1] = c;
     m.m[1][2] = -s;
     m.m[2][1] = s;
@@ -82,8 +91,8 @@ cl_m4 cl_m4_rotate_x(float radians) {
 
 cl_m4 cl_m4_rotate_y(float radians) {
     cl_m4 m = cl_m4_identity();
-    float c = __builtin_cosf(radians);
-    float s = __builtin_sinf(radians);
+    float c = cosf(radians);
+    float s = sinf(radians);
     m.m[0][0] = c;
     m.m[0][2] = s;
     m.m[2][0] = -s;

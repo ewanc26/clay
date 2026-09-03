@@ -23,6 +23,12 @@ function(clay_cpp_test name)
   add_executable(${name} ${name}.cpp)
   target_include_directories(${name} PRIVATE ${PROJECT_SOURCE_DIR}/src/engine)
   target_link_libraries(${name} PRIVATE clay_engine)
+  if(WIN32 AND CLAY_BUILD_SHARED)
+    add_custom_command(TARGET ${name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              $<TARGET_FILE:clay_engine> $<TARGET_FILE_DIR:${name}>
+      VERBATIM)
+  endif()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
@@ -50,6 +56,13 @@ clay_cpp_test(test_reactions)
 clay_cpp_test(test_runtime)
 clay_cpp_test(test_clay_file)
 clay_cpp_test(test_engine_c_api)
+
+# MSVC does not expose the non-standard M_PI constant by default. The runtime
+# test predates the portable CL_PI constant, so enable Microsoft's compatibility
+# definition only for that test until the fixture is migrated.
+if(MSVC)
+  target_compile_definitions(test_runtime PRIVATE _USE_MATH_DEFINES)
+endif()
 
 # The garden itself must survive a real headless run, not just unit tests:
 # every frame it renders deterministically and the dump is a non-degenerate
