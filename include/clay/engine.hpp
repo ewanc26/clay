@@ -5,6 +5,7 @@
 #include <clay/engine/action.hpp>
 #include <clay/engine/audio/audio_decode.hpp>
 #include <clay/engine/audio/audio_mixer.hpp>
+#include <clay/engine/audio/audio_system.hpp>
 #include <clay/engine/command.hpp>
 #include <clay/engine/ecs/components.hpp>
 #include <clay/engine/ecs/world.hpp>
