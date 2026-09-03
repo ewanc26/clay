@@ -17,6 +17,13 @@ public enum ClayError
     Overflow,
 }
 
+/// <summary>Audio routing groups exposed by the native mixer.</summary>
+public enum ClayAudioBus
+{
+    Sfx = 0,
+    Music = 1,
+}
+
 /// <summary>Managed owner for a native Clay runtime.</summary>
 public sealed class ClayRuntime : IDisposable
 {
@@ -61,22 +68,20 @@ public sealed class ClayRuntime : IDisposable
     public ulong RecordingFingerprint => Native.RecordingFingerprint(handle);
     public bool IsReplaying => Native.IsReplaying(handle);
     public bool IsFocused => Native.IsFocused(handle);
+    public bool IsAudioDeviceAvailable => Native.AudioDeviceAvailable(handle);
+    public uint AudioSampleRate => Native.AudioSampleRate(handle);
+    public bool IsMusicPlaying => Native.AudioMusicPlaying(handle);
+    public float MasterVolume => Native.AudioMasterGain(handle);
 
-    public void InstallBuiltinSystems() => Check(
-        Native.InstallBuiltinSystems(handle));
-
+    public void InstallBuiltinSystems() => Check(Native.InstallBuiltinSystems(handle));
     public void LoadReactions(string json) => Check(
         Native.LoadReactions(handle, json ?? throw new ArgumentNullException(nameof(json))));
-
     public void LoadActions(string json) => Check(
         Native.LoadActions(handle, json ?? throw new ArgumentNullException(nameof(json))));
-
     public void SaveRecording(string path) => Check(
         Native.SaveRecording(handle, path ?? throw new ArgumentNullException(nameof(path))));
-
     public void LoadRecording(string path) => Check(
         Native.LoadRecording(handle, path ?? throw new ArgumentNullException(nameof(path))));
-
     public void SetReplaying(bool replaying) => Native.SetReplaying(handle, replaying);
 
     public void SpawnSpecies(string species, float x, float y, float r, float g,
@@ -84,58 +89,88 @@ public sealed class ClayRuntime : IDisposable
         Native.SpawnSpecies(handle,
             species ?? throw new ArgumentNullException(nameof(species)), x, y,
             r, g, b, a, life));
-
     public void SpawnRipple(float x, float y, float radius, float r, float g,
                             float b, float a) => Check(
         Native.SpawnRipple(handle, x, y, radius, r, g, b, a));
 
-    public void FeedKey(int key, bool pressed) => Check(
-        Native.FeedKey(handle, key, pressed));
-
+    public void FeedKey(int key, bool pressed) => Check(Native.FeedKey(handle, key, pressed));
     public void FeedKey(ClayKey key, bool pressed) => FeedKey((int)key, pressed);
-
     public void FeedKeyAt(ClayKey key, bool pressed, double x, double y,
                           int mods = 0) => Check(
         Native.FeedKeyAt(handle, (int)key, pressed, x, y, mods));
-
     public void FeedKeyAt(ClayKey key, bool pressed, double x, double y,
-                          ClayModifiers mods) => FeedKeyAt(key, pressed, x, y,
-                                                           (int)mods);
-
+                          ClayModifiers mods) => FeedKeyAt(key, pressed, x, y, (int)mods);
     public bool IsKeyDown(ClayKey key) => Native.IsKeyDown(handle, (int)key);
-
     public void FeedMotion(double x, double y, double dx, double dy) => Check(
         Native.FeedMotion(handle, x, y, dx, dy));
-
     public void FeedWheel(double x, double y, int clicks) => Check(
         Native.FeedWheel(handle, x, y, clicks));
-
-    public void FeedFocus(bool focused) => Check(
-        Native.FeedFocus(handle, focused));
-
+    public void FeedFocus(bool focused) => Check(Native.FeedFocus(handle, focused));
     public void SetTimeScale(double scale) => Native.SetTimeScale(handle, scale);
+    public void Step(double deltaSeconds) => Check(Native.Step(handle, deltaSeconds));
+    public void Resize(int width, int height) => Check(ResizeNative(width, height));
 
-    public void Step(double deltaSeconds) => Check(
-        Native.Step(handle, deltaSeconds));
+    /// <summary>Attempts to start native playback. Failure leaves the runtime usable headlessly.</summary>
+    public bool TryStartAudioDevice() => Native.AudioStartDevice(handle) == 0;
+    public void StopAudioDevice() => Native.AudioStopDevice(handle);
 
-    public void Resize(int width, int height) => Check(
-        ResizeNative(width, height));
+    /// <summary>Loads a short WAV or OGG/Vorbis effect and returns its native clip id.</summary>
+    public uint LoadAudioClip(string path)
+    {
+        Check(Native.AudioLoadClip(handle,
+            path ?? throw new ArgumentNullException(nameof(path)), out uint clip));
+        return clip;
+    }
+
+    public void UnloadAudioClip(uint clip) => Check(Native.AudioUnloadClip(handle, clip));
+
+    public uint PlayAudio(uint clip, ClayAudioBus bus = ClayAudioBus.Sfx,
+                          bool loop = false, float gain = 1.0f)
+    {
+        Check(Native.AudioPlay(handle, clip, (int)bus, loop, gain, out uint voice));
+        return voice;
+    }
+
+    public uint PlaySpatialAudio(uint clip, uint entityIndex, uint entityGeneration,
+                                 float maxDistance, float gain = 1.0f,
+                                 bool loop = false)
+    {
+        Check(Native.AudioPlaySpatial(handle, clip, entityIndex, entityGeneration,
+                                      maxDistance, gain, loop, out uint voice));
+        return voice;
+    }
+
+    public void StopAudio(uint voice) => Check(Native.AudioStopVoice(handle, voice));
+    public void StopAllAudio() => Native.AudioStopAll(handle);
+    public void SetMasterVolume(float gain) => Native.AudioSetMasterGain(handle, gain);
+    public void SetBusVolume(ClayAudioBus bus, float gain) =>
+        Native.AudioSetBusGain(handle, (int)bus, gain);
+    public float GetBusVolume(ClayAudioBus bus) =>
+        Native.AudioBusGain(handle, (int)bus);
+    public void SetAudioListener(uint entityIndex, uint entityGeneration) => Check(
+        Native.AudioSetListenerEntity(handle, entityIndex, entityGeneration));
+    public void SetAudioListener(float x, float y) => Check(
+        Native.AudioSetListenerPosition(handle, x, y));
+    public void ClearAudioListener() => Native.AudioClearListener(handle);
+    public void UpdateSpatialAudio() => Native.AudioUpdateSpatial(handle);
+    public void PlayMusic(string path, float crossfadeSeconds = 1.0f) => Check(
+        Native.AudioPlayMusic(handle,
+            path ?? throw new ArgumentNullException(nameof(path)), crossfadeSeconds));
+    public void StopMusic(float fadeSeconds = 0.0f) =>
+        Native.AudioStopMusic(handle, fadeSeconds);
 
     private int ResizeNative(int width, int height)
     {
         int error = Native.Resize(handle, width, height);
-        if (error == 0)
-            pixelBuffer = new uint[checked(width * height)];
+        if (error == 0) pixelBuffer = new uint[checked(width * height)];
         return error;
     }
 
-    /// <summary>Copies packed 0x00RRGGBB pixels into a caller-owned array.</summary>
     public ReadOnlySpan<uint> CopyPixels()
     {
         IntPtr pixels = Native.Pixels(handle, out nuint count);
         if (pixels == IntPtr.Zero || count != (nuint)pixelBuffer.Length)
             throw new InvalidOperationException("Clay framebuffer is unavailable.");
-        // Marshal.Copy has no UInt32 overload on every supported runtime.
         for (int i = 0; i < pixelBuffer.Length; i++)
             pixelBuffer[i] = unchecked((uint)Marshal.ReadInt32(pixels, i * sizeof(uint)));
         return pixelBuffer;
@@ -145,8 +180,7 @@ public sealed class ClayRuntime : IDisposable
     {
         if (destination == null) throw new ArgumentNullException(nameof(destination));
         if (destination.Length != pixelBuffer.Length)
-            throw new ArgumentException("Destination has the wrong pixel count.",
-                                        nameof(destination));
+            throw new ArgumentException("Destination has the wrong pixel count.", nameof(destination));
         CopyPixels().CopyTo(destination);
     }
 
@@ -155,30 +189,23 @@ public sealed class ClayRuntime : IDisposable
         if (destination == null) throw new ArgumentNullException(nameof(destination));
         int expected = checked(pixelBuffer.Length * 4);
         if (destination.Length != expected)
-            throw new ArgumentException("Destination has the wrong byte count.",
-                                        nameof(destination));
+            throw new ArgumentException("Destination has the wrong byte count.", nameof(destination));
         IntPtr pixels = Native.PixelsRgba(handle, out nuint count);
         if (pixels == IntPtr.Zero || count != (nuint)expected)
             throw new InvalidOperationException("Clay framebuffer is unavailable.");
         Marshal.Copy(pixels, destination, 0, destination.Length);
     }
 
-    /// <summary>Writes the latest rendered frame as an RGB PNG.</summary>
     public void SavePng(string path) => Check(
         Native.SavePng(handle, path ?? throw new ArgumentNullException(nameof(path))));
-
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)
     {
-        if (error != 0)
-        {
-            ClayError code = (ClayError)error;
-            string message = Marshal.PtrToStringAnsi(Native.ErrorString(error))
-                             ?? code.ToString();
-            throw new InvalidOperationException(
-                $"Clay error: {error} ({code}): {message}.");
-        }
+        if (error == 0) return;
+        ClayError code = (ClayError)error;
+        string message = Marshal.PtrToStringAnsi(Native.ErrorString(error)) ?? code.ToString();
+        throw new InvalidOperationException($"Clay error: {error} ({code}): {message}.");
     }
 
     private static class Native
@@ -190,9 +217,7 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create")]
         public static extern RuntimeHandle Create(int width, int height, ulong seed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_create_with_arena")]
-        public static extern RuntimeHandle CreateWithArena(int width, int height,
-                                                            ulong seed,
-                                                            nuint arenaBytes);
+        public static extern RuntimeHandle CreateWithArena(int width, int height, ulong seed, nuint arenaBytes);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_destroy")]
         public static extern void Destroy(IntPtr runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_step")]
@@ -200,11 +225,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_resize")]
         public static extern int Resize(RuntimeHandle runtime, int width, int height);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_key")]
-        public static extern int FeedKey(RuntimeHandle runtime, int key,
-                                         [MarshalAs(UnmanagedType.I1)] bool pressed);
+        public static extern int FeedKey(RuntimeHandle runtime, int key, [MarshalAs(UnmanagedType.I1)] bool pressed);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_key_at")]
-        public static extern int FeedKeyAt(RuntimeHandle runtime, int key,
-                                            [MarshalAs(UnmanagedType.I1)] bool pressed,
+        public static extern int FeedKeyAt(RuntimeHandle runtime, int key, [MarshalAs(UnmanagedType.I1)] bool pressed,
                                             double x, double y, int mods);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_feed_motion")]
         public static extern int FeedMotion(RuntimeHandle runtime, double x, double y, double dx, double dy);
@@ -229,8 +252,7 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_recording")]
         public static extern int LoadRecording(RuntimeHandle runtime, string path);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_set_replaying")]
-        public static extern void SetReplaying(RuntimeHandle runtime,
-                                                [MarshalAs(UnmanagedType.I1)] bool replaying);
+        public static extern void SetReplaying(RuntimeHandle runtime, [MarshalAs(UnmanagedType.I1)] bool replaying);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_is_replaying")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool IsReplaying(RuntimeHandle runtime);
@@ -239,13 +261,11 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_recording_fingerprint")]
         public static extern ulong RecordingFingerprint(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_species")]
-        public static extern int SpawnSpecies(RuntimeHandle runtime, string species,
-                                               float x, float y, float r, float g,
-                                               float b, float a, float life);
+        public static extern int SpawnSpecies(RuntimeHandle runtime, string species, float x, float y, float r,
+                                               float g, float b, float a, float life);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_spawn_ripple")]
-        public static extern int SpawnRipple(RuntimeHandle runtime, float x, float y,
-                                              float radius, float r, float g,
-                                              float b, float a);
+        public static extern int SpawnRipple(RuntimeHandle runtime, float x, float y, float radius,
+                                              float r, float g, float b, float a);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_install_builtin_systems")]
         public static extern int InstallBuiltinSystems(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_width")]
@@ -264,6 +284,56 @@ public sealed class ClayRuntime : IDisposable
         public static extern double CursorX(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_cursor_y")]
         public static extern double CursorY(RuntimeHandle runtime);
+
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_start_device")]
+        public static extern int AudioStartDevice(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_stop_device")]
+        public static extern void AudioStopDevice(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_device_available")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceAvailable(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_sample_rate")]
+        public static extern uint AudioSampleRate(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_load_clip")]
+        public static extern int AudioLoadClip(RuntimeHandle runtime, string path, out uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_unload_clip")]
+        public static extern int AudioUnloadClip(RuntimeHandle runtime, uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_play")]
+        public static extern int AudioPlay(RuntimeHandle runtime, uint clip, int bus,
+                                           [MarshalAs(UnmanagedType.I1)] bool loop,
+                                           float gain, out uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_play_spatial")]
+        public static extern int AudioPlaySpatial(RuntimeHandle runtime, uint clip,
+            uint entityIndex, uint entityGeneration, float maxDistance, float gain,
+            [MarshalAs(UnmanagedType.I1)] bool loop, out uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_stop_voice")]
+        public static extern int AudioStopVoice(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_stop_all")]
+        public static extern void AudioStopAll(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_set_master_gain")]
+        public static extern void AudioSetMasterGain(RuntimeHandle runtime, float gain);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_set_bus_gain")]
+        public static extern void AudioSetBusGain(RuntimeHandle runtime, int bus, float gain);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_master_gain")]
+        public static extern float AudioMasterGain(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_bus_gain")]
+        public static extern float AudioBusGain(RuntimeHandle runtime, int bus);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_set_listener_entity")]
+        public static extern int AudioSetListenerEntity(RuntimeHandle runtime, uint index, uint generation);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_set_listener_position")]
+        public static extern int AudioSetListenerPosition(RuntimeHandle runtime, float x, float y);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_clear_listener")]
+        public static extern void AudioClearListener(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_update_spatial")]
+        public static extern void AudioUpdateSpatial(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_play_music")]
+        public static extern int AudioPlayMusic(RuntimeHandle runtime, string path, float crossfadeSeconds);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_stop_music")]
+        public static extern void AudioStopMusic(RuntimeHandle runtime, float fadeSeconds);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_audio_music_playing")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioMusicPlaying(RuntimeHandle runtime);
+
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels")]
         public static extern IntPtr Pixels(RuntimeHandle runtime, out nuint count);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_pixels_rgba")]
