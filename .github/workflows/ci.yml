@@ -32,15 +32,15 @@ jobs:
         run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON -DCLAY_BUILD_INTERACTIVE=OFF
 
       - name: Build
-        run: cmake --build build -j
+        run: cmake --build build --config Debug -j
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build -C Debug --output-on-failure
 
       - name: Verify installed CMake package
         shell: bash
         run: |
-          cmake --install build --prefix "$PWD/build/sdk"
+          cmake --install build --config Debug --prefix "$PWD/build/sdk"
           test -f build/sdk/integrations/godot-mono/ClayRuntime.cs
           test -f build/sdk/integrations/godot-mono/ClayKey.cs
           test -f build/sdk/integrations/godot-mono/ClayGodotSample.csproj
@@ -53,8 +53,8 @@ jobs:
             test -f build/sdk/integrations/godot-mono/clay_engine.dll
           cmake -S test/package-consumer -B build/package-consumer \
             -DCMAKE_PREFIX_PATH="$PWD/build/sdk"
-          cmake --build build/package-consumer
-          ctest --test-dir build/package-consumer --output-on-failure
+          cmake --build build/package-consumer --config Debug
+          ctest --test-dir build/package-consumer -C Debug --output-on-failure
 
       - name: Verify installed static CMake package
         shell: bash
@@ -62,12 +62,12 @@ jobs:
           cmake -S . -B build-static \
             -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF \
             -DCLAY_BUILD_EXAMPLES=OFF -DCLAY_BUILD_SHARED=OFF
-          cmake --build build-static -j
-          cmake --install build-static --prefix "$PWD/build/static-sdk"
+          cmake --build build-static --config Debug -j
+          cmake --install build-static --config Debug --prefix "$PWD/build/static-sdk"
           cmake -S test/package-consumer -B build/static-package-consumer \
             -DCMAKE_PREFIX_PATH="$PWD/build/static-sdk"
-          cmake --build build/static-package-consumer
-          ctest --test-dir build/static-package-consumer --output-on-failure
+          cmake --build build/static-package-consumer --config Debug
+          ctest --test-dir build/static-package-consumer -C Debug --output-on-failure
 
       - name: Headless demo smoke
         if: runner.os != 'Windows'
@@ -81,7 +81,7 @@ jobs:
           cmake -S . -B build-no-glfw \
             -DCLAY_BUILD_INTERACTIVE=ON -DCLAY_USE_SYSTEM_GLFW=OFF \
             -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_EXAMPLES=OFF
-          cmake --build build-no-glfw --parallel
+          cmake --build build-no-glfw --config Debug --parallel
 
   managed-wrapper:
     strategy:
@@ -114,7 +114,7 @@ jobs:
       - name: Build Clay shared library
         run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
       - name: Compile Clay shared library
-        run: cmake --build build -j
+        run: cmake --build build --config Debug -j
       - name: Run Godot Mono smoke test
         env:
           GODOT_MONO_BIN: godot-mono
