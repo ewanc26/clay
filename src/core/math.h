@@ -3,6 +3,7 @@
 
 #include "common.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -42,7 +43,7 @@ static inline float cl_v2_dot(cl_v2 a, cl_v2 b) {
 }
 static inline float cl_v2_length(cl_v2 a) {
     return a.x == 0.0f && a.y == 0.0f ? 0.0f
-                                      : __builtin_sqrtf(a.x * a.x + a.y * a.y);
+                                      : sqrtf(a.x * a.x + a.y * a.y);
 }
 static inline cl_v2 cl_v2_normalize(cl_v2 a) {
     float l = cl_v2_length(a);
@@ -79,7 +80,7 @@ static inline cl_v3 cl_v3_cross(cl_v3 a, cl_v3 b) {
                       a.x * b.y - a.y * b.x);
 }
 static inline float cl_v3_length(cl_v3 a) {
-    return __builtin_sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+    return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 static inline cl_v3 cl_v3_normalize(cl_v3 a) {
     float l = cl_v3_length(a);

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #if defined(__GNUC__) || defined(__clang__)
 #define CLAY_PRINTF_ATTR(format_index, argument_index) \
@@ -52,7 +53,7 @@ static inline bool cl_str_eq(cl_str a, cl_str b) {
     if (a.len != b.len) return false;
     if (a.data == b.data) return true;
     if (a.len == 0) return true;
-    return a.data && b.data && __builtin_memcmp(a.data, b.data, a.len) == 0;
+    return a.data && b.data && memcmp(a.data, b.data, a.len) == 0;
 }
 
 static inline bool cl_str_empty(cl_str s) {
