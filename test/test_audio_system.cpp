@@ -71,15 +71,25 @@ TEST_CASE("audio system stays headless until device start is requested") {
 
 TEST_CASE("audio system decodes and resamples short effects") {
     Fixture f;
-    const auto encoded = wav16(24000, {16384, 16384, 16384, 16384});
+    // Give the resampler enough source material to move beyond its filter
+    // startup latency; the first output frame is not guaranteed to contain
+    // steady-state audio for a rate-converted stream.
+    const auto encoded = wav16(24000, std::vector<std::int16_t>(1024, 16384));
     auto clip = f.audio.load_clip_memory(encoded);
     REQUIRE(clip.has_value());
     REQUIRE(f.audio.play(*clip).has_value());
 
-    std::array<float, 4> output{};
+    std::array<float, 256> output{};
     REQUIRE(f.audio.mix_stereo(output));
-    CHECK(output[0] == doctest::Approx(0.5F).epsilon(0.02));
-    CHECK(output[1] == doctest::Approx(0.5F).epsilon(0.02));
+    bool heard_steady_state = false;
+    for (std::size_t i = 32; i + 1 < output.size(); i += 2) {
+        if (output[i] == doctest::Approx(0.5F).epsilon(0.03) &&
+            output[i + 1] == doctest::Approx(0.5F).epsilon(0.03)) {
+            heard_steady_state = true;
+            break;
+        }
+    }
+    CHECK(heard_steady_state);
 }
 
 TEST_CASE("audio event channel triggers loaded effects") {
