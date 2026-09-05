@@ -104,6 +104,8 @@ The headless audio mixer is available through
 `cl_engine_runtime_audio_unload_clip`, and
 `cl_engine_runtime_audio_mix_stereo`; query
 `cl_engine_runtime_audio_sample_rate` rather than hard-coding the host rate.
+Missing audio paths return `CLAY_ERR_IO`; existing files that are malformed or
+use an unavailable decoder return `CLAY_ERR_PARSE`.
 The default is interleaved stereo float32 at 48 kHz. `ClayRuntime` exposes the
 same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`, and
 `MixAudio`, `PauseAudio`, and `ResumeAudio`, plus `AudioSampleRate`. The strict WAV loader supports PCM and
