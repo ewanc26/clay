@@ -16,6 +16,7 @@ out/
 
 # Godot/.NET integration output
 integrations/godot-gdextension/.godot/
+integrations/godot-gdextension/*.uid
 integrations/godot-mono/.godot/
 integrations/godot-mono/bin/
 integrations/godot-mono/obj/
