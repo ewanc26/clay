@@ -82,6 +82,8 @@ class Runtime {
     cl_err audio_load_wav(const std::string &path, AudioClipId *clip_id);
     cl_err audio_load_file(const std::string &path, AudioClipId *clip_id);
     bool audio_load_stream(const std::string &path, AudioStreamId *stream_id);
+    [[nodiscard]] AudioStreamReadStatus
+    audio_stream_read_status(AudioStreamId stream_id) const noexcept;
     bool audio_unload_clip(AudioClipId clip_id);
     bool audio_unload_stream(AudioStreamId stream_id);
     AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,

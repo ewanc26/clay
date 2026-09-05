@@ -23,6 +23,13 @@ public enum ClayAudioBus
     Music = 1,
 }
 
+public enum ClayAudioStreamReadStatus
+{
+    Ready = 0,
+    EndOfStream = 1,
+    Error = 2,
+}
+
 /// <summary>Managed owner for a native Clay runtime.</summary>
 public sealed class ClayRuntime : IDisposable
 {
@@ -292,6 +299,9 @@ public sealed class ClayRuntime : IDisposable
     public nuint GetAudioStreamFrames(uint stream) =>
         Native.AudioStreamFrameCount(handle, stream);
 
+    public ClayAudioStreamReadStatus GetAudioStreamReadStatus(uint stream) =>
+        (ClayAudioStreamReadStatus)Native.AudioStreamReadStatus(handle, stream);
+
     public uint AudioSampleRate => Native.AudioSampleRate(handle);
 
     public bool OpenAudioDevice(uint sampleRate = 0) =>
@@ -525,6 +535,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stream_frame_count")]
         public static extern nuint AudioStreamFrameCount(RuntimeHandle runtime,
                                                           uint stream);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stream_read_status")]
+        public static extern int AudioStreamReadStatus(RuntimeHandle runtime,
+                                                        uint stream);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_sample_rate")]
         public static extern uint AudioSampleRate(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_open")]

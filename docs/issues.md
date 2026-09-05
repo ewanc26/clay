@@ -17,11 +17,13 @@ ownership remain future work in this issue.
 ## Audio subsystem
 
 The standalone and managed paths now validate WAV loading, generic miniaudio
-loading for FLAC, MP3, and Ogg Vorbis, decoder-backed streams, headless mixing,
+loading for FLAC, MP3, and Ogg Vorbis, decoder-backed streams with explicit
+read status, headless mixing,
 clip/stream unload, optional realtime playback, host sample-rate discovery,
 deterministic fades, music crossfades, an optional owned playback-device
 lifecycle, and deterministic 2D source/listener spatialization. Remaining work
-is explicit underflow/error policy and broader format/device matrix coverage.
+is underflow recovery policy at the realtime device boundary and broader
+format/device matrix coverage.
 Track that follow-up in GitHub issue #15.
 
 ## CI workflow execution

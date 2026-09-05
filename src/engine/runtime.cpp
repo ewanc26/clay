@@ -225,6 +225,11 @@ bool Runtime::audio_load_stream(const std::string &path,
     return true;
 }
 
+AudioStreamReadStatus
+Runtime::audio_stream_read_status(AudioStreamId stream_id) const noexcept {
+    return audio_.stream_read_status(stream_id);
+}
+
 bool Runtime::audio_unload_stream(AudioStreamId stream_id) {
     return audio_.remove_stream(stream_id);
 }

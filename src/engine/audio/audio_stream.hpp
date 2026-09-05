@@ -9,6 +9,12 @@
 
 namespace clay {
 
+enum class AudioStreamReadStatus : std::uint8_t {
+    Ready = 0,
+    EndOfStream = 1,
+    Error = 2,
+};
+
 /* Incremental decoder source for long-form audio. The decoder resamples to
  * the mixer's stereo float format, so a stream never becomes a mixer-owned
  * PCM buffer. */
@@ -29,6 +35,7 @@ class AudioStream {
     }
     [[nodiscard]] std::size_t frame_count() const noexcept;
     [[nodiscard]] std::size_t read(std::span<float> stereo_frames) noexcept;
+    [[nodiscard]] AudioStreamReadStatus last_read_status() const noexcept;
     bool rewind() noexcept;
 
   private:

@@ -737,6 +737,12 @@ cl_engine_runtime_audio_stream_frame_count(const cl_engine_runtime *runtime,
                : 0;
 }
 
+extern "C" int cl_engine_runtime_audio_stream_read_status(
+    const cl_engine_runtime *runtime, uint32_t stream_id) {
+    if (runtime == nullptr) return 2;
+    return static_cast<int>(runtime->impl.audio_stream_read_status(stream_id));
+}
+
 extern "C" cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
                                                      float *samples,
                                                      size_t sample_count) {

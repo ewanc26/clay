@@ -16,6 +16,7 @@ struct AudioStream::State {
     std::size_t buffered_frames = 0;
     std::size_t buffer_offset = 0;
     bool at_end = false;
+    AudioStreamReadStatus last_status = AudioStreamReadStatus::Ready;
 };
 
 AudioStream::AudioStream() = default;
@@ -71,22 +72,35 @@ std::size_t AudioStream::frame_count() const noexcept {
 }
 
 std::size_t AudioStream::read(std::span<float> stereo_frames) noexcept {
-    if (state_ == nullptr || stereo_frames.size() % 2 != 0) return 0;
+    if (state_ == nullptr || stereo_frames.size() % 2 != 0) {
+        if (state_ != nullptr) state_->last_status = AudioStreamReadStatus::Error;
+        return 0;
+    }
+    state_->last_status = AudioStreamReadStatus::Ready;
     std::size_t requested = stereo_frames.size() / 2;
     std::size_t written = 0;
     while (requested > 0) {
         if (state_->buffer_offset == state_->buffered_frames) {
-            if (state_->at_end) break;
+            if (state_->at_end) {
+                state_->last_status = AudioStreamReadStatus::EndOfStream;
+                break;
+            }
             ma_uint64 frames_read = 0;
             const ma_result result = ma_decoder_read_pcm_frames(
                 &state_->decoder, state_->buffer.data(),
                 static_cast<ma_uint64>(state_->buffer.size() / 2),
                 &frames_read);
-            if (result != MA_SUCCESS && result != MA_AT_END) return written;
+            if (result != MA_SUCCESS && result != MA_AT_END) {
+                state_->last_status = AudioStreamReadStatus::Error;
+                return written;
+            }
             state_->buffered_frames = static_cast<std::size_t>(frames_read);
             state_->buffer_offset = 0;
             state_->at_end = result == MA_AT_END;
-            if (state_->buffered_frames == 0) break;
+            if (state_->buffered_frames == 0) {
+                state_->last_status = AudioStreamReadStatus::EndOfStream;
+                break;
+            }
         }
 
         const std::size_t available =
@@ -101,6 +115,11 @@ std::size_t AudioStream::read(std::span<float> stereo_frames) noexcept {
     return written;
 }
 
+AudioStreamReadStatus AudioStream::last_read_status() const noexcept {
+    return state_ == nullptr ? AudioStreamReadStatus::Error
+                             : state_->last_status;
+}
+
 bool AudioStream::rewind() noexcept {
     if (state_ == nullptr ||
         ma_decoder_seek_to_pcm_frame(&state_->decoder, 0) != MA_SUCCESS)
@@ -108,6 +127,7 @@ bool AudioStream::rewind() noexcept {
     state_->buffered_frames = 0;
     state_->buffer_offset = 0;
     state_->at_end = false;
+    state_->last_status = AudioStreamReadStatus::Ready;
     return true;
 }
 

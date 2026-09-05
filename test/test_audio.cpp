@@ -317,9 +317,14 @@ TEST_CASE("audio mixer streams decoder frames and loops at end") {
     CHECK(stream->frame_count() == 5000);
     std::vector<float> decoded(5000 * 2);
     CHECK(stream->read(decoded) == 5000);
+    CHECK(stream->last_read_status() == AudioStreamReadStatus::Ready);
     CHECK(decoded[0] == doctest::Approx(0.5F));
     CHECK(decoded[2] == doctest::Approx(-0.5F));
+    std::array<float, 2> end_probe{};
+    CHECK(stream->read(end_probe) == 0);
+    CHECK(stream->last_read_status() == AudioStreamReadStatus::EndOfStream);
     REQUIRE(stream->rewind());
+    CHECK(stream->last_read_status() == AudioStreamReadStatus::Ready);
 
     {
         AudioMixer mixer;
@@ -332,6 +337,8 @@ TEST_CASE("audio mixer streams decoder frames and loops at end") {
         CHECK(samples[0] == doctest::Approx(0.5F));
         CHECK(samples[2] == doctest::Approx(-0.5F));
         CHECK(mixer.stream_frame_count(*stream_id) == 5000);
+        CHECK(mixer.stream_read_status(*stream_id) ==
+              AudioStreamReadStatus::Ready);
     }
 
     std::filesystem::remove(path);

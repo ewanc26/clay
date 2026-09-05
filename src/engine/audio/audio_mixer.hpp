@@ -353,6 +353,14 @@ class AudioMixer {
         return entry == nullptr ? 0 : entry->stream->frame_count();
     }
 
+    [[nodiscard]] AudioStreamReadStatus
+    stream_read_status(AudioStreamId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        const StreamEntry *entry = find_stream(id);
+        return entry == nullptr ? AudioStreamReadStatus::Error
+                                : entry->stream->last_read_status();
+    }
+
     void stop_all() noexcept {
         std::lock_guard lock(mutex_);
         voices_.clear();

@@ -206,6 +206,12 @@ CLAY_API size_t cl_engine_runtime_audio_clip_frame_count(
     const cl_engine_runtime *runtime, uint32_t clip_id);
 CLAY_API size_t cl_engine_runtime_audio_stream_frame_count(
     const cl_engine_runtime *runtime, uint32_t stream_id);
+/* Status of the most recent decoder read: 0 ready, 1 end-of-stream, 2 error.
+ * An unknown or unloaded stream reports error. Looping voices rewind before
+ * the next read, so callers that need the boundary can inspect this after a
+ * mix callback. */
+CLAY_API int cl_engine_runtime_audio_stream_read_status(
+    const cl_engine_runtime *runtime, uint32_t stream_id);
 CLAY_API cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
                                                   float *samples,
                                                   size_t sample_count);

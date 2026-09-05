@@ -135,7 +135,9 @@ music voices out over the same number of mixer frames.
 audio in a decoder-backed source and read frames incrementally during mixing;
 `GetAudioStreamFrames` reports its decoded duration. Stream sources use a
 preallocated refill buffer and rewind cleanly when looping, so mixer callbacks
-do not allocate or decode one frame at a time.
+do not allocate or decode one frame at a time. `GetAudioStreamReadStatus`
+distinguishes ready data, a clean end-of-stream boundary, and decoder error
+(`Ready`, `EndOfStream`, or `Error`) for non-looping host recovery.
 `SetAudioListenerPosition` and `SetAudioPosition` enable deterministic 2D
 spatialization in canvas coordinates. A spatial voice uses linear attenuation
 from full volume at the listener to silence at `maxDistance`, and its
