@@ -22,7 +22,8 @@ loading for FLAC, MP3, and Ogg Vorbis, headless mixing, clip unload, optional
 realtime playback, host sample-rate discovery, deterministic fades, and music
 crossfades. Streaming remains future work; the C ABI now also exposes an
 optional owned playback-device lifecycle that safely reports unavailable when
-the backend or platform device is absent. Track streaming in GitHub issue #15.
+the backend or platform device is absent, plus deterministic 2D source/listener
+spatialization. Track streamed music in GitHub issue #15.
 
 ## CI workflow execution
 

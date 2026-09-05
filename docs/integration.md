@@ -126,6 +126,11 @@ right; `GetAudioPan` reads the current per-voice value. `SetAudioGain` and
 target gain over a specified number of mixer frames for deterministic fades
 and crossfades. `CrossfadeMusic` starts a music-bus voice while fading existing
 music voices out over the same number of mixer frames.
+`SetAudioListenerPosition` and `SetAudioPosition` enable deterministic 2D
+spatialization in canvas coordinates. A spatial voice uses linear attenuation
+from full volume at the listener to silence at `maxDistance`, and its
+horizontal offset produces a clamped stereo pan. `ClearAudioPosition` returns
+a voice to its explicit gain/pan settings.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
