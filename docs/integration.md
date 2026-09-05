@@ -74,7 +74,10 @@ Hosts can also load a complete version-1 `.clay` document with
 `cl_engine_runtime_load_scene`; its render settings resolution is applied to
 the runtime and its 3D scene becomes the active render system. Use
 `cl_engine_runtime_has_scene` and `cl_engine_runtime_unload_scene` to manage
-that owned scene. The managed facade exposes these as `LoadScene`, `HasScene`,
+that owned scene. Hosts with a filesystem path can use
+`cl_engine_runtime_load_scene_file`, which reads and validates the document
+inside the native boundary and returns `CLAY_ERR_IO` for an unreadable path.
+The managed facade exposes these as `LoadScene`, `LoadSceneFile`, `HasScene`,
 and `UnloadScene`.
 Recordings can be persisted with `cl_engine_runtime_save_recording` and
 `cl_engine_runtime_load_recording`, then driven with
