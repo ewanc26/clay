@@ -98,6 +98,31 @@ TEST_CASE("C ABI loads an authored scene from a file") {
     std::filesystem::remove(path);
 }
 
+TEST_CASE("C ABI loads action and reaction data from files") {
+    const auto actions_path = std::filesystem::temp_directory_path() /
+                              "clay-engine-c-api-actions.json";
+    const auto reactions_path = std::filesystem::temp_directory_path() /
+                                "clay-engine-c-api-reactions.json";
+    {
+        std::ofstream actions(actions_path, std::ios::binary);
+        std::ofstream reactions(reactions_path, std::ios::binary);
+        REQUIRE(actions);
+        REQUIRE(reactions);
+        actions << R"({"actions":{"primary":{"key":"SPACE"}}})";
+        reactions << R"({"rules":[]})";
+    }
+
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 12);
+    REQUIRE(runtime != nullptr);
+    CHECK(cl_engine_runtime_load_actions_file(
+              runtime, actions_path.string().c_str()) == CLAY_OK);
+    CHECK(cl_engine_runtime_load_reactions_file(
+              runtime, reactions_path.string().c_str()) == CLAY_OK);
+    cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(actions_path);
+    std::filesystem::remove(reactions_path);
+}
+
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     const std::filesystem::path temp_dir =
         std::filesystem::temp_directory_path();

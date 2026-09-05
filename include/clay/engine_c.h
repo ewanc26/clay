@@ -65,8 +65,12 @@ CLAY_API bool cl_engine_runtime_is_key_down(
 CLAY_API bool cl_engine_runtime_is_focused(const cl_engine_runtime *runtime);
 CLAY_API cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                  const char *json);
+CLAY_API cl_err cl_engine_runtime_load_reactions_file(cl_engine_runtime *runtime,
+                                                      const char *path);
 CLAY_API cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
                                                const char *json);
+CLAY_API cl_err cl_engine_runtime_load_actions_file(cl_engine_runtime *runtime,
+                                                    const char *path);
 CLAY_API cl_err cl_engine_runtime_load_scene(cl_engine_runtime *runtime,
                                              const char *json);
 CLAY_API cl_err cl_engine_runtime_load_scene_file(cl_engine_runtime *runtime,

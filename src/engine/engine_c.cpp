@@ -192,6 +192,23 @@ extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" cl_err cl_engine_runtime_load_reactions_file(
+    cl_engine_runtime *runtime, const char *path) {
+    if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
+    try {
+        std::ifstream input(path, std::ios::binary);
+        if (!input) return CLAY_ERR_IO;
+        std::string json((std::istreambuf_iterator<char>(input)),
+                         std::istreambuf_iterator<char>());
+        if (json.empty()) return CLAY_ERR_PARSE;
+        return cl_engine_runtime_load_reactions(runtime, json.c_str());
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_IO;
+    }
+}
+
 extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
                                                  const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
@@ -201,6 +218,23 @@ extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
         return CLAY_ERR_OOM;
     } catch (...) {
         return CLAY_ERR_INVALID_ARG;
+    }
+}
+
+extern "C" cl_err cl_engine_runtime_load_actions_file(
+    cl_engine_runtime *runtime, const char *path) {
+    if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
+    try {
+        std::ifstream input(path, std::ios::binary);
+        if (!input) return CLAY_ERR_IO;
+        std::string json((std::istreambuf_iterator<char>(input)),
+                         std::istreambuf_iterator<char>());
+        if (json.empty()) return CLAY_ERR_PARSE;
+        return cl_engine_runtime_load_actions(runtime, json.c_str());
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_IO;
     }
 }
 

@@ -55,6 +55,23 @@ finally
 }
 runtime.Resize(32, 24);
 
+string dataPath = Path.Combine(Path.GetTempPath(),
+    $"clay-managed-actions-{Guid.NewGuid():N}.json");
+File.WriteAllText(dataPath, "{\"actions\":{\"primary\":{\"key\":\"SPACE\"}}}");
+string reactionsPath = Path.Combine(Path.GetTempPath(),
+    $"clay-managed-reactions-{Guid.NewGuid():N}.json");
+File.WriteAllText(reactionsPath, "{\"rules\":[]}");
+try
+{
+    runtime.LoadActionsFile(dataPath);
+    runtime.LoadReactionsFile(reactionsPath);
+}
+finally
+{
+    File.Delete(dataPath);
+    File.Delete(reactionsPath);
+}
+
 string audioPath = Path.Combine(Path.GetTempPath(),
     $"clay-managed-audio-{Guid.NewGuid():N}.wav");
 File.WriteAllBytes(audioPath, new byte[] {

@@ -74,8 +74,16 @@ public sealed class ClayRuntime : IDisposable
     public void LoadReactions(string json) => Check(
         Native.LoadReactions(handle, json ?? throw new ArgumentNullException(nameof(json))));
 
+    public void LoadReactionsFile(string path) => Check(
+        Native.LoadReactionsFile(handle,
+            path ?? throw new ArgumentNullException(nameof(path))));
+
     public void LoadActions(string json) => Check(
         Native.LoadActions(handle, json ?? throw new ArgumentNullException(nameof(json))));
+
+    public void LoadActionsFile(string path) => Check(
+        Native.LoadActionsFile(handle,
+            path ?? throw new ArgumentNullException(nameof(path))));
 
     public void LoadScene(string json)
     {
@@ -275,8 +283,12 @@ public sealed class ClayRuntime : IDisposable
         public static extern void SetTimeScale(RuntimeHandle runtime, double scale);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions")]
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_reactions_file")]
+        public static extern int LoadReactionsFile(RuntimeHandle runtime, string path);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_actions")]
         public static extern int LoadActions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_actions_file")]
+        public static extern int LoadActionsFile(RuntimeHandle runtime, string path);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_scene")]
         public static extern int LoadScene(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_scene_file")]
