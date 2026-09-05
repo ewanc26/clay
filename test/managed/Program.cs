@@ -1,0 +1,63 @@
+using Clay;
+using System.Runtime.InteropServices;
+
+if (args.Length != 1)
+    throw new ArgumentException("Usage: ClayHostTests NATIVE_LIBRARY_DIRECTORY");
+string library = OperatingSystem.IsWindows() ? "clay_engine.dll"
+    : OperatingSystem.IsMacOS() ? "libclay_engine.dylib" : "libclay_engine.so";
+string nativePath = Path.GetFullPath(Path.Combine(args[0], library));
+NativeLibrary.SetDllImportResolver(typeof(ClayRuntime).Assembly,
+    (name, assembly, searchPath) => name == "clay_engine"
+        ? NativeLibrary.Load(nativePath) : IntPtr.Zero);
+
+static void Require(bool condition, string message)
+{
+    if (!condition) throw new Exception(message);
+}
+
+static T Expect<T>(Action action) where T : Exception
+{
+    try { action(); }
+    catch (T error) { return error; }
+    throw new Exception($"Expected {typeof(T).Name}");
+}
+
+using var runtime = new ClayRuntime(64, 64, 42);
+runtime.InstallBuiltinSystems();
+runtime.FeedFocus(true);
+Require(runtime.IsFocused, "Focus true did not cross the ABI");
+runtime.FeedKeyAt(ClayKey.A, true, 12, 18, ClayModifiers.Shift);
+Require(runtime.IsKeyDown(ClayKey.A), "Key press did not cross the ABI");
+Require(runtime.CursorX == 12 && runtime.CursorY == 18, "Cursor mismatch");
+runtime.FeedFocus(false);
+Require(!runtime.IsFocused && !runtime.IsKeyDown(ClayKey.A),
+    "Focus loss failed to release held keys");
+runtime.SpawnSpecies("pebble", 32, 24, 1, 0, 0, 1, 60);
+runtime.Step(1.0 / 60);
+Require(runtime.Frame == 1 && runtime.SimTime > 0, "Runtime did not advance");
+uint[] packed = runtime.CopyPixels().ToArray();
+byte[] rgba = new byte[packed.Length * 4];
+runtime.CopyRgbaTo(rgba);
+Require(packed.Distinct().Count() > 1, "Rendered frame is degenerate");
+for (int i = 0; i < packed.Length; ++i)
+    Require(rgba[4 * i] == ((packed[i] >> 16) & 255)
+        && rgba[4 * i + 1] == ((packed[i] >> 8) & 255)
+        && rgba[4 * i + 2] == (packed[i] & 255)
+        && rgba[4 * i + 3] == 255, "RGBA channel conversion mismatch");
+
+string message = Expect<InvalidOperationException>(
+    () => runtime.LoadActions("invalid json")).Message;
+Require(message.Contains("Parse") && message.Contains("parse error"),
+    "Native error text did not reach the managed exception");
+Expect<InvalidOperationException>(() => runtime.Resize(0, 32));
+Require(runtime.Width == 64 && runtime.Height == 64,
+    "Rejected resize changed dimensions");
+runtime.Resize(20, 30);
+runtime.Step(1.0 / 60);
+Require(runtime.CopyPixels().Length == 600, "Resize left stale managed buffer");
+runtime.CopyRgbaTo(new byte[2400]);
+Expect<ArgumentException>(() => runtime.CopyRgbaTo(new byte[4]));
+runtime.Dispose();
+runtime.Dispose();
+Expect<ObjectDisposedException>(() => runtime.Step(1.0 / 60));
+Console.WriteLine("Managed/native integration passed: input, rendering, errors, resize, disposal.");

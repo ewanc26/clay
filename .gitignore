@@ -20,6 +20,8 @@ integrations/godot-mono/bin/
 integrations/godot-mono/obj/
 integrations/godot-mono/managed/bin/
 integrations/godot-mono/managed/obj/
+test/managed/bin/
+test/managed/obj/
 
 # IDE configurations
 .idea/
