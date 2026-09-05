@@ -5,6 +5,7 @@
 #include "audio/audio_device.hpp"
 #include "audio/audio_mixer.hpp"
 
+#include <cstdlib>
 #include <array>
 #include <bit>
 #include <cstdint>
@@ -218,6 +219,14 @@ TEST_CASE("audio device remains safe before opening a platform device") {
     CHECK_FALSE(device.is_started());
     CHECK_FALSE(device.start());
     CHECK_FALSE(device.stop());
+
+    if (std::getenv("CLAY_TEST_AUDIO_DEVICE") == nullptr) return;
+    REQUIRE(device.open());
+    REQUIRE(device.start());
+    CHECK(device.is_open());
+    CHECK(device.is_started());
+    REQUIRE(device.stop());
+    CHECK_FALSE(device.is_started());
 }
 
 TEST_CASE("WAV decoder converts signed 16-bit mono PCM") {
