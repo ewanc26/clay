@@ -358,6 +358,13 @@ class AudioMixer {
         voices_.clear();
     }
 
+    void stop_bus(AudioBus bus) noexcept {
+        std::lock_guard lock(mutex_);
+        std::erase_if(voices_, [bus](const Voice &voice) {
+            return voice.bus == bus;
+        });
+    }
+
     void set_master_gain(float gain) noexcept {
         std::lock_guard lock(mutex_);
         master_gain_ = clamp_gain(gain);

@@ -1,6 +1,7 @@
 #ifndef CLAY_ENGINE_SYSTEMS_REACTION_HPP
 #define CLAY_ENGINE_SYSTEMS_REACTION_HPP
 
+#include "audio/audio_mixer.hpp"
 #include "event.hpp"
 
 #include <clay/clay.h>
@@ -36,7 +37,8 @@ class ReactionEngine {
      * input.focus / action / command / world. `match.value` filters payload
      * (key or action name); `match.kind` filters "press"/"release".
      * Effects: spawn (species, x, y, life, color), ripple, flash, log,
-     * kill_radius. Positioning: without x/y, cursor position is used. */
+     * kill_radius, audio_play (clip, bus, loop, gain), audio_stop_all, and
+     * audio_music_stop. Positioning: without x/y, cursor position is used. */
     void load_json(cl_json_node *root);
     bool load_text(const std::string &text);
 
@@ -54,7 +56,16 @@ class ReactionEngine {
     enum class MatchKind { Any, Press, Release };
 
     struct Effect {
-        enum class Type { Spawn, Ripple, Flash, Log, KillRadius };
+        enum class Type {
+            Spawn,
+            Ripple,
+            Flash,
+            Log,
+            KillRadius,
+            AudioPlay,
+            AudioStopAll,
+            AudioMusicStop
+        };
         Type type = Type::Spawn;
         std::string species;
         bool use_cursor = true;
@@ -64,6 +75,10 @@ class ReactionEngine {
         double radius = 40.0;
         float color[3] = {1.0f, 1.0f, 1.0f};
         float alpha = 1.0f;
+        uint32_t audio_clip = 0;
+        AudioBus audio_bus = AudioBus::Sfx;
+        bool audio_loop = false;
+        float audio_gain = 1.0f;
     };
 
     struct Rule {

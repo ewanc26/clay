@@ -2,13 +2,13 @@
 
 #include "runtime.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
 namespace clay {
 
-ReactionEngine::ReactionEngine()
-    : arena_storage_(1u << 20) {
+ReactionEngine::ReactionEngine() : arena_storage_(1u << 20) {
     cl_arena_init(&arena_, arena_storage_.data(), arena_storage_.size());
 }
 
@@ -24,9 +24,12 @@ std::string node_str(cl_json_node *node) {
 double node_num(cl_json_node *node, double fallback) {
     if (node == nullptr) return fallback;
     switch (node->kind) {
-    case CLAY_J_I64: return (double)node->i;
-    case CLAY_J_F64: return node->f;
-    default: return fallback;
+        case CLAY_J_I64:
+            return (double)node->i;
+        case CLAY_J_F64:
+            return node->f;
+        default:
+            return fallback;
     }
 }
 
@@ -74,6 +77,22 @@ void ReactionEngine::load_json(cl_json_node *root) {
                 out.type = Effect::Type::Log;
             } else if (effect == "kill_radius") {
                 out.type = Effect::Type::KillRadius;
+            } else if (effect == "audio_play") {
+                out.type = Effect::Type::AudioPlay;
+                out.audio_clip = static_cast<uint32_t>(
+                    std::max(0.0, node_num(cl_json_get_cstr(e, "clip"), 0.0)));
+                const std::string bus = node_str(cl_json_get_cstr(e, "bus"));
+                out.audio_bus =
+                    bus == "music" ? AudioBus::Music : AudioBus::Sfx;
+                cl_json_node *loop = cl_json_get_cstr(e, "loop");
+                out.audio_loop =
+                    loop != nullptr && loop->kind == CLAY_J_BOOL && loop->b;
+                out.audio_gain = static_cast<float>(
+                    node_num(cl_json_get_cstr(e, "gain"), 1.0));
+            } else if (effect == "audio_stop_all") {
+                out.type = Effect::Type::AudioStopAll;
+            } else if (effect == "audio_music_stop") {
+                out.type = Effect::Type::AudioMusicStop;
             } else {
                 continue;
             }
@@ -110,8 +129,8 @@ bool ReactionEngine::load_text(const std::string &text) {
      * allocation-failed replacement must not destroy the active ruleset. */
     ReactionEngine replacement;
     cl_json_node root;
-    cl_err err = cl_json_parse(&root, &replacement.arena_,
-                               cl_str_c(text.c_str()));
+    cl_err err =
+        cl_json_parse(&root, &replacement.arena_, cl_str_c(text.c_str()));
     if (err != CLAY_OK) return false;
     replacement.load_json(&root);
     rules_ = std::move(replacement.rules_);
@@ -176,24 +195,34 @@ void ReactionEngine::apply_effect(Runtime &rt, const Rule &rule,
                 effect.alpha};
 
     switch (effect.type) {
-    case Effect::Type::Spawn:
-        rt.spawn_species(effect.species, (float)x, (float)y, color,
-                         (float)effect.life);
-        break;
-    case Effect::Type::Ripple:
-        rt.spawn_ripple((float)x, (float)y, (float)effect.radius, color);
-        break;
-    case Effect::Type::Flash:
-        rt.flash(color, 0.5);
-        break;
-    case Effect::Type::KillRadius:
-        rt.kill_within((float)x, (float)y, (float)effect.radius);
-        break;
-    case Effect::Type::Log:
-        rt.log_reaction(rule.name + " fired on " + ev.channel_str() +
-                        " @ (" + std::to_string((int)x) + ", " +
-                        std::to_string((int)y) + ")");
-        break;
+        case Effect::Type::Spawn:
+            rt.spawn_species(effect.species, (float)x, (float)y, color,
+                             (float)effect.life);
+            break;
+        case Effect::Type::Ripple:
+            rt.spawn_ripple((float)x, (float)y, (float)effect.radius, color);
+            break;
+        case Effect::Type::Flash:
+            rt.flash(color, 0.5);
+            break;
+        case Effect::Type::KillRadius:
+            rt.kill_within((float)x, (float)y, (float)effect.radius);
+            break;
+        case Effect::Type::Log:
+            rt.log_reaction(rule.name + " fired on " + ev.channel_str() +
+                            " @ (" + std::to_string((int)x) + ", " +
+                            std::to_string((int)y) + ")");
+            break;
+        case Effect::Type::AudioPlay:
+            rt.audio_play(effect.audio_clip, effect.audio_bus,
+                          effect.audio_loop, effect.audio_gain);
+            break;
+        case Effect::Type::AudioStopAll:
+            rt.audio().stop_all();
+            break;
+        case Effect::Type::AudioMusicStop:
+            rt.audio().stop_bus(AudioBus::Music);
+            break;
     }
 }
 

@@ -6,6 +6,8 @@
 
 #include <clay/clay.h>
 
+#include <array>
+#include <string>
 #include <vector>
 
 using namespace clay;
@@ -46,6 +48,46 @@ TEST_CASE("reaction: press value matches, release does not") {
     CHECK_EQ(rt.reactions().fired_count(), 2);
 }
 
+TEST_CASE("reaction: audio effects trigger and stop mixer voices") {
+    Runtime rt(200, 200, 5);
+    const auto clip = rt.audio().add_clip(AudioClip{48000, 1, {0.75F}});
+    REQUIRE(clip.has_value());
+    const std::string rules = std::string(R"json({"rules":[
+          {"name":"play music","on":"input.key",
+           "match":{"value":"SPACE","kind":"press"},
+           "do":[{"effect":"audio_play","clip":)json") +
+                              std::to_string(*clip) +
+                              R"json(,"bus":"music","loop":true,"gain":0.5}]},
+          {"name":"play sfx","on":"input.key",
+           "match":{"value":"SPACE","kind":"press"},
+           "do":[{"effect":"audio_play","clip":)json" +
+                              std::to_string(*clip) +
+                              R"json(,"bus":"sfx","loop":true}]},
+          {"name":"stop music","on":"input.key",
+           "match":{"value":"E","kind":"press"},
+           "do":[{"effect":"audio_music_stop"}]},
+          {"name":"stop all","on":"input.key",
+           "match":{"value":"R","kind":"press"},
+           "do":[{"effect":"audio_stop_all"}]}
+        ]})json";
+    REQUIRE(rt.reactions().load_text(rules));
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.feed_press(CLAY_KEY_SPACE);
+    CHECK(rt.audio().voice_count() == 2);
+    std::array<float, 2> samples{};
+    REQUIRE(rt.audio().mix_stereo(samples));
+    CHECK(samples[0] == doctest::Approx(1.0F));
+    CHECK(samples[1] == doctest::Approx(1.0F));
+
+    rt.feed_release(CLAY_KEY_SPACE);
+    rt.feed_press(CLAY_KEY_E);
+    CHECK(rt.audio().voice_count() == 1);
+    rt.feed_release(CLAY_KEY_E);
+    rt.feed_press(CLAY_KEY_R);
+    CHECK(rt.audio().voice_count() == 0);
+}
+
 TEST_CASE("reaction: cooldown clocks from sim time, not wall time") {
     Runtime rt(200, 200, 2);
     rt.reactions().load_text(kRules);
@@ -71,7 +113,8 @@ TEST_CASE("reaction: rules survive a clear and re-load") {
     CHECK_EQ(rt.reactions().rule_count(), 4);
 }
 
-TEST_CASE("reaction: successful reload replaces rules and parse failure preserves") {
+TEST_CASE(
+    "reaction: successful reload replaces rules and parse failure preserves") {
     Runtime rt(200, 200, 4);
     rt.reactions().load_text(kRules);
     CHECK_EQ(rt.reactions().rule_count(), 4);
