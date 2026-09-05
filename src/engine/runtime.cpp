@@ -216,9 +216,13 @@ bool Runtime::audio_mix_stereo(std::span<float> output) {
 
 bool Runtime::resize(int width, int height) {
     if (!valid_dimensions(width, height)) return false;
+
+    /* Build the complete replacement before touching the live renderer. This
+     * keeps the runtime coherent if framebuffer/depth allocation throws. */
+    RendererSW replacement(width, height);
+    renderer_ = std::move(replacement);
     width_ = width;
     height_ = height;
-    renderer_.framebuffer().resize(width, height);
     return true;
 }
 
