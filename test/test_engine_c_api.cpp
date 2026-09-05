@@ -38,6 +38,8 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     CHECK(samples[0] == doctest::Approx(127.0F / 128.0F));
     CHECK(samples[1] == doctest::Approx(127.0F / 128.0F));
     CHECK(cl_engine_runtime_audio_stop(runtime, voice) == false);
+    CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
+    CHECK(!cl_engine_runtime_audio_unload_clip(runtime, clip));
     CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 3) ==
           CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_audio_load_wav(

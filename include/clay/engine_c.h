@@ -130,6 +130,8 @@ CLAY_API cl_err cl_engine_runtime_save_png(const cl_engine_runtime *runtime,
 CLAY_API cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
                                                 const char *path,
                                                 uint32_t *clip_id);
+CLAY_API bool cl_engine_runtime_audio_unload_clip(cl_engine_runtime *runtime,
+                                                  uint32_t clip_id);
 CLAY_API uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                uint32_t clip_id, int bus,
                                                bool loop, float gain);

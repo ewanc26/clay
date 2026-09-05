@@ -91,6 +91,8 @@ try
         && Math.Abs(audio[1] - (127f / 128f)) < 0.001f,
         "Managed audio did not cross the native ABI");
     Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
+    Require(runtime.UnloadAudio(clip), "Managed audio clip did not unload");
+    Require(!runtime.UnloadAudio(clip), "Managed audio clip unloaded twice");
 }
 finally
 {

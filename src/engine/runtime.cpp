@@ -143,6 +143,10 @@ cl_err Runtime::audio_load_wav(const std::string &path, AudioClipId *clip_id) {
     return CLAY_OK;
 }
 
+bool Runtime::audio_unload_clip(AudioClipId clip_id) {
+    return audio_.remove_clip(clip_id);
+}
+
 AudioVoiceId Runtime::audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                                  float gain) {
     auto voice = audio_.play(clip_id, bus, loop, gain);

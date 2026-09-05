@@ -470,6 +470,11 @@ extern "C" uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" bool cl_engine_runtime_audio_unload_clip(cl_engine_runtime *runtime,
+                                                     uint32_t clip_id) {
+    return runtime && clip_id != 0 && runtime->impl.audio_unload_clip(clip_id);
+}
+
 extern "C" bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
                                              uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_stop(voice_id);

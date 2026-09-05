@@ -206,6 +206,8 @@ public sealed class ClayRuntime : IDisposable
         return clip;
     }
 
+    public bool UnloadAudio(uint clip) => Native.AudioUnloadClip(handle, clip);
+
     public uint PlayAudio(uint clip, ClayAudioBus bus = ClayAudioBus.Sfx,
                           bool loop = false, float gain = 1)
     {
@@ -352,6 +354,9 @@ public sealed class ClayRuntime : IDisposable
                                              int bus,
                                              [MarshalAs(UnmanagedType.I1)] bool loop,
                                              float gain);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_unload_clip")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioUnloadClip(RuntimeHandle runtime, uint clip);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
