@@ -187,6 +187,14 @@ TEST_CASE("runtime: resize reports invalid dimensions") {
     CHECK(rt.framebuffer().pixels.size() == 48u * 20u);
 }
 
+TEST_CASE("runtime: scenes without resolution preserve host dimensions") {
+    Runtime rt(32, 24, 10);
+    REQUIRE(rt.load_scene("{\"version\":1,\"scene\":[]}"));
+    CHECK(rt.width() == 32);
+    CHECK(rt.height() == 24);
+    CHECK(rt.has_scene());
+}
+
 TEST_CASE("runtime: same seed, same transcript, same world") {
     uint64_t seed = 0xBEEF;
     const uint64_t frames = 60;

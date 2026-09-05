@@ -136,6 +136,7 @@ bool parse_render_settings(cl_json_node *settings, ClaySettings &out) {
      * an accepted alias for existing files. */
     if (cl_json_node *res = cl_json_get_cstr(settings, "resolution")) {
         if (res->kind != CLAY_J_ARR || res->arr.n != 2) return false;
+        out.has_resolution = true;
         for (int i = 0; i < 2; i++) {
             cl_json_node *v = res->arr.items[i];
             if (!v || v->kind != CLAY_J_I64 || v->i <= 0 || v->i > 8192)
@@ -149,11 +150,13 @@ bool parse_render_settings(cl_json_node *settings, ClaySettings &out) {
         if (cl_json_node *width = cl_json_get_cstr(render, "width")) {
             if (width->kind != CLAY_J_I64 || width->i <= 0 || width->i > 8192)
                 return false;
+            out.has_resolution = true;
             out.resolution[0] = (int)width->i;
         }
         if (cl_json_node *height = cl_json_get_cstr(render, "height")) {
             if (height->kind != CLAY_J_I64 || height->i <= 0 || height->i > 8192)
                 return false;
+            out.has_resolution = true;
             out.resolution[1] = (int)height->i;
         }
         if (cl_json_node *clear = cl_json_get_cstr(render, "clear")) {

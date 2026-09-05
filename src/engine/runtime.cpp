@@ -90,10 +90,12 @@ bool Runtime::load_scene(const std::string &text) {
     auto scene = std::make_unique<ClayScene>();
     if (!scene->load(cl_str_c(text.c_str()))) return false;
 
-    const auto &resolution = scene->settings().resolution;
-    if ((resolution[0] != width_ || resolution[1] != height_) &&
-        !resize(resolution[0], resolution[1]))
-        return false;
+    if (scene->settings().has_resolution) {
+        const auto &resolution = scene->settings().resolution;
+        if ((resolution[0] != width_ || resolution[1] != height_) &&
+            !resize(resolution[0], resolution[1]))
+            return false;
+    }
 
     if (scene->settings().has_seed) {
         seed_ = scene->settings().seed;

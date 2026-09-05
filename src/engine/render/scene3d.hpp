@@ -58,6 +58,7 @@ struct ClaySettings {
     bool has_seed = false;
     int fps = 60;
     int resolution[2] = {640, 480};
+    bool has_resolution = false;
     Rgba clear{24, 26, 34, 255};
 };
 

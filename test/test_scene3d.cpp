@@ -191,6 +191,7 @@ TEST_CASE("scene3d: canonical render settings and legacy resolution alias load")
     CHECK(canonical.settings().fps == 60);
     CHECK(canonical.settings().resolution[0] == 320);
     CHECK(canonical.settings().resolution[1] == 240);
+    CHECK(canonical.settings().has_resolution);
     CHECK(canonical.settings().clear.r == 12);
 
     ClayScene legacy;
@@ -198,6 +199,11 @@ TEST_CASE("scene3d: canonical render settings and legacy resolution alias load")
         "{\"version\":1,\"settings\":{\"resolution\":[80,60]}}")));
     CHECK(legacy.settings().resolution[0] == 80);
     CHECK(legacy.settings().resolution[1] == 60);
+    CHECK(legacy.settings().has_resolution);
+
+    ClayScene defaults;
+    REQUIRE(defaults.load(cl_str_c("{\"version\":1}")));
+    CHECK_FALSE(defaults.settings().has_resolution);
 }
 
 TEST_CASE("scene3d: camera entity is parsed into view and projection matrices") {
