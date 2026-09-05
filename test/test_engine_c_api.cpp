@@ -68,6 +68,7 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     CHECK(cl_engine_runtime_audio_load_file(runtime, path.string().c_str(),
                                             &clip) == CLAY_OK);
     REQUIRE(clip != 0);
+    CHECK(cl_engine_runtime_audio_clip_frame_count(runtime, clip) > 0);
     const uint32_t voice =
         cl_engine_runtime_audio_play(runtime, clip, 0, false, 1.0F);
     REQUIRE(voice != 0);
@@ -78,6 +79,7 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     for (float sample : samples) nonzero |= sample != 0.0F;
     CHECK(nonzero);
     CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
+    CHECK(cl_engine_runtime_audio_clip_frame_count(runtime, clip) == 0);
     CHECK(!cl_engine_runtime_audio_voice_active(runtime, voice));
     CHECK(!cl_engine_runtime_audio_stop(runtime, voice));
     cl_engine_runtime_destroy(runtime);

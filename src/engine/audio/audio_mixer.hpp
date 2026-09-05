@@ -105,6 +105,14 @@ class AudioMixer {
         return false;
     }
 
+    [[nodiscard]] std::size_t clip_frame_count(AudioClipId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        for (const ClipEntry &entry : clips_) {
+            if (entry.id == id) return entry.clip.frame_count();
+        }
+        return 0;
+    }
+
     void stop_all() noexcept {
         std::lock_guard lock(mutex_);
         voices_.clear();

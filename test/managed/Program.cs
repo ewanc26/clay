@@ -88,6 +88,8 @@ try
     Require(runtime.UnloadAudio(genericClip),
         "Managed generic audio clip did not unload");
     uint clip = runtime.LoadWav(audioPath);
+    Require(runtime.GetAudioClipFrames(clip) > 0,
+        "Managed audio clip length query failed");
     uint voice = runtime.PlayAudio(clip);
     Require(runtime.IsAudioPlaying(voice),
         "Managed audio voice state did not cross the native ABI");

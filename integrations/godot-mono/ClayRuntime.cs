@@ -228,6 +228,9 @@ public sealed class ClayRuntime : IDisposable
 
     public bool IsAudioPlaying(uint voice) => Native.AudioVoiceActive(handle, voice);
 
+    public nuint GetAudioClipFrames(uint clip) =>
+        Native.AudioClipFrameCount(handle, clip);
+
     public uint AudioSampleRate => Native.AudioSampleRate(handle);
 
     public void MixAudio(float[] samples)
@@ -377,6 +380,8 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_active")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioVoiceActive(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_clip_frame_count")]
+        public static extern nuint AudioClipFrameCount(RuntimeHandle runtime, uint clip);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_sample_rate")]
         public static extern uint AudioSampleRate(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_mix_stereo")]

@@ -88,6 +88,9 @@ class Runtime {
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }
+    std::size_t audio_clip_frame_count(AudioClipId clip_id) const noexcept {
+        return audio_.clip_frame_count(clip_id);
+    }
     bool audio_mix_stereo(std::span<float> output);
     std::uint32_t audio_sample_rate() const noexcept {
         return audio_.sample_rate();
