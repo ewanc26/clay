@@ -107,6 +107,10 @@ try
     Require(!runtime.IsAudioPlaying(voice),
         "Completed managed audio voice remained active");
     Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
+    uint loopVoice = runtime.PlayAudio(clip, loop: true);
+    Require(runtime.IsAudioPlaying(loopVoice), "Managed loop voice did not start");
+    runtime.StopAllAudio();
+    Require(!runtime.IsAudioPlaying(loopVoice), "Managed stop-all audio failed");
     Require(runtime.UnloadAudio(clip), "Managed audio clip did not unload");
     Require(!runtime.UnloadAudio(clip), "Managed audio clip unloaded twice");
 }

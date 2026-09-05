@@ -227,6 +227,8 @@ public sealed class ClayRuntime : IDisposable
 
     public bool StopAudio(uint voice) => Native.AudioStop(handle, voice);
 
+    public void StopAllAudio() => Native.AudioStopAll(handle);
+
     public bool PauseAudio(uint voice) => Native.AudioPause(handle, voice);
 
     public bool ResumeAudio(uint voice) => Native.AudioResume(handle, voice);
@@ -384,6 +386,8 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop_all")]
+        public static extern void AudioStopAll(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_pause")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioPause(RuntimeHandle runtime, uint voice);

@@ -501,6 +501,11 @@ extern "C" bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
     return runtime && voice_id != 0 && runtime->impl.audio_stop(voice_id);
 }
 
+extern "C" void
+cl_engine_runtime_audio_stop_all(cl_engine_runtime *runtime) {
+    if (runtime) runtime->impl.audio().stop_all();
+}
+
 extern "C" bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
                                                uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_pause(voice_id);

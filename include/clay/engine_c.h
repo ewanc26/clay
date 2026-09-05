@@ -144,6 +144,7 @@ CLAY_API uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                bool loop, float gain);
 CLAY_API bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
                                            uint32_t voice_id);
+CLAY_API void cl_engine_runtime_audio_stop_all(cl_engine_runtime *runtime);
 CLAY_API bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
                                             uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
