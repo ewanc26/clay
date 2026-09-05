@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <mutex>
 #include <span>
 #include <utility>
 #include <vector>
@@ -47,6 +48,7 @@ class AudioMixer {
     }
 
     [[nodiscard]] std::optional<AudioClipId> add_clip(AudioClip clip) {
+        std::lock_guard lock(mutex_);
         if (!clip.valid() || clip.sample_rate != sample_rate_) {
             return std::nullopt;
         }
@@ -57,6 +59,7 @@ class AudioMixer {
     }
 
     bool remove_clip(AudioClipId id) {
+        std::lock_guard lock(mutex_);
         const auto before = clips_.size();
         std::erase_if(clips_, [id](const ClipEntry &entry) {
             return entry.id == id;
@@ -74,6 +77,7 @@ class AudioMixer {
     [[nodiscard]] std::optional<AudioVoiceId>
     play(AudioClipId clip_id, AudioBus bus = AudioBus::Sfx,
          bool loop = false, float gain = 1.0F) {
+        std::lock_guard lock(mutex_);
         if (find_clip(clip_id) == nullptr) {
             return std::nullopt;
         }
@@ -85,6 +89,7 @@ class AudioMixer {
     }
 
     bool stop(AudioVoiceId id) {
+        std::lock_guard lock(mutex_);
         const auto before = voices_.size();
         std::erase_if(voices_, [id](const Voice &voice) {
             return voice.id == id;
@@ -92,15 +97,20 @@ class AudioMixer {
         return voices_.size() != before;
     }
 
-    void stop_all() noexcept { voices_.clear(); }
+    void stop_all() noexcept {
+        std::lock_guard lock(mutex_);
+        voices_.clear();
+    }
 
     void set_master_gain(float gain) noexcept {
+        std::lock_guard lock(mutex_);
         master_gain_ = clamp_gain(gain);
     }
 
     [[nodiscard]] float master_gain() const noexcept { return master_gain_; }
 
     void set_bus_gain(AudioBus bus, float gain) noexcept {
+        std::lock_guard lock(mutex_);
         const float clamped = clamp_gain(gain);
         switch (bus) {
         case AudioBus::Sfx:
@@ -123,10 +133,12 @@ class AudioMixer {
     }
 
     [[nodiscard]] std::size_t clip_count() const noexcept {
+        std::lock_guard lock(mutex_);
         return clips_.size();
     }
 
     [[nodiscard]] std::size_t voice_count() const noexcept {
+        std::lock_guard lock(mutex_);
         return voices_.size();
     }
 
@@ -134,6 +146,7 @@ class AudioMixer {
     // device; platform backends can call this from their callback, while
     // headless tests can exercise the exact same deterministic path.
     bool mix_stereo(std::span<float> output) {
+        std::lock_guard lock(mutex_);
         std::fill(output.begin(), output.end(), 0.0F);
         if (output.size() % 2 != 0) {
             return false;
@@ -149,7 +162,10 @@ class AudioMixer {
 
             const AudioClip &clip = entry->clip;
             const std::size_t clip_frames = clip.frame_count();
-            const float gain = master_gain_ * bus_gain(voice.bus) * voice.gain;
+            const float bus_gain_value = voice.bus == AudioBus::Sfx
+                                             ? sfx_gain_
+                                             : music_gain_;
+            const float gain = master_gain_ * bus_gain_value * voice.gain;
 
             for (std::size_t frame = 0; frame < output_frames; ++frame) {
                 if (voice.cursor >= clip_frames) {
@@ -220,6 +236,7 @@ class AudioMixer {
     AudioVoiceId next_voice_id_ = 1;
     std::vector<ClipEntry> clips_;
     std::vector<Voice> voices_;
+    mutable std::mutex mutex_;
 };
 
 } // namespace clay

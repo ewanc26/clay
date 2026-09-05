@@ -38,6 +38,8 @@ option(CLAY_BUILD_TESTS "Build unit tests" ON)
 option(CLAY_BUILD_INTERACTIVE "Build the interactive `clay_player` app" ON)
 option(CLAY_BUILD_EXAMPLES "Build standalone host examples" ON)
 option(CLAY_BUILD_SHARED "Build clay_engine as a shared library for host bindings" ON)
+option(CLAY_BUILD_AUDIO_DEVICE
+       "Build the optional miniaudio playback device backend" ON)
 option(CLAY_INSTALL_GODOT_NATIVE
        "Install the shared Clay library into the Godot native layout" ON)
 
@@ -151,6 +153,9 @@ set(CLAY_ENGINE_SOURCES
   src/engine/imageio.cpp
   src/engine/engine_c.cpp
 )
+if(CLAY_BUILD_AUDIO_DEVICE)
+  list(APPEND CLAY_ENGINE_SOURCES src/engine/audio/audio_device.cpp)
+endif()
 if(CLAY_HAS_GLFW)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/platform/window_glfw.cpp)
 endif()
@@ -219,6 +224,8 @@ install(FILES include/clay/engine_c.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
 install(FILES include/clay/engine.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay)
+install(FILES third_party/miniaudio.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay/engine)
 install(DIRECTORY src/core/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/clay/core
   FILES_MATCHING PATTERN "*.h")
