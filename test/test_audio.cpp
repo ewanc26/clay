@@ -300,7 +300,11 @@ TEST_CASE("audio mixer spatializes a voice against the listener") {
 TEST_CASE("audio mixer streams decoder frames and loops at end") {
     const auto path =
         std::filesystem::temp_directory_path() / "clay-audio-stream-test.wav";
-    const auto wav = make_wav(1, 1, 48000, 16, {0x00, 0x40, 0x00, 0xC0});
+    std::vector<std::uint8_t> stream_data;
+    stream_data.reserve(5000 * 2);
+    for (std::size_t frame = 0; frame < 5000; ++frame)
+        append_u16(stream_data, frame % 2 == 0 ? 0x4000 : 0xC000);
+    const auto wav = make_wav(1, 1, 48000, 16, std::move(stream_data));
     {
         std::ofstream output(path, std::ios::binary);
         REQUIRE(output);
@@ -310,7 +314,12 @@ TEST_CASE("audio mixer streams decoder frames and loops at end") {
 
     auto stream = std::make_unique<AudioStream>();
     REQUIRE(stream->open(path.string(), 48000));
-    CHECK(stream->frame_count() == 2);
+    CHECK(stream->frame_count() == 5000);
+    std::vector<float> decoded(5000 * 2);
+    CHECK(stream->read(decoded) == 5000);
+    CHECK(decoded[0] == doctest::Approx(0.5F));
+    CHECK(decoded[2] == doctest::Approx(-0.5F));
+    REQUIRE(stream->rewind());
 
     {
         AudioMixer mixer;
@@ -322,7 +331,7 @@ TEST_CASE("audio mixer streams decoder frames and loops at end") {
         REQUIRE(mixer.mix_stereo(samples));
         CHECK(samples[0] == doctest::Approx(0.5F));
         CHECK(samples[2] == doctest::Approx(-0.5F));
-        CHECK(mixer.stream_frame_count(*stream_id) == 2);
+        CHECK(mixer.stream_frame_count(*stream_id) == 5000);
     }
 
     std::filesystem::remove(path);
