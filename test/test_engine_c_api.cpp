@@ -133,6 +133,44 @@ TEST_CASE("C ABI decodes a generic MP3 audio file") {
     std::filesystem::remove(path);
 }
 
+TEST_CASE("C ABI decodes a generic Ogg Vorbis audio file") {
+    std::ifstream encoded(std::string(CLAY_TEST_DATA_DIR) +
+                          "/tiny-ogg.ogg.b64");
+    REQUIRE(encoded);
+    const std::string text((std::istreambuf_iterator<char>(encoded)),
+                           std::istreambuf_iterator<char>());
+    const auto ogg = decode_base64(text);
+    REQUIRE(ogg.size() > 100);
+    const auto path = std::filesystem::temp_directory_path() /
+                      "clay-engine-c-api-ogg.ogg";
+    std::ofstream output(path, std::ios::binary);
+    REQUIRE(output);
+    output.write(reinterpret_cast<const char *>(ogg.data()),
+                 static_cast<std::streamsize>(ogg.size()));
+    output.close();
+
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 4);
+    REQUIRE(runtime != nullptr);
+    uint32_t clip = 0;
+    CHECK(cl_engine_runtime_audio_load_file(runtime, path.string().c_str(),
+                                            &clip) == CLAY_OK);
+    REQUIRE(clip != 0);
+    CHECK(cl_engine_runtime_audio_clip_frame_count(runtime, clip) > 0);
+    const uint32_t voice =
+        cl_engine_runtime_audio_play(runtime, clip, 0, false, 1.0F);
+    REQUIRE(voice != 0);
+    float samples[4096] = {};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 4096) ==
+          CLAY_OK);
+    bool nonzero = false;
+    for (float sample : samples) nonzero |= sample != 0.0F;
+    CHECK(nonzero);
+    CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
+    CHECK(!cl_engine_runtime_audio_voice_active(runtime, voice));
+    cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(path);
+}
+
 static std::vector<unsigned char> tiny_wav() {
     return {'R',  'I',  'F', 'F', 38,   0,    0, 0, 'W',  'A', 'V', 'E',
             'f',  'm',  't', ' ', 16,   0,    0, 0, 1,    0,   1,   0,
