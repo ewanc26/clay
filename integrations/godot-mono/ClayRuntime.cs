@@ -17,6 +17,12 @@ public enum ClayError
     Overflow,
 }
 
+public enum ClayAudioBus
+{
+    Sfx = 0,
+    Music = 1,
+}
+
 /// <summary>Managed owner for a native Clay runtime.</summary>
 public sealed class ClayRuntime : IDisposable
 {
@@ -167,6 +173,35 @@ public sealed class ClayRuntime : IDisposable
     public void SavePng(string path) => Check(
         Native.SavePng(handle, path ?? throw new ArgumentNullException(nameof(path))));
 
+    public uint LoadWav(string path)
+    {
+        if (path == null) throw new ArgumentNullException(nameof(path));
+        Check(Native.AudioLoadWav(handle, path, out uint clip));
+        return clip;
+    }
+
+    public uint PlayAudio(uint clip, ClayAudioBus bus = ClayAudioBus.Sfx,
+                          bool loop = false, float gain = 1)
+    {
+        uint voice = Native.AudioPlay(handle, clip, (int)bus, loop, gain);
+        if (voice == 0)
+            throw new InvalidOperationException("Clay audio playback failed.");
+        return voice;
+    }
+
+    public bool StopAudio(uint voice) => Native.AudioStop(handle, voice);
+
+    public void MixAudio(float[] samples)
+    {
+        if (samples == null) throw new ArgumentNullException(nameof(samples));
+        Check(Native.AudioMixStereo(handle, samples, (nuint)samples.Length));
+    }
+
+    public void SetMasterGain(float gain) => Native.AudioSetMasterGain(handle, gain);
+
+    public void SetBusGain(ClayAudioBus bus, float gain) =>
+        Native.AudioSetBusGain(handle, (int)bus, gain);
+
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)
@@ -270,5 +305,26 @@ public sealed class ClayRuntime : IDisposable
         public static extern IntPtr PixelsRgba(RuntimeHandle runtime, out nuint byteCount);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_save_png")]
         public static extern int SavePng(RuntimeHandle runtime, string path);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_load_wav")]
+        public static extern int AudioLoadWav(RuntimeHandle runtime, string path,
+                                               out uint clip);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_play")]
+        public static extern uint AudioPlay(RuntimeHandle runtime, uint clip,
+                                             int bus,
+                                             [MarshalAs(UnmanagedType.I1)] bool loop,
+                                             float gain);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_stop")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_mix_stereo")]
+        public static extern int AudioMixStereo(RuntimeHandle runtime,
+                                                 [In, Out] float[] samples,
+                                                 nuint sampleCount);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_set_master_gain")]
+        public static extern void AudioSetMasterGain(RuntimeHandle runtime,
+                                                      float gain);
+        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_set_bus_gain")]
+        public static extern void AudioSetBusGain(RuntimeHandle runtime, int bus,
+                                                  float gain);
     }
 }
