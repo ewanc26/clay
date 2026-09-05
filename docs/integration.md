@@ -28,7 +28,10 @@ integer-overflowing sizes, and surfaces larger than
 
 The install package is validated with both a C ABI consumer and a C++ consumer;
 the latter includes the public `<clay/engine.hpp>` umbrella, constructs a
-`Runtime`, steps one frame, and checks the installed framebuffer.
+`Runtime`, steps one frame, and checks the installed framebuffer. Standalone
+C++ hosts can also call `Runtime::load_scene` or `Runtime::load_scene_file`;
+the runtime owns the loaded scene and its render system until
+`Runtime::unload_scene`.
 
 For a managed binding, include `clay/engine_c.h` and P/Invoke the
 `cl_engine_runtime_*` functions. The runtime handle is opaque, and framebuffer
