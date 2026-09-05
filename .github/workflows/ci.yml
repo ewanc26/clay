@@ -56,6 +56,13 @@ jobs:
           cmake --build build/package-consumer --config Debug
           ctest --test-dir build/package-consumer -C Debug --timeout 30 --output-on-failure
 
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Verify managed calls against installed native library
+        run: dotnet run --project test/managed/ClayHostTests.csproj -- build/sdk/integrations/godot-mono
+
       - name: Verify installed static CMake package
         shell: bash
         run: |
