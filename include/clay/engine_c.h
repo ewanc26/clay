@@ -106,6 +106,7 @@ CLAY_API cl_err cl_engine_runtime_install_builtin_systems(
 CLAY_API int cl_engine_runtime_width(const cl_engine_runtime *runtime);
 CLAY_API int cl_engine_runtime_height(const cl_engine_runtime *runtime);
 CLAY_API uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime);
+CLAY_API uint64_t cl_engine_runtime_seed(const cl_engine_runtime *runtime);
 CLAY_API double cl_engine_runtime_sim_time(const cl_engine_runtime *runtime);
 CLAY_API double cl_engine_runtime_sim_dt(const cl_engine_runtime *runtime);
 CLAY_API double cl_engine_runtime_time_scale(

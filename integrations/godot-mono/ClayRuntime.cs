@@ -58,6 +58,7 @@ public sealed class ClayRuntime : IDisposable
     public int Width => Native.Width(handle);
     public int Height => Native.Height(handle);
     public ulong Frame => Native.Frame(handle);
+    public ulong Seed => Native.Seed(handle);
     public double SimTime => Native.SimTime(handle);
     public double SimDelta => Native.SimDelta(handle);
     public double TimeScale => Native.TimeScale(handle);
@@ -348,6 +349,8 @@ public sealed class ClayRuntime : IDisposable
         public static extern int Height(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_frame")]
         public static extern ulong Frame(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_seed")]
+        public static extern ulong Seed(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_sim_time")]
         public static extern double SimTime(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_sim_dt")]

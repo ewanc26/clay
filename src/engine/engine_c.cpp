@@ -377,6 +377,10 @@ extern "C" uint64_t cl_engine_runtime_frame(const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.frame() : 0;
 }
 
+extern "C" uint64_t cl_engine_runtime_seed(const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.seed() : 0;
+}
+
 extern "C" double cl_engine_runtime_sim_time(const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.sim_time() : 0.0;
 }

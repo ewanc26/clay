@@ -95,6 +95,11 @@ bool Runtime::load_scene(const std::string &text) {
         !resize(resolution[0], resolution[1]))
         return false;
 
+    if (scene->settings().has_seed) {
+        seed_ = scene->settings().seed;
+        cl_rng_seed(&rng_, seed_);
+    }
+
     auto system = std::make_unique<Scene3DRenderSystem>(*scene);
     scene_ = std::move(scene);
     scene_system_ = std::move(system);

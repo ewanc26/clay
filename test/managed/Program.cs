@@ -23,6 +23,7 @@ static T Expect<T>(Action action) where T : Exception
 }
 
 using var runtime = new ClayRuntime(64, 64, 42);
+Require(runtime.Seed == 42, "Initial runtime seed did not cross the ABI");
 runtime.InstallBuiltinSystems();
 runtime.FeedFocus(true);
 Require(runtime.IsFocused, "Focus true did not cross the ABI");
@@ -32,9 +33,10 @@ Require(runtime.CursorX == 12 && runtime.CursorY == 18, "Cursor mismatch");
 runtime.FeedFocus(false);
 Require(!runtime.IsFocused && !runtime.IsKeyDown(ClayKey.A),
     "Focus loss failed to release held keys");
-runtime.LoadScene("{\"version\":1,\"settings\":{\"render\":{\"width\":32,\"height\":24}},\"meshes\":[{\"name\":\"cube\",\"primitive\":\"cube\"}],\"scene\":[{\"component\":\"mesh\",\"mesh\":\"cube\"}]}");
+runtime.LoadScene("{\"version\":1,\"settings\":{\"seed\":77,\"render\":{\"width\":32,\"height\":24}},\"meshes\":[{\"name\":\"cube\",\"primitive\":\"cube\"}],\"scene\":[{\"component\":\"mesh\",\"mesh\":\"cube\"}]}");
 Require(runtime.HasScene && runtime.Width == 32 && runtime.Height == 24,
     "Authored scene did not cross the managed boundary");
+Require(runtime.Seed == 77, "Scene seed did not cross the managed boundary");
 runtime.Step(1.0 / 60);
 runtime.UnloadScene();
 Require(!runtime.HasScene, "Scene did not unload");
