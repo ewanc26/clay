@@ -35,7 +35,9 @@ struct AudioClip {
 
     [[nodiscard]] bool valid() const noexcept {
         return sample_rate > 0 && (channels == 1 || channels == 2) &&
-               !samples.empty() && samples.size() % channels == 0;
+               !samples.empty() && samples.size() % channels == 0 &&
+               std::all_of(samples.begin(), samples.end(),
+                           [](float sample) { return std::isfinite(sample); });
     }
 };
 

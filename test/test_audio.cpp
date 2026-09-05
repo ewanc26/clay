@@ -106,6 +106,10 @@ TEST_CASE("audio mixer rejects incompatible clips") {
 
     AudioClip partial_stereo{48000, 2, {0.25F, -0.25F, 0.5F}};
     CHECK_FALSE(mixer.add_clip(std::move(partial_stereo)).has_value());
+
+    AudioClip non_finite{48000, 1,
+                         {0.25F, std::numeric_limits<float>::quiet_NaN()}};
+    CHECK_FALSE(mixer.add_clip(std::move(non_finite)).has_value());
     CHECK(mixer.clip_count() == 0);
 }
 
