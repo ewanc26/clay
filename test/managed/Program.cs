@@ -89,11 +89,15 @@ try
         "Managed generic audio clip did not unload");
     uint clip = runtime.LoadWav(audioPath);
     uint voice = runtime.PlayAudio(clip);
+    Require(runtime.IsAudioPlaying(voice),
+        "Managed audio voice state did not cross the native ABI");
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0] - (127f / 128f)) < 0.001f
         && Math.Abs(audio[1] - (127f / 128f)) < 0.001f,
         "Managed audio did not cross the native ABI");
+    Require(!runtime.IsAudioPlaying(voice),
+        "Completed managed audio voice remained active");
     Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
     Require(runtime.UnloadAudio(clip), "Managed audio clip did not unload");
     Require(!runtime.UnloadAudio(clip), "Managed audio clip unloaded twice");

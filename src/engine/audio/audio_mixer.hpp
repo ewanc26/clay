@@ -97,6 +97,14 @@ class AudioMixer {
         return voices_.size() != before;
     }
 
+    [[nodiscard]] bool voice_active(AudioVoiceId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        for (const Voice &voice : voices_) {
+            if (voice.id == id) return voice.active;
+        }
+        return false;
+    }
+
     void stop_all() noexcept {
         std::lock_guard lock(mutex_);
         voices_.clear();

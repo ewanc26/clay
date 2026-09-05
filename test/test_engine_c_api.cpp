@@ -71,12 +71,14 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     const uint32_t voice =
         cl_engine_runtime_audio_play(runtime, clip, 0, false, 1.0F);
     REQUIRE(voice != 0);
+    CHECK(cl_engine_runtime_audio_voice_active(runtime, voice));
     float samples[2048] = {};
     CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 2048) == CLAY_OK);
     bool nonzero = false;
     for (float sample : samples) nonzero |= sample != 0.0F;
     CHECK(nonzero);
     CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
+    CHECK(!cl_engine_runtime_audio_voice_active(runtime, voice));
     CHECK(!cl_engine_runtime_audio_stop(runtime, voice));
     cl_engine_runtime_destroy(runtime);
     std::filesystem::remove(path);

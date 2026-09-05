@@ -85,6 +85,9 @@ class Runtime {
     AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                             float gain);
     bool audio_stop(AudioVoiceId voice_id);
+    bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
+        return audio_.voice_active(voice_id);
+    }
     bool audio_mix_stereo(std::span<float> output);
     std::uint32_t audio_sample_rate() const noexcept {
         return audio_.sample_rate();

@@ -143,6 +143,8 @@ CLAY_API uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                bool loop, float gain);
 CLAY_API bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
                                            uint32_t voice_id);
+CLAY_API bool cl_engine_runtime_audio_voice_active(
+    const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
                                                   float *samples,
                                                   size_t sample_count);
