@@ -107,7 +107,10 @@ class AudioMixer {
         master_gain_ = clamp_gain(gain);
     }
 
-    [[nodiscard]] float master_gain() const noexcept { return master_gain_; }
+    [[nodiscard]] float master_gain() const noexcept {
+        std::lock_guard lock(mutex_);
+        return master_gain_;
+    }
 
     void set_bus_gain(AudioBus bus, float gain) noexcept {
         std::lock_guard lock(mutex_);
@@ -123,6 +126,7 @@ class AudioMixer {
     }
 
     [[nodiscard]] float bus_gain(AudioBus bus) const noexcept {
+        std::lock_guard lock(mutex_);
         switch (bus) {
         case AudioBus::Sfx:
             return sfx_gain_;
