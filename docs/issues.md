@@ -18,7 +18,7 @@ to the validated Mono integration.
 ## Audio subsystem
 
 The standalone and managed paths now validate WAV loading, generic miniaudio
-loading for FLAC, headless mixing, clip unload, optional realtime playback,
+loading for FLAC and MP3, headless mixing, clip unload, optional realtime playback,
 and host sample-rate discovery. OGG/Vorbis support would require vendoring a
 separate decoder backend, while streaming, crossfades, and a C-ABI-owned audio
 device lifecycle remain future work. Track these in GitHub issue #15.
