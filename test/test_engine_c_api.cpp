@@ -65,6 +65,16 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
                            .string()
                            .c_str(),
               &clip) == CLAY_ERR_IO);
+    const auto malformed_path = path.parent_path() / "clay-malformed-audio.bin";
+    {
+        std::ofstream malformed(malformed_path, std::ios::binary);
+        REQUIRE(malformed);
+        malformed << "not an audio file";
+    }
+    CHECK(cl_engine_runtime_audio_load_file(runtime,
+                                            malformed_path.string().c_str(),
+                                            &clip) == CLAY_ERR_PARSE);
+    std::filesystem::remove(malformed_path);
     CHECK(cl_engine_runtime_audio_load_file(runtime, path.string().c_str(),
                                             &clip) == CLAY_OK);
     REQUIRE(clip != 0);

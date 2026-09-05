@@ -152,11 +152,14 @@ cl_err Runtime::audio_load_wav(const std::string &path, AudioClipId *clip_id) {
 cl_err Runtime::audio_load_file(const std::string &path, AudioClipId *clip_id) {
     if (path.empty() || clip_id == nullptr) return CLAY_ERR_INVALID_ARG;
 
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return CLAY_ERR_IO;
+
     ma_decoder_config config = ma_decoder_config_init(
         ma_format_f32, 2, static_cast<ma_uint32>(audio_.sample_rate()));
     ma_decoder decoder{};
     if (ma_decoder_init_file(path.c_str(), &config, &decoder) != MA_SUCCESS)
-        return CLAY_ERR_IO;
+        return CLAY_ERR_PARSE;
     struct DecoderGuard {
         ma_decoder &decoder;
         ~DecoderGuard() { ma_decoder_uninit(&decoder); }
