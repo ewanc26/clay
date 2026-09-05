@@ -1,0 +1,10 @@
+[configuration]
+
+entry_symbol = "clay_gdextension_init"
+compatibility_minimum = "4.2"
+
+[libraries]
+
+macos.debug = "res://bin/libclay_gdextension.dylib"
+linux.debug = "res://bin/libclay_gdextension.so"
+windows.debug = "res://bin/clay_gdextension.dll"

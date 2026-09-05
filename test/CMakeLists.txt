@@ -62,6 +62,13 @@ clay_cpp_test(test_reactions)
 clay_cpp_test(test_runtime)
 clay_cpp_test(test_clay_file)
 clay_cpp_test(test_engine_c_api)
+if(CLAY_BUILD_GDEXTENSION)
+  add_executable(test_gdextension test_gdextension.cpp)
+  target_include_directories(test_gdextension PRIVATE
+    ${PROJECT_SOURCE_DIR}/integrations/godot-gdextension)
+  target_link_libraries(test_gdextension PRIVATE clay_gdextension clay_third_party)
+  add_test(NAME test_gdextension COMMAND test_gdextension)
+endif()
 target_compile_definitions(test_engine_c_api PRIVATE
   CLAY_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/test/data")
 

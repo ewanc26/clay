@@ -42,6 +42,8 @@ option(CLAY_BUILD_AUDIO_DEVICE
        "Build the optional miniaudio playback device backend" ON)
 option(CLAY_BUILD_AUDIO_VORBIS
        "Enable Ogg Vorbis decoding through the pinned stb_vorbis source" ON)
+option(CLAY_BUILD_GDEXTENSION
+       "Build the optional Godot GDExtension bootstrap library" OFF)
 option(CLAY_INSTALL_GODOT_NATIVE
        "Install the shared Clay library into the Godot native layout" ON)
 
@@ -185,6 +187,23 @@ else()
 endif()
 if(CLAY_HAS_GLFW)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/platform/window_glfw.cpp)
+endif()
+
+if(CLAY_BUILD_GDEXTENSION)
+  add_library(clay_gdextension SHARED
+    integrations/godot-gdextension/clay_gdextension.cpp)
+  set_target_properties(clay_gdextension PROPERTIES
+    OUTPUT_NAME clay_gdextension)
+  target_include_directories(clay_gdextension PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/integrations/godot-gdextension)
+  target_link_libraries(clay_gdextension PRIVATE clay_engine)
+  install(TARGETS clay_gdextension
+    LIBRARY DESTINATION integrations/godot-gdextension/bin
+    RUNTIME DESTINATION integrations/godot-gdextension/bin
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(FILES integrations/godot-gdextension/clay.gdextension
+    integrations/godot-gdextension/README.md
+    DESTINATION integrations/godot-gdextension)
 endif()
 
 if(CLAY_BUILD_SHARED)
