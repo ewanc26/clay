@@ -80,6 +80,13 @@ are portable across supported compilers and architectures.
 Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
+The headless audio mixer is available through
+`cl_engine_runtime_audio_load_wav`, `cl_engine_runtime_audio_play`, and
+`cl_engine_runtime_audio_mix_stereo`; it produces interleaved stereo float32
+samples at 48 kHz for a host audio device. `ClayRuntime` exposes the same
+operations as `LoadWav`, `PlayAudio`, and `MixAudio`. Audio loading supports
+PCM and IEEE-float WAV clips at the mixer's sample rate; the mixer performs
+mono expansion, looping, bus/master gain, and output clamping.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
