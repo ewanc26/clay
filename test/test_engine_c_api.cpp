@@ -17,7 +17,8 @@ static std::vector<unsigned char> tiny_wav() {
 }
 
 TEST_CASE("C ABI exposes deterministic headless audio") {
-    const char *path = "/tmp/clay-engine-c-api.wav";
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "clay-engine-c-api.wav";
     const auto wav = tiny_wav();
     std::ofstream output(path, std::ios::binary);
     output.write(reinterpret_cast<const char *>(wav.data()),
@@ -27,7 +28,8 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 1);
     REQUIRE(runtime != nullptr);
     uint32_t clip = 0;
-    CHECK(cl_engine_runtime_audio_load_wav(runtime, path, &clip) == CLAY_OK);
+    CHECK(cl_engine_runtime_audio_load_wav(runtime, path.string().c_str(), &clip) ==
+          CLAY_OK);
     REQUIRE(clip != 0);
     uint32_t voice = cl_engine_runtime_audio_play(runtime, clip, 0, false, 1);
     REQUIRE(voice != 0);
@@ -38,9 +40,12 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     CHECK(cl_engine_runtime_audio_stop(runtime, voice) == false);
     CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 3) ==
           CLAY_ERR_INVALID_ARG);
-    CHECK(cl_engine_runtime_audio_load_wav(runtime, "/no/such.wav", &clip) ==
+    CHECK(cl_engine_runtime_audio_load_wav(
+              runtime, (path.parent_path() / "clay-no-such-file.wav").string().c_str(),
+              &clip) ==
           CLAY_ERR_IO);
     cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(path);
 }
 
 TEST_CASE("C ABI owns an authored 3D scene render system") {
