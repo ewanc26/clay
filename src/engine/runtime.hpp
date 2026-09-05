@@ -70,6 +70,10 @@ class Runtime {
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
     bool load_actions(const std::string &text);
+    bool load_scene(const std::string &text);
+    bool load_scene_file(const std::string &path);
+    void unload_scene() noexcept;
+    bool has_scene() const noexcept;
     cl_err save_recording(const std::string &path) const;
     cl_err load_recording(const std::string &path);
     cl_err audio_load_wav(const std::string &path, AudioClipId *clip_id);
@@ -242,6 +246,8 @@ class Runtime {
     ReactionEngine reactions_;
     RendererSW renderer_;
     RenderSystem *render_system_ = nullptr;
+    std::unique_ptr<ClayScene> scene_;
+    std::unique_ptr<Scene3DRenderSystem> scene_system_;
 
     uint64_t frame_ = 0;
     double sim_time_ = 0.0;

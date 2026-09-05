@@ -1,6 +1,7 @@
 #include "runtime.hpp"
 
 #include "render/raster.hpp"
+#include "render/scene3d.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -61,6 +62,39 @@ bool Runtime::load_actions(const std::string &text) {
     actions_.bind_from_json(&root);
     return true;
 }
+
+bool Runtime::load_scene(const std::string &text) {
+    auto scene = std::make_unique<ClayScene>();
+    if (!scene->load(cl_str_c(text.c_str()))) return false;
+
+    const auto &resolution = scene->settings().resolution;
+    if ((resolution[0] != width_ || resolution[1] != height_) &&
+        !resize(resolution[0], resolution[1]))
+        return false;
+
+    auto system = std::make_unique<Scene3DRenderSystem>(*scene);
+    scene_ = std::move(scene);
+    scene_system_ = std::move(system);
+    render_system_ = scene_system_.get();
+    return true;
+}
+
+bool Runtime::load_scene_file(const std::string &path) {
+    if (path.empty()) return false;
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return false;
+    std::string text((std::istreambuf_iterator<char>(input)),
+                     std::istreambuf_iterator<char>());
+    return !text.empty() && load_scene(text);
+}
+
+void Runtime::unload_scene() noexcept {
+    if (render_system_ == scene_system_.get()) render_system_ = nullptr;
+    scene_system_.reset();
+    scene_.reset();
+}
+
+bool Runtime::has_scene() const noexcept { return scene_ != nullptr; }
 
 cl_err Runtime::save_recording(const std::string &path) const {
     return cl_input_log_save(const_cast<cl_input_log *>(&input_log_),

@@ -1,6 +1,8 @@
 #include <clay/engine.hpp>
 
 #include <array>
+#include <filesystem>
+#include <fstream>
 
 int main() {
     clay::Runtime runtime(24, 18, 42);
@@ -17,5 +19,17 @@ int main() {
     if (!mixer.mix_stereo(samples) || samples[0] != 0.5F ||
         samples[1] != 0.5F)
         return 1;
+
+    const auto scene_path = std::filesystem::temp_directory_path() /
+                            "clay-package-consumer.clay";
+    {
+        std::ofstream scene(scene_path, std::ios::binary);
+        scene << R"({"version":1,"settings":{"render":{"width":10,"height":6}},"scene":[]})";
+    }
+    if (!runtime.load_scene_file(scene_path.string()) || !runtime.has_scene() ||
+        runtime.width() != 10 || runtime.height() != 6)
+        return 1;
+    runtime.unload_scene();
+    std::filesystem::remove(scene_path);
     return 0;
 }
