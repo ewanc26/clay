@@ -154,6 +154,10 @@ CLAY_API bool cl_engine_runtime_audio_set_voice_pan(
     cl_engine_runtime *runtime, uint32_t voice_id, float pan);
 CLAY_API float cl_engine_runtime_audio_voice_pan(
     const cl_engine_runtime *runtime, uint32_t voice_id);
+CLAY_API bool cl_engine_runtime_audio_set_voice_gain(
+    cl_engine_runtime *runtime, uint32_t voice_id, float gain);
+CLAY_API float cl_engine_runtime_audio_voice_gain(
+    const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_paused(

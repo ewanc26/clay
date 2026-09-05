@@ -529,6 +529,19 @@ extern "C" float cl_engine_runtime_audio_voice_pan(
                : 0.0F;
 }
 
+extern "C" bool cl_engine_runtime_audio_set_voice_gain(
+    cl_engine_runtime *runtime, uint32_t voice_id, float gain) {
+    return runtime && voice_id != 0 && std::isfinite(gain) &&
+           runtime->impl.audio_set_voice_gain(voice_id, gain);
+}
+
+extern "C" float cl_engine_runtime_audio_voice_gain(
+    const cl_engine_runtime *runtime, uint32_t voice_id) {
+    return runtime && voice_id != 0
+               ? runtime->impl.audio_voice_gain(voice_id)
+               : 0.0F;
+}
+
 extern "C" bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);

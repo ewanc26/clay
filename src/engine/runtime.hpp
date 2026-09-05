@@ -93,6 +93,12 @@ class Runtime {
     float audio_voice_pan(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_pan(voice_id);
     }
+    bool audio_set_voice_gain(AudioVoiceId voice_id, float gain) noexcept {
+        return audio_.set_voice_gain(voice_id, gain);
+    }
+    float audio_voice_gain(AudioVoiceId voice_id) const noexcept {
+        return audio_.voice_gain(voice_id);
+    }
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }

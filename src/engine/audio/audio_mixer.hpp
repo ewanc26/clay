@@ -135,6 +135,26 @@ class AudioMixer {
         return false;
     }
 
+    bool set_voice_gain(AudioVoiceId id, float gain) noexcept {
+        std::lock_guard lock(mutex_);
+        if (!std::isfinite(gain)) return false;
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.gain = clamp_gain(gain);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [[nodiscard]] float voice_gain(AudioVoiceId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        for (const Voice &voice : voices_) {
+            if (voice.id == id && voice.active) return voice.gain;
+        }
+        return 0.0F;
+    }
+
     [[nodiscard]] float voice_pan(AudioVoiceId id) const noexcept {
         std::lock_guard lock(mutex_);
         for (const Voice &voice : voices_) {
