@@ -11,7 +11,7 @@ single-header or fetched at configure time — no lock-in, no build branches.
 | [stb_image](https://github.com/nothings/stb) | PNG decode | `src/engine/imageio.cpp` | public domain / MIT |
 | [stb_image_write](https://github.com/nothings/stb) | PNG encode (`--dump`, screenshots) | `src/engine/imageio.cpp` | public domain / MIT |
 | [doctest](https://github.com/doctest/doctest) | C++ unit tests | `test/*.cpp` | MIT |
-| [miniaudio 0.11.21](https://miniaud.io/) | optional audio device | `src/engine/audio/audio_device.cpp` | public domain / MIT-0 |
+| [miniaudio 0.11.21](https://miniaud.io/) | optional audio device and WAV/FLAC/MP3 decoding | `src/engine/audio/audio_device.cpp` | public domain / MIT-0 |
 
 ## Vendored, single-file
 

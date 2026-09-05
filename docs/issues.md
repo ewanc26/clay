@@ -14,3 +14,11 @@ provide a Godot entry symbol or `.gdextension` manifest, so it cannot be
 consumed as a first-class GDExtension. Decide whether to maintain a separate
 GDExtension adapter if a native Godot extension surface is needed in addition
 to the validated Mono integration.
+
+## Audio subsystem
+
+The standalone and managed paths now validate WAV loading, generic miniaudio
+loading for FLAC, headless mixing, clip unload, optional realtime playback,
+and host sample-rate discovery. OGG/Vorbis support would require vendoring a
+separate decoder backend, while streaming, crossfades, and a C-ABI-owned audio
+device lifecycle remain future work. Track these in GitHub issue #15.

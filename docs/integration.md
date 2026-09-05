@@ -97,13 +97,18 @@ Call `cl_engine_runtime_install_builtin_systems` once after creation when the
 host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
 The headless audio mixer is available through
-`cl_engine_runtime_audio_load_wav`, `cl_engine_runtime_audio_play`, and
+`cl_engine_runtime_audio_load_wav`,
+`cl_engine_runtime_audio_load_file`, `cl_engine_runtime_audio_play`, and
 `cl_engine_runtime_audio_unload_clip`, and
-`cl_engine_runtime_audio_mix_stereo`; it produces interleaved stereo float32
-samples at 48 kHz for a host audio device. `ClayRuntime` exposes the same
-operations as `LoadWav`, `UnloadAudio`, `PlayAudio`, and `MixAudio`. Audio loading supports
-PCM and IEEE-float WAV clips at the mixer's sample rate; the mixer performs
-mono expansion, looping, bus/master gain, and output clamping.
+`cl_engine_runtime_audio_mix_stereo`; query
+`cl_engine_runtime_audio_sample_rate` rather than hard-coding the host rate.
+The default is interleaved stereo float32 at 48 kHz. `ClayRuntime` exposes the
+same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`, and
+`MixAudio`, plus `AudioSampleRate`. The strict WAV loader supports PCM and
+IEEE-float clips at the mixer's sample rate; the generic loader uses
+miniaudio's enabled WAV, FLAC, and MP3 decoders and resamples to the mixer
+rate. The mixer performs mono expansion, looping, bus/master gain, and output
+clamping.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
