@@ -124,11 +124,23 @@ try
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0]) < 0.001f
-        && Math.Abs(audio[1] - (127f / 128f)) < 0.001f,
+        && Math.Abs(audio[1] - (127f / 128f * 0.25f)) < 0.001f,
         "Managed audio pan did not cross the native ABI");
     Require(!runtime.IsAudioPlaying(voice),
         "Completed managed audio voice remained active");
     Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
+    uint stream = runtime.LoadAudioStream(audioPath);
+    Require(runtime.GetAudioStreamReadStatus(stream) ==
+                ClayAudioStreamReadStatus.Ready,
+            "Managed audio stream did not start ready");
+    uint streamVoice = runtime.PlayAudioStream(stream, loop: false);
+    runtime.MixAudio(new float[4]);
+    Require(runtime.GetAudioStreamReadStatus(stream) ==
+                ClayAudioStreamReadStatus.EndOfStream &&
+                !runtime.IsAudioPlaying(streamVoice),
+            "Managed audio stream EOS status did not cross the ABI");
+    Require(runtime.UnloadAudioStream(stream),
+            "Managed audio stream did not unload");
     uint loopVoice = runtime.PlayAudio(clip, loop: true);
     Require(runtime.IsAudioPlaying(loopVoice), "Managed loop voice did not start");
     uint musicVoice = runtime.CrossfadeMusic(clip, 0);
