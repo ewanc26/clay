@@ -98,9 +98,10 @@ host wants movement, cursor attraction, lifespans, hue drift, and ripple
 simulation.
 The headless audio mixer is available through
 `cl_engine_runtime_audio_load_wav`, `cl_engine_runtime_audio_play`, and
+`cl_engine_runtime_audio_unload_clip`, and
 `cl_engine_runtime_audio_mix_stereo`; it produces interleaved stereo float32
 samples at 48 kHz for a host audio device. `ClayRuntime` exposes the same
-operations as `LoadWav`, `PlayAudio`, and `MixAudio`. Audio loading supports
+operations as `LoadWav`, `UnloadAudio`, `PlayAudio`, and `MixAudio`. Audio loading supports
 PCM and IEEE-float WAV clips at the mixer's sample rate; the mixer performs
 mono expansion, looping, bus/master gain, and output clamping.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
