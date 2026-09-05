@@ -66,8 +66,45 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     const uint32_t voice =
         cl_engine_runtime_audio_play(runtime, clip, 0, false, 1.0F);
     REQUIRE(voice != 0);
-    float samples[32] = {};
-    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 32) == CLAY_OK);
+    float samples[2048] = {};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 2048) == CLAY_OK);
+    bool nonzero = false;
+    for (float sample : samples) nonzero |= sample != 0.0F;
+    CHECK(nonzero);
+    CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
+    CHECK(!cl_engine_runtime_audio_stop(runtime, voice));
+    cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(path);
+}
+
+TEST_CASE("C ABI decodes a generic MP3 audio file") {
+    std::ifstream encoded(std::string(CLAY_TEST_DATA_DIR) +
+                          "/tiny-mp3.mp3.b64");
+    REQUIRE(encoded);
+    const std::string text((std::istreambuf_iterator<char>(encoded)),
+                           std::istreambuf_iterator<char>());
+    const auto mp3 = decode_base64(text);
+    REQUIRE(mp3.size() > 100);
+    const auto path = std::filesystem::temp_directory_path() /
+                      "clay-engine-c-api-mp3.mp3";
+    std::ofstream output(path, std::ios::binary);
+    REQUIRE(output);
+    output.write(reinterpret_cast<const char *>(mp3.data()),
+                 static_cast<std::streamsize>(mp3.size()));
+    output.close();
+
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 3);
+    REQUIRE(runtime != nullptr);
+    uint32_t clip = 0;
+    CHECK(cl_engine_runtime_audio_load_file(runtime, path.string().c_str(),
+                                            &clip) == CLAY_OK);
+    REQUIRE(clip != 0);
+    const uint32_t voice =
+        cl_engine_runtime_audio_play(runtime, clip, 1, false, 1.0F);
+    REQUIRE(voice != 0);
+    float samples[8192] = {};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 8192) ==
+          CLAY_OK);
     bool nonzero = false;
     for (float sample : samples) nonzero |= sample != 0.0F;
     CHECK(nonzero);
