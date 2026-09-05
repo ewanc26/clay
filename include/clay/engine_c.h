@@ -151,6 +151,8 @@ CLAY_API bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
                                              uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
+CLAY_API bool cl_engine_runtime_audio_voice_paused(
+    const cl_engine_runtime *runtime, uint32_t voice_id);
 /* Returns decoded frames, or zero when clip_id is not loaded. */
 CLAY_API size_t cl_engine_runtime_audio_clip_frame_count(
     const cl_engine_runtime *runtime, uint32_t clip_id);

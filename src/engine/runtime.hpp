@@ -90,6 +90,9 @@ class Runtime {
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }
+    bool audio_voice_paused(AudioVoiceId voice_id) const noexcept {
+        return audio_.voice_paused(voice_id);
+    }
     std::size_t audio_clip_frame_count(AudioClipId clip_id) const noexcept {
         return audio_.clip_frame_count(clip_id);
     }

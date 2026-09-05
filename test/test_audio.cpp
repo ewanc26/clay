@@ -194,6 +194,23 @@ TEST_CASE("audio mixer loops and stops voices") {
     CHECK(mixer.voice_count() == 0);
 }
 
+TEST_CASE("audio mixer distinguishes paused voices from finished voices") {
+    AudioMixer mixer;
+    auto clip = mixer.add_clip(AudioClip{48000, 1, {0.25F, -0.25F}});
+    REQUIRE(clip.has_value());
+    auto voice = mixer.play(*clip);
+    REQUIRE(voice.has_value());
+    CHECK_FALSE(mixer.voice_paused(*voice));
+    REQUIRE(mixer.pause(*voice));
+    CHECK_FALSE(mixer.voice_active(*voice));
+    CHECK(mixer.voice_paused(*voice));
+    REQUIRE(mixer.resume(*voice));
+    CHECK(mixer.voice_active(*voice));
+    CHECK_FALSE(mixer.voice_paused(*voice));
+    REQUIRE(mixer.stop(*voice));
+    CHECK_FALSE(mixer.voice_paused(*voice));
+}
+
 TEST_CASE("audio mixer clamps summed output and removes clip voices") {
     AudioMixer mixer;
     auto clip = mixer.add_clip(AudioClip{48000, 1, {0.8F}});

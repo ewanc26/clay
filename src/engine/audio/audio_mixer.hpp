@@ -130,6 +130,14 @@ class AudioMixer {
         return false;
     }
 
+    [[nodiscard]] bool voice_paused(AudioVoiceId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        for (const Voice &voice : voices_) {
+            if (voice.id == id) return voice.active && voice.paused;
+        }
+        return false;
+    }
+
     [[nodiscard]] std::size_t clip_frame_count(AudioClipId id) const noexcept {
         std::lock_guard lock(mutex_);
         for (const ClipEntry &entry : clips_) {

@@ -521,6 +521,11 @@ extern "C" bool cl_engine_runtime_audio_voice_active(
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);
 }
 
+extern "C" bool cl_engine_runtime_audio_voice_paused(
+    const cl_engine_runtime *runtime, uint32_t voice_id) {
+    return runtime && voice_id != 0 && runtime->impl.audio_voice_paused(voice_id);
+}
+
 extern "C" size_t cl_engine_runtime_audio_clip_frame_count(
     const cl_engine_runtime *runtime, uint32_t clip_id) {
     return runtime && clip_id != 0
