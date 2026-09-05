@@ -22,8 +22,8 @@ loading for FLAC, MP3, and Ogg Vorbis, decoder-backed streams, headless mixing,
 clip/stream unload, optional realtime playback, host sample-rate discovery,
 deterministic fades, music crossfades, an optional owned playback-device
 lifecycle, and deterministic 2D source/listener spatialization. Remaining work
-is production hardening around stream buffering/underflow policy and broader
-format/device matrix coverage. Track that follow-up in GitHub issue #15.
+is explicit underflow/error policy and broader format/device matrix coverage.
+Track that follow-up in GitHub issue #15.
 
 ## CI workflow execution
 

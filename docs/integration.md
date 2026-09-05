@@ -128,7 +128,9 @@ and crossfades. `CrossfadeMusic` starts a music-bus voice while fading existing
 music voices out over the same number of mixer frames.
 `LoadAudioStream`, `PlayAudioStream`, and `CrossfadeMusicStream` keep long-form
 audio in a decoder-backed source and read frames incrementally during mixing;
-`GetAudioStreamFrames` reports its decoded duration.
+`GetAudioStreamFrames` reports its decoded duration. Stream sources use a
+preallocated refill buffer and rewind cleanly when looping, so mixer callbacks
+do not allocate or decode one frame at a time.
 `SetAudioListenerPosition` and `SetAudioPosition` enable deterministic 2D
 spatialization in canvas coordinates. A spatial voice uses linear attenuation
 from full volume at the listener to silence at `maxDistance`, and its
