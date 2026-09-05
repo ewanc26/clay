@@ -16,6 +16,19 @@ loader searches that location. It also keeps a copy at
 
 `managed/ClayRuntime.csproj` builds the wrapper independently as a `net8.0`
 library, which is useful for checking the binding without the Godot editor.
+The managed integration executable exercises the installed native library,
+including input/focus, framebuffer bytes, error reporting, resizing, and
+handle disposal. From the repository root, with the .NET 8 SDK installed:
+
+```sh
+cmake --install build --config Debug --prefix build/sdk
+dotnet run --project test/managed/ClayHostTests.csproj -- build/sdk/integrations/godot-mono
+```
+
+CI runs this check on macOS, Linux, and Windows. If only a newer .NET runtime
+is installed locally, set `DOTNET_ROLL_FORWARD=Major` to run the same executable
+on that runtime; this does not substitute for CI's .NET 8 check.
+
 `ClayGodotSample.csproj` is the Godot SDK project opened by the Mono editor.
 `ClayRuntime` checks the exported ABI version during construction and fails
 early if the native library does not match the wrapper contract.
