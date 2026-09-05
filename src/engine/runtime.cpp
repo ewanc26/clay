@@ -4,8 +4,10 @@
 
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
+#include <iterator>
 #include <vector>
 
 namespace clay {
@@ -15,8 +17,8 @@ constexpr size_t kMaxFramebufferPixels = 64u << 20;
 
 static bool valid_dimensions(int width, int height) {
     return width > 0 && height > 0 &&
-           (size_t)width <= std::numeric_limits<size_t>::max() /
-                                  (size_t)height &&
+           (size_t)width <=
+               std::numeric_limits<size_t>::max() / (size_t)height &&
            (size_t)width * (size_t)height <= kMaxFramebufferPixels;
 }
 
@@ -29,16 +31,9 @@ static int checked_width(int width, int height) {
 /* --------------------------------------------------------------- ctor */
 
 Runtime::Runtime(int width, int height, uint64_t seed, size_t arena_bytes)
-    : width_(checked_width(width, height)),
-      height_(height),
-      seed_(seed),
-      arena_(arena_bytes),
-      bus_(),
-      input_log_(),
-      hub_(&arena_.a),
-      inputs_(actions_),
-      renderer_(width, height),
-      replay_(input_log_) {
+    : width_(checked_width(width, height)), height_(height), seed_(seed),
+      arena_(arena_bytes), bus_(), input_log_(), hub_(&arena_.a),
+      inputs_(actions_), renderer_(width, height), replay_(input_log_) {
     cl_rng_seed(&rng_, seed_);
     cl_bus_init(&bus_, &arena_.a);
     std::memset(&input_state_, 0, sizeof(input_state_));
@@ -76,6 +71,34 @@ cl_err Runtime::load_recording(const std::string &path) {
     cl_err err = cl_input_log_load(&input_log_, path.c_str());
     if (err == CLAY_OK) replay_.rewind();
     return err;
+}
+
+cl_err Runtime::audio_load_wav(const std::string &path, AudioClipId *clip_id) {
+    if (path.empty() || clip_id == nullptr) return CLAY_ERR_INVALID_ARG;
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return CLAY_ERR_IO;
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(input)),
+                               std::istreambuf_iterator<char>());
+    auto clip = decode_wav(bytes);
+    if (!clip.has_value()) return CLAY_ERR_PARSE;
+    auto id = audio_.add_clip(std::move(*clip));
+    if (!id.has_value()) return CLAY_ERR_INVALID_ARG;
+    *clip_id = *id;
+    return CLAY_OK;
+}
+
+AudioVoiceId Runtime::audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
+                                 float gain) {
+    auto voice = audio_.play(clip_id, bus, loop, gain);
+    return voice.value_or(0);
+}
+
+bool Runtime::audio_stop(AudioVoiceId voice_id) {
+    return audio_.stop(voice_id);
+}
+
+bool Runtime::audio_mix_stereo(std::span<float> output) {
+    return audio_.mix_stereo(output);
 }
 
 bool Runtime::resize(int width, int height) {
@@ -163,26 +186,27 @@ void Runtime::feed(const cl_input_event &raw) {
 void Runtime::publish_input_event(const cl_input_event &e) {
     cl_variant value = cl_variant_nil();
     switch (e.type) {
-    case CLAY_IN_PRESS:
-    case CLAY_IN_RELEASE:
-        value = cl_variant_str(cl_str_c(cl_key_name(e.key)));
-        hub_.publish_at(channel(CLAY_CH_INPUT_KEY), value, frame_, sim_time_);
-        break;
-    case CLAY_IN_MOTION:
-        value = cl_variant_f64(e.dx);
-        hub_.publish_at(channel(CLAY_CH_INPUT_MOTION), value, frame_,
-                        sim_time_);
-        break;
-    case CLAY_IN_WHEEL:
-        value = cl_variant_i64(e.wheel);
-        hub_.publish_at(channel(CLAY_CH_INPUT_WHEEL), value, frame_,
-                        sim_time_);
-        break;
-    case CLAY_IN_FOCUS:
-        value = cl_variant_bool(e.focus);
-        hub_.publish_at(channel(CLAY_CH_INPUT_FOCUS), value, frame_,
-                        sim_time_);
-        break;
+        case CLAY_IN_PRESS:
+        case CLAY_IN_RELEASE:
+            value = cl_variant_str(cl_str_c(cl_key_name(e.key)));
+            hub_.publish_at(channel(CLAY_CH_INPUT_KEY), value, frame_,
+                            sim_time_);
+            break;
+        case CLAY_IN_MOTION:
+            value = cl_variant_f64(e.dx);
+            hub_.publish_at(channel(CLAY_CH_INPUT_MOTION), value, frame_,
+                            sim_time_);
+            break;
+        case CLAY_IN_WHEEL:
+            value = cl_variant_i64(e.wheel);
+            hub_.publish_at(channel(CLAY_CH_INPUT_WHEEL), value, frame_,
+                            sim_time_);
+            break;
+        case CLAY_IN_FOCUS:
+            value = cl_variant_bool(e.focus);
+            hub_.publish_at(channel(CLAY_CH_INPUT_FOCUS), value, frame_,
+                            sim_time_);
+            break;
     }
 }
 
@@ -243,7 +267,7 @@ Entity Runtime::spawn_species(const std::string &species, float x, float y,
         double dir = cl_rng_f64(&rng_) * kTwoPi;
         double speed = 12.0 + cl_rng_f64(&rng_) * 22.0;
         world_.storage<Velocity>().set(e, {(float)(std::cos(dir) * speed),
-                                          (float)(std::sin(dir) * speed)});
+                                           (float)(std::sin(dir) * speed)});
         world_.storage<MagnetStrength>().set(e, {42.0f});
     }
 
@@ -259,18 +283,17 @@ Entity Runtime::spawn_ripple(float x, float y, float radius, Color color) {
     world_.storage<Color>().set(e, color);
     world_.storage<LifeSpan>().set(e, {1.4f, 1.4f});
     world_.storage<Kind>().set(e, {Species::Ripple});
-    world_.storage<RippleRing>().set(
-        e, {8.0f, radius / 1.4f, 2.0f});
+    world_.storage<RippleRing>().set(e, {8.0f, radius / 1.4f, 2.0f});
     hub_.publish_at(channel(CLAY_CH_WORLD), cl_variant_str(cl_str_c("ripple")),
-                frame_, sim_time_);
+                    frame_, sim_time_);
     return e;
 }
 
 void Runtime::destroy_entity(Entity e) {
     if (!world_.alive(e)) return;
     world_.destroy(e);
-    hub_.publish_at(channel(CLAY_CH_WORLD),
-                    cl_variant_str(cl_str_c("destroy")), frame_, sim_time_);
+    hub_.publish_at(channel(CLAY_CH_WORLD), cl_variant_str(cl_str_c("destroy")),
+                    frame_, sim_time_);
 }
 
 void Runtime::kill_within(float x, float y, float radius) {
@@ -282,7 +305,8 @@ void Runtime::kill_within(float x, float y, float radius) {
         float dy = t.y - y;
         if (dx * dx + dy * dy > radius * radius) continue;
         Kind *k = world_.storage<Kind>().find(ts.owner[i]);
-        if (k && (k->species == Species::Sculpture || k->species == Species::Ground))
+        if (k &&
+            (k->species == Species::Sculpture || k->species == Species::Ground))
             continue;
         victims.push_back(ts.owner[i]);
     }
@@ -311,8 +335,7 @@ void Runtime::update(double dt) {
 
 void Runtime::render() {
     static GardenRenderSystem default_renderer;
-    RenderSystem *system = render_system_ ? render_system_
-                                          : &default_renderer;
+    RenderSystem *system = render_system_ ? render_system_ : &default_renderer;
     system->render(*this, renderer_);
 }
 
@@ -328,8 +351,8 @@ const Command *Runtime::undo() {
      * reaction rules can match undo events distinctly from fresh ones. */
     std::string event_name = "undo:" + cmd->name;
     hub_.publish_at(channel(CLAY_CH_COMMAND),
-                    cl_variant_str(cl_str_c(event_name.c_str())),
-                    cmd->frame, cmd->time);
+                    cl_variant_str(cl_str_c(event_name.c_str())), cmd->frame,
+                    cmd->time);
     return cmd;
 }
 
@@ -339,8 +362,8 @@ const Command *Runtime::redo() {
     /* Redone commands are republished as-is — systems re-apply the same
      * world mutation they applied originally. */
     hub_.publish_at(channel(CLAY_CH_COMMAND),
-                    cl_variant_str(cl_str_c(cmd->name.c_str())),
-                    cmd->frame, cmd->time);
+                    cl_variant_str(cl_str_c(cmd->name.c_str())), cmd->frame,
+                    cmd->time);
     return cmd;
 }
 

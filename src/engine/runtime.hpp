@@ -2,6 +2,8 @@
 #define CLAY_ENGINE_RUNTIME_HPP
 
 #include "action.hpp"
+#include "audio/audio_decode.hpp"
+#include "audio/audio_mixer.hpp"
 #include "command.hpp"
 #include "ecs/components.hpp"
 #include "ecs/world.hpp"
@@ -19,6 +21,7 @@
 #include <cstdint>
 #include <cmath>
 #include <memory>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -61,13 +64,19 @@ class Runtime {
     }
     void feed_motion(double x, double y, double dx, double dy);
 
-    /* ---------------------------------------------- world mutation (reactive) */
+    /* ---------------------------------------------- world mutation (reactive)
+     */
     Entity spawn_species(const std::string &species, float x, float y,
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
     bool load_actions(const std::string &text);
     cl_err save_recording(const std::string &path) const;
     cl_err load_recording(const std::string &path);
+    cl_err audio_load_wav(const std::string &path, AudioClipId *clip_id);
+    AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
+                            float gain);
+    bool audio_stop(AudioVoiceId voice_id);
+    bool audio_mix_stereo(std::span<float> output);
     bool resize(int width, int height);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
@@ -166,6 +175,13 @@ class Runtime {
         return input_log_;
     }
 
+    AudioMixer &audio() {
+        return audio_;
+    }
+    const AudioMixer &audio() const {
+        return audio_;
+    }
+
     double time_scale() const {
         return time_scale_;
     }
@@ -216,6 +232,7 @@ class Runtime {
     cl_bus bus_;
     cl_input_state input_state_;
     cl_input_log input_log_;
+    AudioMixer audio_;
     Hub hub_;
     ActionMap actions_;
     InputSystem inputs_;

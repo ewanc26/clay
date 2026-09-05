@@ -113,6 +113,24 @@ CLAY_API const uint8_t *cl_engine_runtime_pixels_rgba(
 CLAY_API cl_err cl_engine_runtime_save_png(const cl_engine_runtime *runtime,
                                            const char *path);
 
+/* Headless-safe software audio output. Samples are interleaved stereo float32
+ * frames at 48 kHz. The caller owns the output buffer. */
+CLAY_API cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
+                                                const char *path,
+                                                uint32_t *clip_id);
+CLAY_API uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
+                                               uint32_t clip_id, int bus,
+                                               bool loop, float gain);
+CLAY_API bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
+                                           uint32_t voice_id);
+CLAY_API cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
+                                                  float *samples,
+                                                  size_t sample_count);
+CLAY_API void cl_engine_runtime_audio_set_master_gain(
+    cl_engine_runtime *runtime, float gain);
+CLAY_API void cl_engine_runtime_audio_set_bus_gain(cl_engine_runtime *runtime,
+                                                   int bus, float gain);
+
 #ifdef __cplusplus
 }
 #endif
