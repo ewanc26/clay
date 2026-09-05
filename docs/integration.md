@@ -103,6 +103,11 @@ focus notifications, providing a complete host-loop reference.
 The GLFW standalone presenter also polls the first connected GLFW-mapped
 gamepad and forwards its digital face, shoulder, menu, stick, and D-pad buttons;
 disconnecting it emits releases for any buttons that were held.
+Standalone C++ hosts that want Clay to own the platform playback device can
+construct `clay::AudioDevice device(runtime.audio())`, call `open()` and then
+`start()`, and stop it before destruction. This backend is built by default
+and can be disabled with `-DCLAY_BUILD_AUDIO_DEVICE=OFF`; C ABI and Godot hosts
+can instead pull mixed samples into their own audio callback.
 The standalone window is resizable; the demo synchronizes the runtime canvas
 and recreates its presentation texture when the window size changes.
 The GLFW presenter also maps auxiliary mouse buttons and keypad digits to the
