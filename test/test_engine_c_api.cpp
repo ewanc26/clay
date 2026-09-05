@@ -152,6 +152,15 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 1);
     REQUIRE(runtime != nullptr);
     CHECK(cl_engine_runtime_audio_sample_rate(runtime) == 48000);
+    CHECK(cl_engine_runtime_audio_master_gain(runtime) == doctest::Approx(1.0F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 0) == doctest::Approx(1.0F));
+    cl_engine_runtime_audio_set_master_gain(runtime, 0.5F);
+    cl_engine_runtime_audio_set_bus_gain(runtime, 1, 0.25F);
+    CHECK(cl_engine_runtime_audio_master_gain(runtime) == doctest::Approx(0.5F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 1) == doctest::Approx(0.25F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 9) == doctest::Approx(0.0F));
+    cl_engine_runtime_audio_set_master_gain(runtime, 1.0F);
+    cl_engine_runtime_audio_set_bus_gain(runtime, 1, 1.0F);
     uint32_t clip = 0;
     CHECK(cl_engine_runtime_audio_load_wav(runtime, path.string().c_str(), &clip) ==
           CLAY_OK);

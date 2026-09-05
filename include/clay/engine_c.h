@@ -161,6 +161,10 @@ CLAY_API void cl_engine_runtime_audio_set_master_gain(
     cl_engine_runtime *runtime, float gain);
 CLAY_API void cl_engine_runtime_audio_set_bus_gain(cl_engine_runtime *runtime,
                                                    int bus, float gain);
+CLAY_API float cl_engine_runtime_audio_master_gain(
+    const cl_engine_runtime *runtime);
+CLAY_API float cl_engine_runtime_audio_bus_gain(const cl_engine_runtime *runtime,
+                                               int bus);
 
 #ifdef __cplusplus
 }

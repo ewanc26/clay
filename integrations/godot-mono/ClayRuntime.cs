@@ -251,6 +251,11 @@ public sealed class ClayRuntime : IDisposable
     public void SetBusGain(ClayAudioBus bus, float gain) =>
         Native.AudioSetBusGain(handle, (int)bus, gain);
 
+    public float MasterGain => Native.AudioMasterGain(handle);
+
+    public float GetBusGain(ClayAudioBus bus) =>
+        Native.AudioBusGain(handle, (int)bus);
+
     public void Dispose() => handle.Dispose();
 
     private static void Check(int error)
@@ -411,5 +416,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_bus_gain")]
         public static extern void AudioSetBusGain(RuntimeHandle runtime, int bus,
                                                   float gain);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_master_gain")]
+        public static extern float AudioMasterGain(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_bus_gain")]
+        public static extern float AudioBusGain(RuntimeHandle runtime, int bus);
     }
 }

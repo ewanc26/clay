@@ -557,3 +557,15 @@ extern "C" void cl_engine_runtime_audio_set_bus_gain(cl_engine_runtime *runtime,
     if (runtime && valid_audio_bus(bus) && std::isfinite(gain))
         runtime->impl.audio().set_bus_gain(audio_bus(bus), gain);
 }
+
+extern "C" float cl_engine_runtime_audio_master_gain(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.audio().master_gain() : 0.0F;
+}
+
+extern "C" float cl_engine_runtime_audio_bus_gain(
+    const cl_engine_runtime *runtime, int bus) {
+    return runtime && valid_audio_bus(bus)
+               ? runtime->impl.audio().bus_gain(audio_bus(bus))
+               : 0.0F;
+}

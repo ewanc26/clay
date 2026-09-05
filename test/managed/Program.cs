@@ -86,6 +86,15 @@ File.WriteAllBytes(audioPath, new byte[] {
 try
 {
     Require(runtime.AudioSampleRate == 48000, "Managed audio rate query failed");
+    Require(Math.Abs(runtime.MasterGain - 1) < 0.001f,
+        "Managed master gain query failed");
+    runtime.SetMasterGain(0.5f);
+    runtime.SetBusGain(ClayAudioBus.Music, 0.25f);
+    Require(Math.Abs(runtime.MasterGain - 0.5f) < 0.001f
+        && Math.Abs(runtime.GetBusGain(ClayAudioBus.Music) - 0.25f) < 0.001f,
+        "Managed gain queries failed");
+    runtime.SetMasterGain(1);
+    runtime.SetBusGain(ClayAudioBus.Music, 1);
     uint genericClip = runtime.LoadAudioFile(audioPath);
     Require(runtime.UnloadAudio(genericClip),
         "Managed generic audio clip did not unload");
