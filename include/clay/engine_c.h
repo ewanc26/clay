@@ -162,6 +162,9 @@ CLAY_API float cl_engine_runtime_audio_voice_gain(
 CLAY_API bool cl_engine_runtime_audio_fade_voice(
     cl_engine_runtime *runtime, uint32_t voice_id, float target_gain,
     size_t duration_frames);
+/* Starts a music voice and fades existing music voices out together. */
+CLAY_API uint32_t cl_engine_runtime_audio_crossfade_music(
+    cl_engine_runtime *runtime, uint32_t clip_id, size_t duration_frames);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_paused(

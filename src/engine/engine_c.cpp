@@ -550,6 +550,16 @@ extern "C" bool cl_engine_runtime_audio_fade_voice(
                                           duration_frames);
 }
 
+extern "C" uint32_t cl_engine_runtime_audio_crossfade_music(
+    cl_engine_runtime *runtime, uint32_t clip_id, size_t duration_frames) {
+    if (!runtime || clip_id == 0) return 0;
+    try {
+        return runtime->impl.audio_crossfade_music(clip_id, duration_frames);
+    } catch (...) {
+        return 0;
+    }
+}
+
 extern "C" bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);

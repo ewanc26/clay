@@ -92,6 +92,34 @@ class AudioMixer {
         return id;
     }
 
+    [[nodiscard]] std::optional<AudioVoiceId>
+    crossfade_music(AudioClipId clip_id, std::size_t duration_frames) {
+        std::lock_guard lock(mutex_);
+        if (find_clip(clip_id) == nullptr) return std::nullopt;
+
+        for (Voice &voice : voices_) {
+            if (!voice.active || voice.bus != AudioBus::Music) continue;
+            voice.fade_target = 0.0F;
+            voice.fade_remaining = duration_frames;
+            voice.fade_step = duration_frames == 0
+                                  ? 0.0F
+                                  : -voice.gain /
+                                        static_cast<float>(duration_frames);
+            if (duration_frames == 0) voice.gain = 0.0F;
+        }
+
+        const AudioVoiceId id = next_voice_id_++;
+        const float initial_gain = duration_frames == 0 ? 1.0F : 0.0F;
+        const float fade_step = duration_frames == 0
+                                    ? 0.0F
+                                    : 1.0F /
+                                          static_cast<float>(duration_frames);
+        voices_.push_back(Voice{id, clip_id, 0, AudioBus::Music, initial_gain,
+                                false, 0.0F, 1.0F, fade_step,
+                                duration_frames, false, true});
+        return id;
+    }
+
     bool stop(AudioVoiceId id) {
         std::lock_guard lock(mutex_);
         const auto before = voices_.size();

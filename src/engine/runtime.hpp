@@ -103,6 +103,10 @@ class Runtime {
                           std::size_t duration_frames) noexcept {
         return audio_.fade_voice(voice_id, target_gain, duration_frames);
     }
+    AudioVoiceId audio_crossfade_music(AudioClipId clip_id,
+                                       std::size_t duration_frames) {
+        return audio_.crossfade_music(clip_id, duration_frames).value_or(0);
+    }
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }
