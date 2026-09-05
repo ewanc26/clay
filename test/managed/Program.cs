@@ -32,9 +32,15 @@ Require(runtime.CursorX == 12 && runtime.CursorY == 18, "Cursor mismatch");
 runtime.FeedFocus(false);
 Require(!runtime.IsFocused && !runtime.IsKeyDown(ClayKey.A),
     "Focus loss failed to release held keys");
+runtime.LoadScene("{\"version\":1,\"settings\":{\"render\":{\"width\":32,\"height\":24}},\"meshes\":[{\"name\":\"cube\",\"primitive\":\"cube\"}],\"scene\":[{\"component\":\"mesh\",\"mesh\":\"cube\"}]}");
+Require(runtime.HasScene && runtime.Width == 32 && runtime.Height == 24,
+    "Authored scene did not cross the managed boundary");
+runtime.Step(1.0 / 60);
+runtime.UnloadScene();
+Require(!runtime.HasScene, "Scene did not unload");
 runtime.SpawnSpecies("pebble", 32, 24, 1, 0, 0, 1, 60);
 runtime.Step(1.0 / 60);
-Require(runtime.Frame == 1 && runtime.SimTime > 0, "Runtime did not advance");
+Require(runtime.Frame > 0 && runtime.SimTime > 0, "Runtime did not advance");
 uint[] packed = runtime.CopyPixels().ToArray();
 byte[] rgba = new byte[packed.Length * 4];
 runtime.CopyRgbaTo(rgba);
@@ -50,7 +56,7 @@ string message = Expect<InvalidOperationException>(
 Require(message.Contains("Parse") && message.Contains("parse error"),
     "Native error text did not reach the managed exception");
 Expect<InvalidOperationException>(() => runtime.Resize(0, 32));
-Require(runtime.Width == 64 && runtime.Height == 64,
+Require(runtime.Width == 32 && runtime.Height == 24,
     "Rejected resize changed dimensions");
 runtime.Resize(20, 30);
 runtime.Step(1.0 / 60);

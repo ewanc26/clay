@@ -70,6 +70,12 @@ the C ABI with `cl_engine_runtime_load_actions`,
 `cl_engine_runtime_load_reactions`, `cl_engine_runtime_spawn_species`, and
 `cl_engine_runtime_spawn_ripple`. Both JSON loaders return `CLAY_ERR_PARSE` for
 invalid JSON; loading an action document replaces existing bindings.
+Hosts can also load a complete version-1 `.clay` document with
+`cl_engine_runtime_load_scene`; its render settings resolution is applied to
+the runtime and its 3D scene becomes the active render system. Use
+`cl_engine_runtime_has_scene` and `cl_engine_runtime_unload_scene` to manage
+that owned scene. The managed facade exposes these as `LoadScene`, `HasScene`,
+and `UnloadScene`.
 Recordings can be persisted with `cl_engine_runtime_save_recording` and
 `cl_engine_runtime_load_recording`, then driven with
 `cl_engine_runtime_set_replaying`; query the active mode with
