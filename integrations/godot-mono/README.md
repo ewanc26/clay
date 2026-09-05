@@ -76,9 +76,9 @@ surface changes. The wrapper deliberately does not marshal Clay's C++ headers
 or expose native pointers to managed code.
 
 This is the Mono/P/Invoke integration path. The repository also provides a
-minimal native GDExtension bootstrap in `integrations/godot-gdextension/` for
-projects that need a `.gdextension` manifest and native entry symbol; it does
-not yet register a Godot class or resource surface.
+minimal native GDExtension adapter in `integrations/godot-gdextension/` for
+projects that need a `.gdextension` manifest and native class registration
+experiments; the managed facade remains the complete runtime surface.
 
 The committed `export_presets.cfg` provides reproducible macOS, Windows Desktop
 and Linux/X11 exports. After exporting on macOS, use the bundled helper to stage

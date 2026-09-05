@@ -10,10 +10,10 @@ Linux and Windows workflows pin the official Godot .NET 4.7.2 editor/templates
 and verify their published SHA-256 digests before use.
 
 The optional `godot-gdextension` package now provides a loadable entry symbol,
-`.gdextension` manifest, and CI headless startup smoke test while reusing the
-stable C ABI. It intentionally registers no Godot classes yet, so exposing a
-first-class Clay node/resource surface and editor lifecycle ownership remain
-future work in this issue.
+`.gdextension` manifest, and registration code for a native `ClayRuntimeNode`
+while reusing the stable C ABI. The installed Godot 4.7.2 Mono smoke runtime
+still reports the class as unavailable, so native class instantiation and a
+richer resource/editor lifecycle surface remain open work in this issue.
 
 ## Audio subsystem
 
