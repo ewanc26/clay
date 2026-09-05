@@ -77,6 +77,11 @@ invalid JSON; loading an action document replaces existing bindings.
 Filesystem-backed hosts can use `cl_engine_runtime_load_actions_file` and
 `cl_engine_runtime_load_reactions_file` to keep those data files outside host
 source code; unreadable paths return `CLAY_ERR_IO`.
+Reaction rules can trigger preloaded audio clips with `audio_play`, using a
+numeric `clip`, `bus` (`sfx` or `music`), optional `loop`, and `gain` fields.
+`audio_stop_all` and `audio_music_stop` provide matching mixer controls. These
+effects execute on the same event bus as visual reactions and do nothing when
+the referenced clip is not loaded.
 Hosts can also load a complete version-1 `.clay` document with
 `cl_engine_runtime_load_scene`; its render settings resolution is applied to
 the runtime when present, its authored `settings.seed` becomes the runtime
