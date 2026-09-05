@@ -38,6 +38,32 @@ Require(runtime.HasScene && runtime.Width == 32 && runtime.Height == 24,
 runtime.Step(1.0 / 60);
 runtime.UnloadScene();
 Require(!runtime.HasScene, "Scene did not unload");
+
+string audioPath = Path.Combine(Path.GetTempPath(),
+    $"clay-managed-audio-{Guid.NewGuid():N}.wav");
+File.WriteAllBytes(audioPath, new byte[] {
+    (byte)'R', (byte)'I', (byte)'F', (byte)'F', 38, 0, 0, 0,
+    (byte)'W', (byte)'A', (byte)'V', (byte)'E',
+    (byte)'f', (byte)'m', (byte)'t', (byte)' ', 16, 0, 0, 0,
+    1, 0, 1, 0, 0x80, 0xbb, 0, 0, 0x80, 0xbb, 0, 0, 1, 0, 8, 0,
+    (byte)'d', (byte)'a', (byte)'t', (byte)'a', 1, 0, 0, 0, 0xff, 0
+});
+try
+{
+    uint clip = runtime.LoadWav(audioPath);
+    uint voice = runtime.PlayAudio(clip);
+    float[] audio = { 9, 9, 9, 9 };
+    runtime.MixAudio(audio);
+    Require(Math.Abs(audio[0] - (127f / 128f)) < 0.001f
+        && Math.Abs(audio[1] - (127f / 128f)) < 0.001f,
+        "Managed audio did not cross the native ABI");
+    Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
+}
+finally
+{
+    File.Delete(audioPath);
+}
+
 runtime.SpawnSpecies("pebble", 32, 24, 1, 0, 0, 1, 60);
 runtime.Step(1.0 / 60);
 Require(runtime.Frame > 0 && runtime.SimTime > 0, "Runtime did not advance");
@@ -66,4 +92,4 @@ Expect<ArgumentException>(() => runtime.CopyRgbaTo(new byte[4]));
 runtime.Dispose();
 runtime.Dispose();
 Expect<ObjectDisposedException>(() => runtime.Step(1.0 / 60));
-Console.WriteLine("Managed/native integration passed: input, rendering, errors, resize, disposal.");
+Console.WriteLine("Managed/native integration passed: input, rendering, audio, errors, resize, disposal.");

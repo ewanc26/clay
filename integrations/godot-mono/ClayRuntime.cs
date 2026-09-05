@@ -323,25 +323,25 @@ public sealed class ClayRuntime : IDisposable
         public static extern IntPtr PixelsRgba(RuntimeHandle runtime, out nuint byteCount);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_save_png")]
         public static extern int SavePng(RuntimeHandle runtime, string path);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_load_wav")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_load_wav")]
         public static extern int AudioLoadWav(RuntimeHandle runtime, string path,
                                                out uint clip);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_play")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_play")]
         public static extern uint AudioPlay(RuntimeHandle runtime, uint clip,
                                              int bus,
                                              [MarshalAs(UnmanagedType.I1)] bool loop,
                                              float gain);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_stop")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_mix_stereo")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_mix_stereo")]
         public static extern int AudioMixStereo(RuntimeHandle runtime,
                                                  [In, Out] float[] samples,
                                                  nuint sampleCount);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_set_master_gain")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_master_gain")]
         public static extern void AudioSetMasterGain(RuntimeHandle runtime,
                                                       float gain);
-        [DllImport("clay_engine", EntryPoint = "clay_engine_runtime_audio_set_bus_gain")]
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_bus_gain")]
         public static extern void AudioSetBusGain(RuntimeHandle runtime, int bus,
                                                   float gain);
     }
