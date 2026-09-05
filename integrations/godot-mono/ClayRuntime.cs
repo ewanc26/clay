@@ -233,6 +233,16 @@ public sealed class ClayRuntime : IDisposable
 
     public bool ResumeAudio(uint voice) => Native.AudioResume(handle, voice);
 
+    public void SetAudioListenerPosition(float x, float y) =>
+        Native.AudioSetListenerPosition(handle, x, y);
+
+    public bool SetAudioPosition(uint voice, float x, float y,
+                                 float maxDistance) =>
+        Native.AudioSetVoicePosition(handle, voice, x, y, maxDistance);
+
+    public bool ClearAudioPosition(uint voice) =>
+        Native.AudioClearVoicePosition(handle, voice);
+
     public bool SetAudioPan(uint voice, float pan) =>
         Native.AudioSetVoicePan(handle, voice, pan);
 
@@ -428,6 +438,19 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_resume")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioResume(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_listener_position")]
+        public static extern void AudioSetListenerPosition(RuntimeHandle runtime,
+                                                             float x, float y);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_voice_position")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioSetVoicePosition(RuntimeHandle runtime,
+                                                         uint voice, float x,
+                                                         float y,
+                                                         float maxDistance);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_clear_voice_position")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioClearVoicePosition(RuntimeHandle runtime,
+                                                           uint voice);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_voice_pan")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioSetVoicePan(RuntimeHandle runtime,

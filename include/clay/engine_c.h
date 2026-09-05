@@ -160,6 +160,16 @@ CLAY_API bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
                                             uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
                                              uint32_t voice_id);
+/* Sets the 2D listener used by spatial voices. Coordinates use the engine's
+ * canvas space. */
+CLAY_API void cl_engine_runtime_audio_set_listener_position(
+    cl_engine_runtime *runtime, float x, float y);
+/* Enables source attenuation/panning relative to the listener. */
+CLAY_API bool cl_engine_runtime_audio_set_voice_position(
+    cl_engine_runtime *runtime, uint32_t voice_id, float x, float y,
+    float max_distance);
+CLAY_API bool cl_engine_runtime_audio_clear_voice_position(
+    cl_engine_runtime *runtime, uint32_t voice_id);
 /* Sets stereo pan from -1 (left) through 0 (center) to 1 (right). */
 CLAY_API bool cl_engine_runtime_audio_set_voice_pan(
     cl_engine_runtime *runtime, uint32_t voice_id, float pan);

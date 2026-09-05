@@ -196,8 +196,9 @@ extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
     }
 }
 
-extern "C" cl_err cl_engine_runtime_load_reactions_file(
-    cl_engine_runtime *runtime, const char *path) {
+extern "C" cl_err
+cl_engine_runtime_load_reactions_file(cl_engine_runtime *runtime,
+                                      const char *path) {
     if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
     try {
         std::ifstream input(path, std::ios::binary);
@@ -225,8 +226,9 @@ extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
     }
 }
 
-extern "C" cl_err cl_engine_runtime_load_actions_file(
-    cl_engine_runtime *runtime, const char *path) {
+extern "C" cl_err
+cl_engine_runtime_load_actions_file(cl_engine_runtime *runtime,
+                                    const char *path) {
     if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
     try {
         std::ifstream input(path, std::ios::binary);
@@ -243,7 +245,7 @@ extern "C" cl_err cl_engine_runtime_load_actions_file(
 }
 
 extern "C" cl_err cl_engine_runtime_load_scene(cl_engine_runtime *runtime,
-                                                const char *json) {
+                                               const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
     try {
         return runtime->impl.load_scene(json) ? CLAY_OK : CLAY_ERR_PARSE;
@@ -276,8 +278,7 @@ extern "C" void cl_engine_runtime_unload_scene(cl_engine_runtime *runtime) {
     runtime->impl.unload_scene();
 }
 
-extern "C" bool cl_engine_runtime_has_scene(
-    const cl_engine_runtime *runtime) {
+extern "C" bool cl_engine_runtime_has_scene(const cl_engine_runtime *runtime) {
     return runtime && runtime->impl.has_scene();
 }
 
@@ -454,13 +455,13 @@ clay::AudioBus audio_bus(int bus) {
 }
 } // namespace
 
-extern "C" uint32_t cl_engine_runtime_audio_sample_rate(
-    const cl_engine_runtime *runtime) {
+extern "C" uint32_t
+cl_engine_runtime_audio_sample_rate(const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.audio_sample_rate() : 0;
 }
 
-extern "C" bool cl_engine_runtime_audio_device_open(
-    cl_engine_runtime *runtime, uint32_t sample_rate) {
+extern "C" bool cl_engine_runtime_audio_device_open(cl_engine_runtime *runtime,
+                                                    uint32_t sample_rate) {
 #if CLAY_BUILD_AUDIO_DEVICE
     if (!runtime) return false;
     try {
@@ -479,8 +480,8 @@ extern "C" bool cl_engine_runtime_audio_device_open(
 #endif
 }
 
-extern "C" bool cl_engine_runtime_audio_device_start(
-    cl_engine_runtime *runtime) {
+extern "C" bool
+cl_engine_runtime_audio_device_start(cl_engine_runtime *runtime) {
 #if CLAY_BUILD_AUDIO_DEVICE
     return runtime && runtime->audio_device && runtime->audio_device->start();
 #else
@@ -489,8 +490,8 @@ extern "C" bool cl_engine_runtime_audio_device_start(
 #endif
 }
 
-extern "C" bool cl_engine_runtime_audio_device_stop(
-    cl_engine_runtime *runtime) {
+extern "C" bool
+cl_engine_runtime_audio_device_stop(cl_engine_runtime *runtime) {
 #if CLAY_BUILD_AUDIO_DEVICE
     return runtime && runtime->audio_device && runtime->audio_device->stop();
 #else
@@ -499,8 +500,8 @@ extern "C" bool cl_engine_runtime_audio_device_stop(
 #endif
 }
 
-extern "C" bool cl_engine_runtime_audio_device_is_open(
-    const cl_engine_runtime *runtime) {
+extern "C" bool
+cl_engine_runtime_audio_device_is_open(const cl_engine_runtime *runtime) {
 #if CLAY_BUILD_AUDIO_DEVICE
     return runtime && runtime->audio_device && runtime->audio_device->is_open();
 #else
@@ -509,10 +510,11 @@ extern "C" bool cl_engine_runtime_audio_device_is_open(
 #endif
 }
 
-extern "C" bool cl_engine_runtime_audio_device_is_started(
-    const cl_engine_runtime *runtime) {
+extern "C" bool
+cl_engine_runtime_audio_device_is_started(const cl_engine_runtime *runtime) {
 #if CLAY_BUILD_AUDIO_DEVICE
-    return runtime && runtime->audio_device && runtime->audio_device->is_started();
+    return runtime && runtime->audio_device &&
+           runtime->audio_device->is_started();
 #else
     (void)runtime;
     return false;
@@ -559,7 +561,7 @@ extern "C" uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
 }
 
 extern "C" bool cl_engine_runtime_audio_unload_clip(cl_engine_runtime *runtime,
-                                                     uint32_t clip_id) {
+                                                    uint32_t clip_id) {
     return runtime && clip_id != 0 && runtime->impl.audio_unload_clip(clip_id);
 }
 
@@ -568,50 +570,75 @@ extern "C" bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
     return runtime && voice_id != 0 && runtime->impl.audio_stop(voice_id);
 }
 
-extern "C" void
-cl_engine_runtime_audio_stop_all(cl_engine_runtime *runtime) {
+extern "C" void cl_engine_runtime_audio_stop_all(cl_engine_runtime *runtime) {
     if (runtime) runtime->impl.audio().stop_all();
 }
 
 extern "C" bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
-                                               uint32_t voice_id) {
+                                              uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_pause(voice_id);
 }
 
 extern "C" bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
-                                                uint32_t voice_id) {
+                                               uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_resume(voice_id);
 }
 
-extern "C" bool cl_engine_runtime_audio_set_voice_pan(
-    cl_engine_runtime *runtime, uint32_t voice_id, float pan) {
+extern "C" void
+cl_engine_runtime_audio_set_listener_position(cl_engine_runtime *runtime,
+                                              float x, float y) {
+    if (runtime && std::isfinite(x) && std::isfinite(y))
+        runtime->impl.audio().set_listener_position(x, y);
+}
+
+extern "C" bool
+cl_engine_runtime_audio_set_voice_position(cl_engine_runtime *runtime,
+                                           uint32_t voice_id, float x, float y,
+                                           float max_distance) {
+    return runtime && voice_id != 0 &&
+           runtime->impl.audio().set_voice_position(voice_id, x, y,
+                                                    max_distance);
+}
+
+extern "C" bool
+cl_engine_runtime_audio_clear_voice_position(cl_engine_runtime *runtime,
+                                             uint32_t voice_id) {
+    return runtime && voice_id != 0 &&
+           runtime->impl.audio().clear_voice_position(voice_id);
+}
+
+extern "C" bool
+cl_engine_runtime_audio_set_voice_pan(cl_engine_runtime *runtime,
+                                      uint32_t voice_id, float pan) {
     return runtime && voice_id != 0 && std::isfinite(pan) &&
            runtime->impl.audio_set_voice_pan(voice_id, pan);
 }
 
-extern "C" float cl_engine_runtime_audio_voice_pan(
-    const cl_engine_runtime *runtime, uint32_t voice_id) {
-    return runtime && voice_id != 0
-               ? runtime->impl.audio_voice_pan(voice_id)
-               : 0.0F;
+extern "C" float
+cl_engine_runtime_audio_voice_pan(const cl_engine_runtime *runtime,
+                                  uint32_t voice_id) {
+    return runtime && voice_id != 0 ? runtime->impl.audio_voice_pan(voice_id)
+                                    : 0.0F;
 }
 
-extern "C" bool cl_engine_runtime_audio_set_voice_gain(
-    cl_engine_runtime *runtime, uint32_t voice_id, float gain) {
+extern "C" bool
+cl_engine_runtime_audio_set_voice_gain(cl_engine_runtime *runtime,
+                                       uint32_t voice_id, float gain) {
     return runtime && voice_id != 0 && std::isfinite(gain) &&
            runtime->impl.audio_set_voice_gain(voice_id, gain);
 }
 
-extern "C" float cl_engine_runtime_audio_voice_gain(
-    const cl_engine_runtime *runtime, uint32_t voice_id) {
-    return runtime && voice_id != 0
-               ? runtime->impl.audio_voice_gain(voice_id)
-               : 0.0F;
+extern "C" float
+cl_engine_runtime_audio_voice_gain(const cl_engine_runtime *runtime,
+                                   uint32_t voice_id) {
+    return runtime && voice_id != 0 ? runtime->impl.audio_voice_gain(voice_id)
+                                    : 0.0F;
 }
 
-extern "C" bool cl_engine_runtime_audio_fade_voice(
-    cl_engine_runtime *runtime, uint32_t voice_id, float target_gain,
-    size_t duration_frames) {
+extern "C" bool cl_engine_runtime_audio_fade_voice(cl_engine_runtime *runtime,
+                                                   uint32_t voice_id,
+                                                   float target_gain,
+                                                   size_t duration_frames) {
     return runtime && voice_id != 0 && std::isfinite(target_gain) &&
            runtime->impl.audio_fade_voice(voice_id, target_gain,
                                           duration_frames);
@@ -627,18 +654,23 @@ extern "C" uint32_t cl_engine_runtime_audio_crossfade_music(
     }
 }
 
-extern "C" bool cl_engine_runtime_audio_voice_active(
-    const cl_engine_runtime *runtime, uint32_t voice_id) {
-    return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);
+extern "C" bool
+cl_engine_runtime_audio_voice_active(const cl_engine_runtime *runtime,
+                                     uint32_t voice_id) {
+    return runtime && voice_id != 0 &&
+           runtime->impl.audio_voice_active(voice_id);
 }
 
-extern "C" bool cl_engine_runtime_audio_voice_paused(
-    const cl_engine_runtime *runtime, uint32_t voice_id) {
-    return runtime && voice_id != 0 && runtime->impl.audio_voice_paused(voice_id);
+extern "C" bool
+cl_engine_runtime_audio_voice_paused(const cl_engine_runtime *runtime,
+                                     uint32_t voice_id) {
+    return runtime && voice_id != 0 &&
+           runtime->impl.audio_voice_paused(voice_id);
 }
 
-extern "C" size_t cl_engine_runtime_audio_clip_frame_count(
-    const cl_engine_runtime *runtime, uint32_t clip_id) {
+extern "C" size_t
+cl_engine_runtime_audio_clip_frame_count(const cl_engine_runtime *runtime,
+                                         uint32_t clip_id) {
     return runtime && clip_id != 0
                ? runtime->impl.audio_clip_frame_count(clip_id)
                : 0;
@@ -674,13 +706,13 @@ extern "C" void cl_engine_runtime_audio_set_bus_gain(cl_engine_runtime *runtime,
         runtime->impl.audio().set_bus_gain(audio_bus(bus), gain);
 }
 
-extern "C" float cl_engine_runtime_audio_master_gain(
-    const cl_engine_runtime *runtime) {
+extern "C" float
+cl_engine_runtime_audio_master_gain(const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.audio().master_gain() : 0.0F;
 }
 
-extern "C" float cl_engine_runtime_audio_bus_gain(
-    const cl_engine_runtime *runtime, int bus) {
+extern "C" float
+cl_engine_runtime_audio_bus_gain(const cl_engine_runtime *runtime, int bus) {
     return runtime && valid_audio_bus(bus)
                ? runtime->impl.audio().bus_gain(audio_bus(bus))
                : 0.0F;

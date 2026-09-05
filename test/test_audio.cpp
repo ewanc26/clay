@@ -107,8 +107,8 @@ TEST_CASE("audio mixer rejects incompatible clips") {
     AudioClip partial_stereo{48000, 2, {0.25F, -0.25F, 0.5F}};
     CHECK_FALSE(mixer.add_clip(std::move(partial_stereo)).has_value());
 
-    AudioClip non_finite{48000, 1,
-                         {0.25F, std::numeric_limits<float>::quiet_NaN()}};
+    AudioClip non_finite{
+        48000, 1, {0.25F, std::numeric_limits<float>::quiet_NaN()}};
     CHECK_FALSE(mixer.add_clip(std::move(non_finite)).has_value());
     CHECK(mixer.clip_count() == 0);
 }
@@ -132,8 +132,8 @@ TEST_CASE("audio mixer expands mono and completes a voice") {
 
 TEST_CASE("audio mixer preserves stereo channels") {
     AudioMixer mixer;
-    auto clip = mixer.add_clip(
-        AudioClip{48000, 2, {0.75F, -0.25F, 0.5F, -0.5F}});
+    auto clip =
+        mixer.add_clip(AudioClip{48000, 2, {0.75F, -0.25F, 0.5F, -0.5F}});
     REQUIRE(clip.has_value());
     REQUIRE(mixer.play(*clip).has_value());
 
@@ -218,10 +218,10 @@ TEST_CASE("audio mixer fades a voice over mixer frames") {
 
 TEST_CASE("audio mixer crossfades music voices") {
     AudioMixer mixer;
-    auto old_clip = mixer.add_clip(AudioClip{48000, 1, {1.0F, 1.0F, 1.0F,
-                                                        1.0F}});
-    auto new_clip = mixer.add_clip(AudioClip{48000, 1, {0.25F, 0.25F, 0.25F,
-                                                        0.25F}});
+    auto old_clip =
+        mixer.add_clip(AudioClip{48000, 1, {1.0F, 1.0F, 1.0F, 1.0F}});
+    auto new_clip =
+        mixer.add_clip(AudioClip{48000, 1, {0.25F, 0.25F, 0.25F, 0.25F}});
     REQUIRE(old_clip.has_value());
     REQUIRE(new_clip.has_value());
     REQUIRE(mixer.play(*old_clip, AudioBus::Music, true).has_value());
@@ -269,6 +269,31 @@ TEST_CASE("audio mixer applies master bus and voice gains") {
     CHECK(mixer.bus_gain(AudioBus::Music) == doctest::Approx(0.0F));
 }
 
+TEST_CASE("audio mixer spatializes a voice against the listener") {
+    AudioMixer mixer;
+    auto clip = mixer.add_clip(AudioClip{48000, 1, {1.0F}});
+    REQUIRE(clip.has_value());
+    auto voice = mixer.play(*clip);
+    REQUIRE(voice.has_value());
+
+    mixer.set_listener_position(0.0F, 0.0F);
+    REQUIRE(mixer.set_voice_position(*voice, 5.0F, 0.0F, 10.0F));
+    std::array<float, 2> output{};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.25F));
+    CHECK(output[1] == doctest::Approx(0.5F));
+
+    auto quiet_clip = mixer.add_clip(AudioClip{48000, 1, {1.0F}});
+    REQUIRE(quiet_clip.has_value());
+    auto quiet_voice = mixer.play(*quiet_clip);
+    REQUIRE(quiet_voice.has_value());
+    REQUIRE(mixer.set_voice_position(*quiet_voice, 10.0F, 0.0F, 10.0F));
+    output = {};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.0F));
+    CHECK(output[1] == doctest::Approx(0.0F));
+}
+
 TEST_CASE("audio mixer loops and stops voices") {
     AudioMixer mixer;
     auto clip = mixer.add_clip(AudioClip{48000, 1, {0.25F, -0.25F}});
@@ -279,8 +304,7 @@ TEST_CASE("audio mixer loops and stops voices") {
     std::array<float, 8> output{};
     REQUIRE(mixer.mix_stereo(output));
     const std::array<float, 8> expected{
-        0.25F, 0.25F, -0.25F, -0.25F,
-        0.25F, 0.25F, -0.25F, -0.25F,
+        0.25F, 0.25F, -0.25F, -0.25F, 0.25F, 0.25F, -0.25F, -0.25F,
     };
     for (std::size_t i = 0; i < output.size(); ++i) {
         CHECK(output[i] == doctest::Approx(expected[i]));
@@ -356,8 +380,7 @@ TEST_CASE("audio device remains safe before opening a platform device") {
 #endif
 
 TEST_CASE("WAV decoder converts signed 16-bit mono PCM") {
-    auto wav = make_wav(1, 1, 48000, 16,
-                        {0x00, 0x80, 0x00, 0x00, 0xFF, 0x7F});
+    auto wav = make_wav(1, 1, 48000, 16, {0x00, 0x80, 0x00, 0x00, 0xFF, 0x7F});
     auto clip = decode_wav(wav);
     REQUIRE(clip.has_value());
     CHECK(clip->sample_rate == 48000);
@@ -382,8 +405,8 @@ TEST_CASE("WAV decoder handles stereo PCM and padded unknown chunks") {
 }
 
 TEST_CASE("WAV decoder supports 24-bit PCM and 32-bit float") {
-    auto pcm24 = make_wav(1, 1, 48000, 24,
-                          {0x00, 0x00, 0x80, 0xFF, 0xFF, 0x7F});
+    auto pcm24 =
+        make_wav(1, 1, 48000, 24, {0x00, 0x00, 0x80, 0xFF, 0xFF, 0x7F});
     auto int_clip = decode_wav(pcm24);
     REQUIRE(int_clip.has_value());
     REQUIRE(int_clip->samples.size() == 2);
@@ -419,12 +442,12 @@ TEST_CASE("WAV decoder rejects malformed and unsupported files") {
     auto compressed = make_wav(6, 1, 48000, 16, {0x00, 0x00});
     CHECK_FALSE(decode_wav(compressed).has_value());
 
-    auto bad_channels = make_wav(1, 3, 48000, 16,
-                                 {0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+    auto bad_channels =
+        make_wav(1, 3, 48000, 16, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
     CHECK_FALSE(decode_wav(bad_channels).has_value());
 
-    auto bad_align = make_wav(1, 2, 48000, 16,
-                              {0x00, 0x00, 0x00, 0x00}, false, 2);
+    auto bad_align =
+        make_wav(1, 2, 48000, 16, {0x00, 0x00, 0x00, 0x00}, false, 2);
     CHECK_FALSE(decode_wav(bad_align).has_value());
 }
 

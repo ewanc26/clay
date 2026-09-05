@@ -64,31 +64,30 @@ class AudioMixer {
     bool remove_clip(AudioClipId id) {
         std::lock_guard lock(mutex_);
         const auto before = clips_.size();
-        std::erase_if(clips_, [id](const ClipEntry &entry) {
-            return entry.id == id;
-        });
+        std::erase_if(clips_,
+                      [id](const ClipEntry &entry) { return entry.id == id; });
         if (clips_.size() == before) {
             return false;
         }
 
-        std::erase_if(voices_, [id](const Voice &voice) {
-            return voice.clip_id == id;
-        });
+        std::erase_if(voices_,
+                      [id](const Voice &voice) { return voice.clip_id == id; });
         return true;
     }
 
-    [[nodiscard]] std::optional<AudioVoiceId>
-    play(AudioClipId clip_id, AudioBus bus = AudioBus::Sfx,
-         bool loop = false, float gain = 1.0F) {
+    [[nodiscard]] std::optional<AudioVoiceId> play(AudioClipId clip_id,
+                                                   AudioBus bus = AudioBus::Sfx,
+                                                   bool loop = false,
+                                                   float gain = 1.0F) {
         std::lock_guard lock(mutex_);
         if (find_clip(clip_id) == nullptr) {
             return std::nullopt;
         }
 
         const AudioVoiceId id = next_voice_id_++;
-        voices_.push_back(
-            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, 0.0F,
-                  clamp_gain(gain), 0.0F, 0, false, false, true});
+        voices_.push_back(Voice{id, clip_id, 0, bus, clamp_gain(gain), loop,
+                                0.0F, clamp_gain(gain), 0.0F, 0, false, false,
+                                true, false, 0.0F, 0.0F, 1.0F});
         return id;
     }
 
@@ -102,10 +101,10 @@ class AudioMixer {
             voice.fade_target = 0.0F;
             voice.fade_remaining = duration_frames;
             voice.fade_stop_when_done = true;
-            voice.fade_step = duration_frames == 0
-                                  ? 0.0F
-                                  : -voice.gain /
-                                        static_cast<float>(duration_frames);
+            voice.fade_step =
+                duration_frames == 0
+                    ? 0.0F
+                    : -voice.gain / static_cast<float>(duration_frames);
             if (duration_frames == 0) {
                 voice.gain = 0.0F;
                 voice.active = false;
@@ -114,22 +113,57 @@ class AudioMixer {
 
         const AudioVoiceId id = next_voice_id_++;
         const float initial_gain = duration_frames == 0 ? 1.0F : 0.0F;
-        const float fade_step = duration_frames == 0
-                                    ? 0.0F
-                                    : 1.0F /
-                                          static_cast<float>(duration_frames);
+        const float fade_step =
+            duration_frames == 0 ? 0.0F
+                                 : 1.0F / static_cast<float>(duration_frames);
         voices_.push_back(Voice{id, clip_id, 0, AudioBus::Music, initial_gain,
-                                false, 0.0F, 1.0F, fade_step,
-                                duration_frames, false, false, true});
+                                false, 0.0F, 1.0F, fade_step, duration_frames,
+                                false, false, true, false, 0.0F, 0.0F, 1.0F});
         return id;
+    }
+
+    void set_listener_position(float x, float y) noexcept {
+        std::lock_guard lock(mutex_);
+        if (std::isfinite(x) && std::isfinite(y)) {
+            listener_x_ = x;
+            listener_y_ = y;
+        }
+    }
+
+    bool set_voice_position(AudioVoiceId id, float x, float y,
+                            float max_distance) noexcept {
+        std::lock_guard lock(mutex_);
+        if (!std::isfinite(x) || !std::isfinite(y) ||
+            !std::isfinite(max_distance) || max_distance <= 0.0F)
+            return false;
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.spatial = true;
+                voice.x = x;
+                voice.y = y;
+                voice.max_distance = max_distance;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool clear_voice_position(AudioVoiceId id) noexcept {
+        std::lock_guard lock(mutex_);
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.spatial = false;
+                return true;
+            }
+        }
+        return false;
     }
 
     bool stop(AudioVoiceId id) {
         std::lock_guard lock(mutex_);
         const auto before = voices_.size();
-        std::erase_if(voices_, [id](const Voice &voice) {
-            return voice.id == id;
-        });
+        std::erase_if(voices_,
+                      [id](const Voice &voice) { return voice.id == id; });
         return voices_.size() != before;
     }
 
@@ -262,22 +296,22 @@ class AudioMixer {
         std::lock_guard lock(mutex_);
         const float clamped = clamp_gain(gain);
         switch (bus) {
-        case AudioBus::Sfx:
-            sfx_gain_ = clamped;
-            break;
-        case AudioBus::Music:
-            music_gain_ = clamped;
-            break;
+            case AudioBus::Sfx:
+                sfx_gain_ = clamped;
+                break;
+            case AudioBus::Music:
+                music_gain_ = clamped;
+                break;
         }
     }
 
     [[nodiscard]] float bus_gain(AudioBus bus) const noexcept {
         std::lock_guard lock(mutex_);
         switch (bus) {
-        case AudioBus::Sfx:
-            return sfx_gain_;
-        case AudioBus::Music:
-            return music_gain_;
+            case AudioBus::Sfx:
+                return sfx_gain_;
+            case AudioBus::Music:
+                return music_gain_;
         }
         return 1.0F;
     }
@@ -313,13 +347,26 @@ class AudioMixer {
             const AudioClip &clip = entry->clip;
             if (voice.paused) continue;
             const std::size_t clip_frames = clip.frame_count();
-            const float bus_gain_value = voice.bus == AudioBus::Sfx
-                                             ? sfx_gain_
-                                             : music_gain_;
+            const float bus_gain_value =
+                voice.bus == AudioBus::Sfx ? sfx_gain_ : music_gain_;
             const float left_pan_gain =
                 voice.pan > 0.0F ? 1.0F - voice.pan : 1.0F;
             const float right_pan_gain =
                 voice.pan < 0.0F ? 1.0F + voice.pan : 1.0F;
+            float spatial_gain = 1.0F;
+            float spatial_pan = 0.0F;
+            if (voice.spatial) {
+                const float dx = voice.x - listener_x_;
+                const float dy = voice.y - listener_y_;
+                const float distance = std::sqrt(dx * dx + dy * dy);
+                spatial_gain = std::clamp(1.0F - distance / voice.max_distance,
+                                          0.0F, 1.0F);
+                spatial_pan = std::clamp(dx / voice.max_distance, -1.0F, 1.0F);
+            }
+            const float spatial_left =
+                spatial_pan > 0.0F ? 1.0F - spatial_pan : 1.0F;
+            const float spatial_right =
+                spatial_pan < 0.0F ? 1.0F + spatial_pan : 1.0F;
 
             for (std::size_t frame = 0; frame < output_frames; ++frame) {
                 if (voice.cursor >= clip_frames) {
@@ -333,10 +380,13 @@ class AudioMixer {
 
                 const std::size_t index = voice.cursor * clip.channels;
                 const float left = clip.samples[index];
-                const float right = clip.channels == 1 ? left : clip.samples[index + 1];
-                const float gain = master_gain_ * bus_gain_value * voice.gain;
-                output[frame * 2] += left * gain * left_pan_gain;
-                output[frame * 2 + 1] += right * gain * right_pan_gain;
+                const float right =
+                    clip.channels == 1 ? left : clip.samples[index + 1];
+                const float gain =
+                    master_gain_ * bus_gain_value * voice.gain * spatial_gain;
+                output[frame * 2] += left * gain * left_pan_gain * spatial_left;
+                output[frame * 2 + 1] +=
+                    right * gain * right_pan_gain * spatial_right;
 
                 ++voice.cursor;
                 if (voice.fade_remaining > 0) {
@@ -359,9 +409,8 @@ class AudioMixer {
         for (float &sample : output) {
             sample = std::clamp(sample, -1.0F, 1.0F);
         }
-        std::erase_if(voices_, [](const Voice &voice) {
-            return !voice.active;
-        });
+        std::erase_if(voices_,
+                      [](const Voice &voice) { return !voice.active; });
         return true;
     }
 
@@ -385,6 +434,10 @@ class AudioMixer {
         bool paused;
         bool fade_stop_when_done;
         bool active;
+        bool spatial;
+        float x;
+        float y;
+        float max_distance;
     };
 
     [[nodiscard]] static float clamp_gain(float gain) noexcept {
@@ -393,10 +446,9 @@ class AudioMixer {
     }
 
     [[nodiscard]] const ClipEntry *find_clip(AudioClipId id) const noexcept {
-        const auto it = std::find_if(clips_.begin(), clips_.end(),
-                                     [id](const ClipEntry &entry) {
-                                         return entry.id == id;
-                                     });
+        const auto it = std::find_if(
+            clips_.begin(), clips_.end(),
+            [id](const ClipEntry &entry) { return entry.id == id; });
         return it == clips_.end() ? nullptr : &*it;
     }
 
@@ -404,6 +456,8 @@ class AudioMixer {
     float master_gain_ = 1.0F;
     float sfx_gain_ = 1.0F;
     float music_gain_ = 1.0F;
+    float listener_x_ = 0.0F;
+    float listener_y_ = 0.0F;
     AudioClipId next_clip_id_ = 1;
     AudioVoiceId next_voice_id_ = 1;
     std::vector<ClipEntry> clips_;
