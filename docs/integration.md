@@ -111,7 +111,7 @@ use an unavailable decoder return `CLAY_ERR_PARSE`.
 The default is interleaved stereo float32 at 48 kHz. `ClayRuntime` exposes the
 same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`,
 `StopAllAudio`, and `MixAudio`, `PauseAudio`, and `ResumeAudio`, plus
-`AudioSampleRate`. The strict WAV loader supports PCM and
+`AudioSampleRate`, `MasterGain`, and `GetBusGain`. The strict WAV loader supports PCM and
 IEEE-float clips at the mixer's sample rate; the generic loader uses
 miniaudio's enabled WAV, FLAC, and MP3 decoders and resamples to the mixer
 rate. `cl_engine_runtime_audio_clip_frame_count` and
