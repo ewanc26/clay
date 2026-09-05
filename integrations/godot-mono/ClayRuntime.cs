@@ -84,6 +84,13 @@ public sealed class ClayRuntime : IDisposable
         pixelBuffer = new uint[checked(Width * Height)];
     }
 
+    public void LoadSceneFile(string path)
+    {
+        Check(Native.LoadSceneFile(handle,
+            path ?? throw new ArgumentNullException(nameof(path))));
+        pixelBuffer = new uint[checked(Width * Height)];
+    }
+
     public bool HasScene => Native.HasScene(handle);
 
     public void UnloadScene() => Native.UnloadScene(handle);
@@ -272,6 +279,8 @@ public sealed class ClayRuntime : IDisposable
         public static extern int LoadActions(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_scene")]
         public static extern int LoadScene(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_scene_file")]
+        public static extern int LoadSceneFile(RuntimeHandle runtime, string path);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_unload_scene")]
         public static extern void UnloadScene(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_has_scene")]

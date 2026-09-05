@@ -38,6 +38,22 @@ Require(runtime.HasScene && runtime.Width == 32 && runtime.Height == 24,
 runtime.Step(1.0 / 60);
 runtime.UnloadScene();
 Require(!runtime.HasScene, "Scene did not unload");
+string scenePath = Path.Combine(Path.GetTempPath(),
+    $"clay-managed-scene-{Guid.NewGuid():N}.clay");
+File.WriteAllText(scenePath,
+    "{\"version\":1,\"settings\":{\"render\":{\"width\":20,\"height\":12}},\"scene\":[]}");
+try
+{
+    runtime.LoadSceneFile(scenePath);
+    Require(runtime.HasScene && runtime.Width == 20 && runtime.Height == 12,
+        "Managed scene file did not cross the native ABI");
+    runtime.UnloadScene();
+}
+finally
+{
+    File.Delete(scenePath);
+}
+runtime.Resize(32, 24);
 
 string audioPath = Path.Combine(Path.GetTempPath(),
     $"clay-managed-audio-{Guid.NewGuid():N}.wav");

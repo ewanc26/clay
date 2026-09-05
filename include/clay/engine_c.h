@@ -69,6 +69,8 @@ CLAY_API cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
                                                const char *json);
 CLAY_API cl_err cl_engine_runtime_load_scene(cl_engine_runtime *runtime,
                                              const char *json);
+CLAY_API cl_err cl_engine_runtime_load_scene_file(cl_engine_runtime *runtime,
+                                                  const char *path);
 CLAY_API void cl_engine_runtime_unload_scene(cl_engine_runtime *runtime);
 CLAY_API bool cl_engine_runtime_has_scene(const cl_engine_runtime *runtime);
 CLAY_API cl_err cl_engine_runtime_save_recording(

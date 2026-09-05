@@ -72,6 +72,32 @@ TEST_CASE("C ABI owns an authored 3D scene render system") {
     cl_engine_runtime_destroy(runtime);
 }
 
+TEST_CASE("C ABI loads an authored scene from a file") {
+    const auto path = std::filesystem::temp_directory_path() /
+                      "clay-engine-c-api-scene.clay";
+    const std::string scene =
+        R"({"version":1,"settings":{"render":{"width":20,"height":12}},"scene":[]})";
+    {
+        std::ofstream output(path, std::ios::binary);
+        REQUIRE(output);
+        output << scene;
+    }
+
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 11);
+    REQUIRE(runtime != nullptr);
+    CHECK(cl_engine_runtime_load_scene_file(runtime, path.string().c_str()) ==
+          CLAY_OK);
+    CHECK(cl_engine_runtime_has_scene(runtime));
+    CHECK(cl_engine_runtime_width(runtime) == 20);
+    CHECK(cl_engine_runtime_height(runtime) == 12);
+    CHECK(cl_engine_runtime_load_scene_file(
+              runtime, (path.parent_path() / "clay-missing-scene.clay")
+                           .string()
+                           .c_str()) == CLAY_ERR_IO);
+    cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(path);
+}
+
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     const std::filesystem::path temp_dir =
         std::filesystem::temp_directory_path();
