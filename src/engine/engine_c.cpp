@@ -370,6 +370,8 @@ cl_engine_runtime_install_builtin_systems(cl_engine_runtime *runtime) {
         runtime->impl.systems().add(std::make_unique<clay::SceneGraphSystem>());
         runtime->impl.systems().add(std::make_unique<clay::PhysicsSystem>());
         runtime->impl.systems().add(std::make_unique<clay::AnimationSystem>());
+        runtime->impl.systems().add(
+            std::make_unique<clay::AudioSourceSystem>());
     });
 }
 

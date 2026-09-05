@@ -98,6 +98,14 @@ struct WorldTransform2D {
     float scale = 1.0f;
 };
 
+/* Optional spatial audio binding. The voice is owned by AudioMixer; this
+ * component only tells AudioSourceSystem which voice follows the entity. */
+struct AudioSource2D {
+    uint32_t voice = 0;
+    float max_distance = 256.0f;
+    bool enabled = true;
+};
+
 /* --- physics --- */
 
 /* Axis-aligned bounding box, centered on the entity's Transform2D position.

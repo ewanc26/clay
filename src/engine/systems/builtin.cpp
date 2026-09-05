@@ -141,8 +141,9 @@ void HueShiftSystem::update(Runtime &rt, double dt) {
 void RippleSystem::on_event(Runtime &rt, const Event &ev) {
     if (channel_name(ev.channel) != "input.wheel") return;
     cl_variant v = ev.value;
-    double delta = (v.kind == CLAY_VAR_I64) ? (double)v.i
-                                            : (v.kind == CLAY_VAR_F64 ? v.f : 0.0);
+    double delta = (v.kind == CLAY_VAR_I64)
+                       ? (double)v.i
+                       : (v.kind == CLAY_VAR_F64 ? v.f : 0.0);
     if (delta != 0.0) {
         saw_wheel_ = true;
         last_wheel_ = delta;
@@ -188,9 +189,9 @@ void SceneGraphSystem::update(Runtime &rt, double dt) {
             Entity e = locals.owner[i];
             if (parents.find(e)) continue; /* has parent, defer */
             WorldTransform2D *prev = world_ts.find(e);
-            WorldTransform2D wt{
-                locals.dense[i].x, locals.dense[i].y, locals.dense[i].rotation,
-                locals.dense[i].scale};
+            WorldTransform2D wt{locals.dense[i].x, locals.dense[i].y,
+                                locals.dense[i].rotation,
+                                locals.dense[i].scale};
             if (!prev || prev->x != wt.x || prev->y != wt.y ||
                 prev->rotation != wt.rotation || prev->scale != wt.scale) {
                 world_ts.set(e, wt);
@@ -198,7 +199,8 @@ void SceneGraphSystem::update(Runtime &rt, double dt) {
             }
         }
 
-        /* Pass 2: resolve children whose parent already has a world transform. */
+        /* Pass 2: resolve children whose parent already has a world transform.
+         */
         for (size_t i = 0; i < parents.count(); i++) {
             Entity child = parents.owner[i];
             Entity parent = parents.dense[i].parent;
@@ -224,10 +226,8 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
     (void)dt;
     World &world = rt.world();
 
-    ComponentStorage<WorldTransform2D> &wts =
-        world.storage<WorldTransform2D>();
-    ComponentStorage<BoxCollider2D> &boxes =
-        world.storage<BoxCollider2D>();
+    ComponentStorage<WorldTransform2D> &wts = world.storage<WorldTransform2D>();
+    ComponentStorage<BoxCollider2D> &boxes = world.storage<BoxCollider2D>();
     ComponentStorage<CircleCollider2D> &circles =
         world.storage<CircleCollider2D>();
 
@@ -240,9 +240,8 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
 
     /* Helper: publish a collision event and correct positions. */
     auto handle_contact = [&](Entity a, Entity b, const Contact2D &c) {
-        rt.hub().publish(
-            channel(CLAY_CH_COLLISION),
-            cl_variant_str(cl_str_c("collision")));
+        rt.hub().publish(channel(CLAY_CH_COLLISION),
+                         cl_variant_str(cl_str_c("collision")));
         float ma = body_mass(world, a);
         float mb = body_mass(world, b);
         float total = ma + mb;
@@ -266,10 +265,10 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
         Entity a = boxes.owner[i];
         for (size_t j = i + 1; j < boxes.count(); j++) {
             Entity b = boxes.owner[j];
-            Contact2D c = aabb_aabb(
-                resolve_pos(a), boxes.dense[i].width / 2.0f,
-                boxes.dense[i].height / 2.0f, resolve_pos(b),
-                boxes.dense[j].width / 2.0f, boxes.dense[j].height / 2.0f);
+            Contact2D c = aabb_aabb(resolve_pos(a), boxes.dense[i].width / 2.0f,
+                                    boxes.dense[i].height / 2.0f,
+                                    resolve_pos(b), boxes.dense[j].width / 2.0f,
+                                    boxes.dense[j].height / 2.0f);
             if (c.overlap) handle_contact(a, b, c);
         }
     }
@@ -279,10 +278,10 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
         Entity a = boxes.owner[i];
         for (size_t j = 0; j < circles.count(); j++) {
             Entity b = circles.owner[j];
-            Contact2D c = aabb_circle(
-                resolve_pos(a), boxes.dense[i].width / 2.0f,
-                boxes.dense[i].height / 2.0f, resolve_pos(b),
-                circles.dense[j].radius);
+            Contact2D c =
+                aabb_circle(resolve_pos(a), boxes.dense[i].width / 2.0f,
+                            boxes.dense[i].height / 2.0f, resolve_pos(b),
+                            circles.dense[j].radius);
             if (c.overlap) handle_contact(a, b, c);
         }
     }
@@ -292,9 +291,9 @@ void PhysicsSystem::update(Runtime &rt, double dt) {
         Entity a = circles.owner[i];
         for (size_t j = i + 1; j < circles.count(); j++) {
             Entity b = circles.owner[j];
-            Contact2D c = circle_circle(
-                resolve_pos(a), circles.dense[i].radius,
-                resolve_pos(b), circles.dense[j].radius);
+            Contact2D c =
+                circle_circle(resolve_pos(a), circles.dense[i].radius,
+                              resolve_pos(b), circles.dense[j].radius);
             if (c.overlap) handle_contact(a, b, c);
         }
     }
@@ -328,6 +327,26 @@ void AnimationSystem::update(Runtime &rt, double dt) {
                     cl_variant_str(cl_str_c("animation.complete")));
             }
         }
+    }
+}
+
+void AudioSourceSystem::update(Runtime &rt, double) {
+    World &world = rt.world();
+    ComponentStorage<AudioSource2D> &sources = world.storage<AudioSource2D>();
+    ComponentStorage<WorldTransform2D> &world_transforms =
+        world.storage<WorldTransform2D>();
+    ComponentStorage<Transform2D> &transforms = world.storage<Transform2D>();
+    for (size_t i = 0; i < sources.dense.size(); ++i) {
+        const Entity entity = sources.owner[i];
+        AudioSource2D &source = sources.dense[i];
+        if (source.voice == 0 || !source.enabled) continue;
+        const WorldTransform2D *world_transform = world_transforms.find(entity);
+        const Transform2D *transform = transforms.find(entity);
+        const float x = world_transform ? world_transform->x
+                                        : (transform ? transform->x : 0.0F);
+        const float y = world_transform ? world_transform->y
+                                        : (transform ? transform->y : 0.0F);
+        rt.audio().set_voice_position(source.voice, x, y, source.max_distance);
     }
 }
 

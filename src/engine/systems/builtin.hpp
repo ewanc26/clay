@@ -104,6 +104,17 @@ class AnimationSystem final : public System {
     void update(Runtime &rt, double dt) override;
 };
 
+/* AudioSourceSystem follows WorldTransform2D for entities carrying an
+ * AudioSource2D component. It runs after animation so moving/animated sources
+ * reach the mixer in the same frame. */
+class AudioSourceSystem final : public System {
+  public:
+    const char *name() const override {
+        return "audio_source";
+    }
+    void update(Runtime &rt, double dt) override;
+};
+
 } // namespace clay
 
 #endif /* CLAY_ENGINE_SYSTEMS_BUILTIN_HPP */

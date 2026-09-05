@@ -4,6 +4,7 @@
 #include "runtime.hpp"
 #include "systems/builtin.hpp"
 
+#include <array>
 #include <limits>
 
 using namespace clay;
@@ -46,48 +47,49 @@ const char *kTinyReactions = R"json({
 /* A fixed scripted transcript, equivalent to demo drive_headless_input. */
 void drive(Runtime &rt, uint64_t frame) {
     switch (frame) {
-    case 1:
-        rt.feed_motion(120, 140, 0, 0);
-        break;
-    case 20:
-        rt.feed_motion(140, 160, 20, 20);
-        break;
-    case 25: {
-        cl_input_event e =
-            cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_MOUSE_LEFT);
-        e.x = 140;
-        e.y = 160;
-        rt.feed(e);
-        break;
-    }
-    case 26: {
-        cl_input_event e =
-            cl_input_event_make(CLAY_IN_RELEASE, CLAY_KEY_MOUSE_LEFT);
-        e.x = 140;
-        e.y = 160;
-        rt.feed(e);
-        break;
-    }
-    case 34: {
-        cl_input_event e = cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
-        e.wheel = 2;
-        e.x = 180;
-        e.y = 200;
-        rt.feed(e);
-        break;
-    }
-    case 42:
-        rt.feed_press(CLAY_KEY_SPACE);
-        break;
-    case 43:
-        rt.feed_release(CLAY_KEY_SPACE);
-        break;
-    case 50:
-        rt.feed_press(CLAY_KEY_R);
-        rt.feed_release(CLAY_KEY_R);
-        break;
-    default:
-        break;
+        case 1:
+            rt.feed_motion(120, 140, 0, 0);
+            break;
+        case 20:
+            rt.feed_motion(140, 160, 20, 20);
+            break;
+        case 25: {
+            cl_input_event e =
+                cl_input_event_make(CLAY_IN_PRESS, CLAY_KEY_MOUSE_LEFT);
+            e.x = 140;
+            e.y = 160;
+            rt.feed(e);
+            break;
+        }
+        case 26: {
+            cl_input_event e =
+                cl_input_event_make(CLAY_IN_RELEASE, CLAY_KEY_MOUSE_LEFT);
+            e.x = 140;
+            e.y = 160;
+            rt.feed(e);
+            break;
+        }
+        case 34: {
+            cl_input_event e =
+                cl_input_event_make(CLAY_IN_WHEEL, CLAY_KEY_NONE);
+            e.wheel = 2;
+            e.x = 180;
+            e.y = 200;
+            rt.feed(e);
+            break;
+        }
+        case 42:
+            rt.feed_press(CLAY_KEY_SPACE);
+            break;
+        case 43:
+            rt.feed_release(CLAY_KEY_SPACE);
+            break;
+        case 50:
+            rt.feed_press(CLAY_KEY_R);
+            rt.feed_release(CLAY_KEY_R);
+            break;
+        default:
+            break;
     }
 }
 
@@ -244,7 +246,8 @@ TEST_CASE("runtime: recorded transcript replays byte-identically") {
     CHECK(replay.commands().fingerprint() == original.commands().fingerprint());
     CHECK(replay.world().spawns() == original.world().spawns());
     CHECK(replay.world().destroys() == original.world().destroys());
-    CHECK(replay.reactions().fired_count() == original.reactions().fired_count());
+    CHECK(replay.reactions().fired_count() ==
+          original.reactions().fired_count());
     CHECK(fnv1a64(replay.framebuffer()) == fnv1a64(original.framebuffer()));
 }
 
@@ -317,7 +320,7 @@ TEST_CASE("runtime: a custom render system replaces the default draw pass") {
 
     CHECK(blank.calls == 1);
     CHECK(fnv1a64(rt.framebuffer()) ==
-           fnv1a64(Runtime(64, 64, 99).framebuffer()));
+          fnv1a64(Runtime(64, 64, 99).framebuffer()));
 }
 
 TEST_CASE("runtime: unloading a scene restores the host render system") {
@@ -356,13 +359,13 @@ TEST_CASE("runtime: scene graph resolves parent/child world transforms") {
     Runtime rt(320, 240, 42);
     rt.systems().add(std::make_unique<SceneGraphSystem>());
 
-    Entity parent = rt.spawn_species("sculpture", 100, 100,
-                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    Entity parent =
+        rt.spawn_species("sculpture", 100, 100, {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
     /* Move the parent to a known local position. */
     rt.world().storage<Transform2D>().set(parent, {100, 100, 0, 1});
 
-    Entity child = rt.spawn_species("animal", 110, 100,
-                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    Entity child =
+        rt.spawn_species("animal", 110, 100, {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
     /* Child is offset +10 x from parent in local space. */
     rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
     rt.world().storage<Parent>().set(child, {parent});
@@ -383,14 +386,44 @@ TEST_CASE("runtime: scene graph resolves parent/child world transforms") {
     CHECK(wt_parent->y == doctest::Approx(100.0f));
 }
 
+TEST_CASE("runtime: audio source follows resolved entity transform") {
+    Runtime rt(320, 240, 42);
+    rt.systems().add(std::make_unique<SceneGraphSystem>());
+    rt.systems().add(std::make_unique<AudioSourceSystem>());
+
+    const auto clip = rt.audio().add_clip(AudioClip{48000, 1, {1.0F}});
+    REQUIRE(clip.has_value());
+    const auto voice = rt.audio().play(*clip, AudioBus::Sfx, true);
+    REQUIRE(voice.has_value());
+
+    const Entity source = rt.world().create();
+    rt.world().storage<Transform2D>().set(source, {5.0F, 0.0F, 0.0F, 1.0F});
+    rt.world().storage<AudioSource2D>().set(source, {*voice, 10.0F, true});
+
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+    std::array<float, 2> output{};
+    REQUIRE(rt.audio().mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.25F));
+    CHECK(output[1] == doctest::Approx(0.5F));
+
+    rt.world().storage<Transform2D>().set(source, {10.0F, 0.0F, 0.0F, 1.0F});
+    rt.begin_frame(1.0 / 60.0);
+    rt.update(rt.sim_dt());
+    output = {};
+    REQUIRE(rt.audio().mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.0F));
+    CHECK(output[1] == doctest::Approx(0.0F));
+}
+
 TEST_CASE("runtime: moving parent moves all descendants") {
     Runtime rt(320, 240, 42);
     rt.systems().add(std::make_unique<SceneGraphSystem>());
 
-    Entity parent = rt.spawn_species("sculpture", 50, 50,
-                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
-    Entity child = rt.spawn_species("animal", 50, 50,
-                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    Entity parent =
+        rt.spawn_species("sculpture", 50, 50, {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    Entity child =
+        rt.spawn_species("animal", 50, 50, {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
     rt.world().storage<Parent>().set(child, {parent});
     rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
 
@@ -411,24 +444,23 @@ TEST_CASE("runtime: scene graph with rotation and scale") {
     Runtime rt(320, 240, 42);
     rt.systems().add(std::make_unique<SceneGraphSystem>());
 
-    Entity parent = rt.spawn_species("sculpture", 0, 0,
-                                    {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
+    Entity parent =
+        rt.spawn_species("sculpture", 0, 0, {0.5f, 0.4f, 0.3f, 1.0f}, 1e9f);
     /* Parent at origin, rotated 90 degrees, scaled 2x. */
     rt.world().storage<Transform2D>().set(parent,
-        {0, 0, (float)M_PI / 2.0f, 2.0f});
+                                          {0, 0, (float)M_PI / 2.0f, 2.0f});
 
     /* Child at local (10, 0). After 90-deg CCW rotation and 2x scale,
      * child should be at approximately (-0, 20) = (0, 20). */
-    Entity child = rt.spawn_species("animal", 0, 0,
-                                  {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
+    Entity child =
+        rt.spawn_species("animal", 0, 0, {0.7f, 0.9f, 0.6f, 1.0f}, 300.0f);
     rt.world().storage<Parent>().set(child, {parent});
     rt.world().storage<Transform2D>().set(child, {10, 0, 0, 1});
 
     rt.begin_frame(1.0 / 60.0);
     rt.update(rt.sim_dt());
 
-    WorldTransform2D *wt =
-        rt.world().storage<WorldTransform2D>().find(child);
+    WorldTransform2D *wt = rt.world().storage<WorldTransform2D>().find(child);
     REQUIRE(wt != nullptr);
     CHECK(wt->x == doctest::Approx(0.0f).epsilon(0.01f));
     CHECK(wt->y == doctest::Approx(20.0f).epsilon(0.01f));
