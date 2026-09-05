@@ -162,6 +162,11 @@ TEST_CASE("audio mixer applies master bus and voice gains") {
     mixer.set_bus_gain(AudioBus::Sfx, -2.0F);
     CHECK(mixer.master_gain() == doctest::Approx(1.0F));
     CHECK(mixer.bus_gain(AudioBus::Sfx) == doctest::Approx(0.0F));
+
+    mixer.set_master_gain(std::numeric_limits<float>::quiet_NaN());
+    mixer.set_bus_gain(AudioBus::Music, std::numeric_limits<float>::infinity());
+    CHECK(mixer.master_gain() == doctest::Approx(0.0F));
+    CHECK(mixer.bus_gain(AudioBus::Music) == doctest::Approx(0.0F));
 }
 
 TEST_CASE("audio mixer loops and stops voices") {

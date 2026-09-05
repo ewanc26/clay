@@ -2,6 +2,7 @@
 #define CLAY_ENGINE_AUDIO_AUDIO_MIXER_HPP
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -261,6 +262,7 @@ class AudioMixer {
     };
 
     [[nodiscard]] static float clamp_gain(float gain) noexcept {
+        if (!std::isfinite(gain)) return 0.0F;
         return std::clamp(gain, 0.0F, 1.0F);
     }
 
