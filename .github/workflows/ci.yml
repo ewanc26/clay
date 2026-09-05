@@ -91,6 +91,15 @@ jobs:
             -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_EXAMPLES=OFF
           cmake --build build-no-glfw --config Debug --parallel
 
+      - name: Verify audio-device optional build
+        shell: bash
+        run: |
+          cmake -S . -B build-no-audio-device \
+            -DCLAY_BUILD_INTERACTIVE=OFF -DCLAY_BUILD_AUDIO_DEVICE=OFF
+          cmake --build build-no-audio-device --config Debug --parallel
+          ctest --test-dir build-no-audio-device -C Debug \
+            --timeout 30 --output-on-failure
+
   managed-wrapper:
     strategy:
       fail-fast: false
