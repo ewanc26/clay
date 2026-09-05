@@ -50,6 +50,8 @@ shapes described below.
 
 `settings.seed` is either a non-negative integer for a fixed seed, or `null` /
 `false` for no fixed seed. Omitting it also means no fixed seed.
+When a scene with a fixed seed is loaded, the runtime adopts that seed for
+subsequent deterministic operations.
 
 `settings.fps` is a positive integer. It is metadata for the scene/runtime; the
 renderer itself does not read wall-clock time.
