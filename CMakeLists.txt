@@ -222,6 +222,8 @@ if(CLAY_BUILD_SHARED)
 else()
   add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
 endif()
+target_compile_definitions(clay_engine PRIVATE
+  CLAY_BUILD_AUDIO_DEVICE=$<BOOL:${CLAY_BUILD_AUDIO_DEVICE}>)
 if(CLAY_BUILD_GDEXTENSION AND NOT CLAY_BUILD_SHARED)
   set_target_properties(clay_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()

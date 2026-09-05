@@ -42,6 +42,16 @@ static std::vector<unsigned char> decode_base64(const std::string &text) {
     return output;
 }
 
+TEST_CASE("C ABI audio device lifecycle is safe before platform playback") {
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 3);
+    REQUIRE(runtime != nullptr);
+    CHECK_FALSE(cl_engine_runtime_audio_device_is_open(runtime));
+    CHECK_FALSE(cl_engine_runtime_audio_device_is_started(runtime));
+    CHECK_FALSE(cl_engine_runtime_audio_device_start(runtime));
+    CHECK_FALSE(cl_engine_runtime_audio_device_stop(runtime));
+    cl_engine_runtime_destroy(runtime);
+}
+
 TEST_CASE("C ABI decodes a generic FLAC audio file") {
     std::ifstream encoded(std::string(CLAY_TEST_DATA_DIR) +
                           "/tiny-flac.flac.b64");

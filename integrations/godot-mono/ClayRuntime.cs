@@ -258,6 +258,17 @@ public sealed class ClayRuntime : IDisposable
 
     public uint AudioSampleRate => Native.AudioSampleRate(handle);
 
+    public bool OpenAudioDevice(uint sampleRate = 0) =>
+        Native.AudioDeviceOpen(handle, sampleRate);
+
+    public bool StartAudioDevice() => Native.AudioDeviceStart(handle);
+
+    public bool StopAudioDevice() => Native.AudioDeviceStop(handle);
+
+    public bool IsAudioDeviceOpen => Native.AudioDeviceIsOpen(handle);
+
+    public bool IsAudioDeviceStarted => Native.AudioDeviceIsStarted(handle);
+
     public void MixAudio(float[] samples)
     {
         if (samples == null) throw new ArgumentNullException(nameof(samples));
@@ -448,6 +459,22 @@ public sealed class ClayRuntime : IDisposable
         public static extern nuint AudioClipFrameCount(RuntimeHandle runtime, uint clip);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_sample_rate")]
         public static extern uint AudioSampleRate(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_open")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceOpen(RuntimeHandle runtime,
+                                                   uint sampleRate);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_start")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceStart(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_stop")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceStop(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_is_open")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceIsOpen(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_is_started")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioDeviceIsStarted(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_mix_stereo")]
         public static extern int AudioMixStereo(RuntimeHandle runtime,
                                                  [In, Out] float[] samples,

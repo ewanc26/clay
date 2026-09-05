@@ -1,5 +1,8 @@
 #include <clay/engine_c.h>
 
+#if CLAY_BUILD_AUDIO_DEVICE
+#include "audio/audio_device.hpp"
+#endif
 #include "imageio.hpp"
 #include "render/scene3d.hpp"
 #include "runtime.hpp"
@@ -8,6 +11,7 @@
 #include <cmath>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <new>
 #include <span>
 #include <string>
@@ -44,6 +48,9 @@ template <typename Fn> cl_err guarded(Fn &&fn) {
 
 struct cl_engine_runtime {
     clay::Runtime impl;
+#if CLAY_BUILD_AUDIO_DEVICE
+    std::unique_ptr<clay::AudioDevice> audio_device;
+#endif
 
     cl_engine_runtime(int width, int height, uint64_t seed, size_t arena_bytes)
         : impl(width, height, seed, arena_bytes) {}
@@ -450,6 +457,66 @@ clay::AudioBus audio_bus(int bus) {
 extern "C" uint32_t cl_engine_runtime_audio_sample_rate(
     const cl_engine_runtime *runtime) {
     return runtime ? runtime->impl.audio_sample_rate() : 0;
+}
+
+extern "C" bool cl_engine_runtime_audio_device_open(
+    cl_engine_runtime *runtime, uint32_t sample_rate) {
+#if CLAY_BUILD_AUDIO_DEVICE
+    if (!runtime) return false;
+    try {
+        if (!runtime->audio_device)
+            runtime->audio_device =
+                std::make_unique<clay::AudioDevice>(runtime->impl.audio());
+        return runtime->audio_device->open(
+            sample_rate == 0 ? runtime->impl.audio_sample_rate() : sample_rate);
+    } catch (...) {
+        return false;
+    }
+#else
+    (void)runtime;
+    (void)sample_rate;
+    return false;
+#endif
+}
+
+extern "C" bool cl_engine_runtime_audio_device_start(
+    cl_engine_runtime *runtime) {
+#if CLAY_BUILD_AUDIO_DEVICE
+    return runtime && runtime->audio_device && runtime->audio_device->start();
+#else
+    (void)runtime;
+    return false;
+#endif
+}
+
+extern "C" bool cl_engine_runtime_audio_device_stop(
+    cl_engine_runtime *runtime) {
+#if CLAY_BUILD_AUDIO_DEVICE
+    return runtime && runtime->audio_device && runtime->audio_device->stop();
+#else
+    (void)runtime;
+    return false;
+#endif
+}
+
+extern "C" bool cl_engine_runtime_audio_device_is_open(
+    const cl_engine_runtime *runtime) {
+#if CLAY_BUILD_AUDIO_DEVICE
+    return runtime && runtime->audio_device && runtime->audio_device->is_open();
+#else
+    (void)runtime;
+    return false;
+#endif
+}
+
+extern "C" bool cl_engine_runtime_audio_device_is_started(
+    const cl_engine_runtime *runtime) {
+#if CLAY_BUILD_AUDIO_DEVICE
+    return runtime && runtime->audio_device && runtime->audio_device->is_started();
+#else
+    (void)runtime;
+    return false;
+#endif
 }
 
 extern "C" cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,

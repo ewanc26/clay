@@ -130,6 +130,17 @@ CLAY_API cl_err cl_engine_runtime_save_png(const cl_engine_runtime *runtime,
  * frames at 48 kHz. The caller owns the output buffer. */
 CLAY_API uint32_t cl_engine_runtime_audio_sample_rate(
     const cl_engine_runtime *runtime);
+/* Optional platform playback device. Opening with sample_rate == 0 uses the
+ * runtime mixer rate. These calls are safe no-ops when the device backend was
+ * disabled at build time or no platform device is available. */
+CLAY_API bool cl_engine_runtime_audio_device_open(cl_engine_runtime *runtime,
+                                                  uint32_t sample_rate);
+CLAY_API bool cl_engine_runtime_audio_device_start(cl_engine_runtime *runtime);
+CLAY_API bool cl_engine_runtime_audio_device_stop(cl_engine_runtime *runtime);
+CLAY_API bool cl_engine_runtime_audio_device_is_open(
+    const cl_engine_runtime *runtime);
+CLAY_API bool cl_engine_runtime_audio_device_is_started(
+    const cl_engine_runtime *runtime);
 CLAY_API cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
                                                 const char *path,
                                                 uint32_t *clip_id);

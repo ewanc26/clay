@@ -146,6 +146,10 @@ can instead pull mixed samples into their own audio callback.
 Developers with an available playback device can smoke-test the real callback
 with `CLAY_TEST_AUDIO_DEVICE=1 ./build/test/test_audio`; the regular test suite
 does not require hardware.
+The C ABI and managed facade also expose `OpenAudioDevice`,
+`StartAudioDevice`, `StopAudioDevice`, and device-state probes. Passing a zero
+sample rate selects the runtime mixer rate. Hosts should fall back to
+`MixAudio` when opening the optional platform device returns false.
 The standalone window is resizable; the demo synchronizes the runtime canvas
 and recreates its presentation texture when the window size changes.
 The GLFW presenter also maps auxiliary mouse buttons and keypad digits to the
