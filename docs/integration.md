@@ -114,8 +114,9 @@ same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`,
 `AudioSampleRate`, `MasterGain`, and `GetBusGain`. The strict WAV loader supports PCM and
 IEEE-float clips at the mixer's sample rate; the generic loader uses
 miniaudio's enabled WAV, FLAC, and MP3 decoders and resamples to the mixer
-rate. `cl_engine_runtime_audio_clip_frame_count` and
-`cl_engine_runtime_audio_voice_active` let a host inspect decoded duration and
+rate. `cl_engine_runtime_audio_clip_frame_count`,
+`cl_engine_runtime_audio_voice_active`, and
+`cl_engine_runtime_audio_voice_paused` let a host inspect decoded duration and
 playback state without duplicating mixer bookkeeping. Pausing a voice preserves
 its cursor and removes it from the playing state until resumed. The mixer
 performs mono expansion, looping, bus/master gain, and output clamping.
