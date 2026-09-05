@@ -88,14 +88,14 @@ add_test(
   COMMAND clay_player --headless --scene ${_scene_file} --frames 1
                       --dump ${_scene_smoke_dir}/scene-a.png)
 set_tests_properties(headless_scene_smoke_a PROPERTIES
-  PASS_REGULAR_EXPRESSION "clay_player: dumped")
+  PASS_REGULAR_EXPRESSION "clay_player: dumped;clay_player: seed=7")
 
 add_test(
   NAME headless_scene_smoke_b
   COMMAND clay_player --headless --scene ${_scene_file} --frames 1
                       --dump ${_scene_smoke_dir}/scene-b.png)
 set_tests_properties(headless_scene_smoke_b PROPERTIES
-  PASS_REGULAR_EXPRESSION "clay_player: dumped")
+  PASS_REGULAR_EXPRESSION "clay_player: dumped;clay_player: seed=7")
 
 add_test(
   NAME headless_scene_determinism

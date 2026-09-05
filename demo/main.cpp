@@ -1,7 +1,5 @@
 #include "imageio.hpp"
 #include "garden.hpp"
-#include "render/scene3d.hpp"
-#include "render/render_system.hpp"
 
 #ifdef CLAY_PLAYER_INTERACTIVE
 #include "platform/window_glfw.hpp"
@@ -13,7 +11,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <memory>
 #include <sstream>
 #include <string>
 
@@ -154,18 +151,13 @@ int main(int argc, char **argv) {
     clay::Garden garden(o.width, o.height, o.seed);
     clay::Runtime &rt = garden.runtime();
 
-    std::unique_ptr<clay::ClayScene> scene;
-    std::unique_ptr<clay::Scene3DRenderSystem> scene_system;
     if (!o.scene.empty()) {
         std::string text = read_file(o.scene);
-        scene = std::make_unique<clay::ClayScene>();
-        if (text.empty() || !scene->load(cl_str_c(text.c_str()))) {
+        if (text.empty() || !rt.load_scene(text)) {
             std::fprintf(stderr, "clay_player: could not load scene '%s'\n",
                          o.scene.c_str());
             return 1;
         }
-        scene_system = std::make_unique<clay::Scene3DRenderSystem>(*scene);
-        rt.set_render_system(scene_system.get());
     }
 
     if (o.record && o.replay) {
@@ -246,7 +238,7 @@ int main(int argc, char **argv) {
         "clay_player: seed=%llu frames=%llu commands=%zu spawns=%llu "
         "destroys=%llu reactions=%llu systems=%zu touched=%llu "
         "input_fp=%016llx fb_hash=%016llx\n",
-        (unsigned long long)o.seed, (unsigned long long)rt.frame(),
+        (unsigned long long)rt.seed(), (unsigned long long)rt.frame(),
         rt.commands().count(), (unsigned long long)rt.world().spawns(),
         (unsigned long long)rt.world().destroys(),
         (unsigned long long)rt.reactions().fired_count(),
