@@ -233,6 +233,11 @@ public sealed class ClayRuntime : IDisposable
 
     public bool ResumeAudio(uint voice) => Native.AudioResume(handle, voice);
 
+    public bool SetAudioPan(uint voice, float pan) =>
+        Native.AudioSetVoicePan(handle, voice, pan);
+
+    public float GetAudioPan(uint voice) => Native.AudioVoicePan(handle, voice);
+
     public bool IsAudioPlaying(uint voice) => Native.AudioVoiceActive(handle, voice);
 
     public bool IsAudioPaused(uint voice) => Native.AudioVoicePaused(handle, voice);
@@ -401,6 +406,12 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_resume")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioResume(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_set_voice_pan")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioSetVoicePan(RuntimeHandle runtime,
+                                                    uint voice, float pan);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_pan")]
+        public static extern float AudioVoicePan(RuntimeHandle runtime, uint voice);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_active")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioVoiceActive(RuntimeHandle runtime, uint voice);

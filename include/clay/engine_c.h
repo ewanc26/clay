@@ -149,6 +149,11 @@ CLAY_API bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
                                             uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
                                              uint32_t voice_id);
+/* Sets stereo pan from -1 (left) through 0 (center) to 1 (right). */
+CLAY_API bool cl_engine_runtime_audio_set_voice_pan(
+    cl_engine_runtime *runtime, uint32_t voice_id, float pan);
+CLAY_API float cl_engine_runtime_audio_voice_pan(
+    const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_paused(

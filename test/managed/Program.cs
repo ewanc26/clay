@@ -112,6 +112,9 @@ try
         "Managed audio resume did not cross the native ABI");
     Require(!runtime.IsAudioPaused(voice),
         "Managed audio paused state did not clear on resume");
+    Require(runtime.SetAudioPan(voice, 1) &&
+            Math.Abs(runtime.GetAudioPan(voice) - 1) < 0.001f,
+        "Managed audio pan did not cross the native ABI");
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0] - (127f / 128f)) < 0.001f

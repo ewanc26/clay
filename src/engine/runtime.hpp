@@ -87,6 +87,12 @@ class Runtime {
     bool audio_stop(AudioVoiceId voice_id);
     bool audio_pause(AudioVoiceId voice_id);
     bool audio_resume(AudioVoiceId voice_id);
+    bool audio_set_voice_pan(AudioVoiceId voice_id, float pan) noexcept {
+        return audio_.set_voice_pan(voice_id, pan);
+    }
+    float audio_voice_pan(AudioVoiceId voice_id) const noexcept {
+        return audio_.voice_pan(voice_id);
+    }
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }

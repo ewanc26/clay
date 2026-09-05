@@ -87,7 +87,8 @@ class AudioMixer {
 
         const AudioVoiceId id = next_voice_id_++;
         voices_.push_back(
-            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, false, true});
+            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, 0.0F, false,
+                  true});
         return id;
     }
 
@@ -120,6 +121,26 @@ class AudioMixer {
             }
         }
         return false;
+    }
+
+    bool set_voice_pan(AudioVoiceId id, float pan) noexcept {
+        std::lock_guard lock(mutex_);
+        if (!std::isfinite(pan)) return false;
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.pan = std::clamp(pan, -1.0F, 1.0F);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [[nodiscard]] float voice_pan(AudioVoiceId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        for (const Voice &voice : voices_) {
+            if (voice.id == id && voice.active) return voice.pan;
+        }
+        return 0.0F;
     }
 
     [[nodiscard]] bool voice_active(AudioVoiceId id) const noexcept {
@@ -220,6 +241,10 @@ class AudioMixer {
                                              ? sfx_gain_
                                              : music_gain_;
             const float gain = master_gain_ * bus_gain_value * voice.gain;
+            const float left_pan_gain =
+                voice.pan > 0.0F ? 1.0F - voice.pan : 1.0F;
+            const float right_pan_gain =
+                voice.pan < 0.0F ? 1.0F + voice.pan : 1.0F;
 
             for (std::size_t frame = 0; frame < output_frames; ++frame) {
                 if (voice.cursor >= clip_frames) {
@@ -234,8 +259,8 @@ class AudioMixer {
                 const std::size_t index = voice.cursor * clip.channels;
                 const float left = clip.samples[index];
                 const float right = clip.channels == 1 ? left : clip.samples[index + 1];
-                output[frame * 2] += left * gain;
-                output[frame * 2 + 1] += right * gain;
+                output[frame * 2] += left * gain * left_pan_gain;
+                output[frame * 2 + 1] += right * gain * right_pan_gain;
 
                 ++voice.cursor;
                 if (!voice.loop && voice.cursor >= clip_frames) {
@@ -267,6 +292,7 @@ class AudioMixer {
         AudioBus bus;
         float gain;
         bool loop;
+        float pan;
         bool paused;
         bool active;
     };

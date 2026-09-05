@@ -145,6 +145,32 @@ TEST_CASE("audio mixer preserves stereo channels") {
     CHECK(output[3] == doctest::Approx(-0.5F));
 }
 
+TEST_CASE("audio mixer applies per-voice stereo pan") {
+    AudioMixer mixer;
+    auto clip = mixer.add_clip(AudioClip{48000, 1, {0.75F}});
+    REQUIRE(clip.has_value());
+    auto voice = mixer.play(*clip);
+    REQUIRE(voice.has_value());
+
+    CHECK(mixer.set_voice_pan(*voice, 1.0F));
+    CHECK(mixer.voice_pan(*voice) == doctest::Approx(1.0F));
+    std::array<float, 2> output{};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.0F));
+    CHECK(output[1] == doctest::Approx(0.75F));
+
+    auto second_voice = mixer.play(*clip);
+    REQUIRE(second_voice.has_value());
+    CHECK(mixer.set_voice_pan(*second_voice, -1.0F));
+    CHECK(mixer.voice_pan(*second_voice) == doctest::Approx(-1.0F));
+    output = {};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.75F));
+    CHECK(output[1] == doctest::Approx(0.0F));
+    CHECK_FALSE(mixer.set_voice_pan(*second_voice,
+                                    std::numeric_limits<float>::quiet_NaN()));
+}
+
 TEST_CASE("audio mixer applies master bus and voice gains") {
     AudioMixer mixer;
     auto clip = mixer.add_clip(AudioClip{48000, 1, {1.0F}});

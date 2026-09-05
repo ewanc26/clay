@@ -516,6 +516,19 @@ extern "C" bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
     return runtime && voice_id != 0 && runtime->impl.audio_resume(voice_id);
 }
 
+extern "C" bool cl_engine_runtime_audio_set_voice_pan(
+    cl_engine_runtime *runtime, uint32_t voice_id, float pan) {
+    return runtime && voice_id != 0 && std::isfinite(pan) &&
+           runtime->impl.audio_set_voice_pan(voice_id, pan);
+}
+
+extern "C" float cl_engine_runtime_audio_voice_pan(
+    const cl_engine_runtime *runtime, uint32_t voice_id) {
+    return runtime && voice_id != 0
+               ? runtime->impl.audio_voice_pan(voice_id)
+               : 0.0F;
+}
+
 extern "C" bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);

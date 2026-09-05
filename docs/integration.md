@@ -113,13 +113,15 @@ same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`,
 `StopAllAudio`, and `MixAudio`, `PauseAudio`, and `ResumeAudio`, plus
 `AudioSampleRate`, `MasterGain`, and `GetBusGain`. The strict WAV loader supports PCM and
 IEEE-float clips at the mixer's sample rate; the generic loader uses
-miniaudio's enabled WAV, FLAC, and MP3 decoders and resamples to the mixer
+miniaudio's enabled WAV, FLAC, MP3, and Ogg Vorbis decoders and resamples to the mixer
 rate. `cl_engine_runtime_audio_clip_frame_count`,
 `cl_engine_runtime_audio_voice_active`, and
 `cl_engine_runtime_audio_voice_paused` let a host inspect decoded duration and
 playback state without duplicating mixer bookkeeping. Pausing a voice preserves
 its cursor and removes it from the playing state until resumed. The mixer
-performs mono expansion, looping, bus/master gain, and output clamping.
+performs mono expansion, looping, bus/master gain, per-voice stereo pan, and
+output clamping. `SetAudioPan` accepts -1 for left, 0 for center, and 1 for
+right; `GetAudioPan` reads the current per-voice value.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
