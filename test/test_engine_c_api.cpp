@@ -148,6 +148,14 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     REQUIRE(clip != 0);
     uint32_t voice = cl_engine_runtime_audio_play(runtime, clip, 0, false, 1);
     REQUIRE(voice != 0);
+    CHECK(cl_engine_runtime_audio_pause(runtime, voice));
+    CHECK(!cl_engine_runtime_audio_voice_active(runtime, voice));
+    float paused_samples[4] = {9, 9, 9, 9};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, paused_samples, 4) ==
+          CLAY_OK);
+    CHECK(paused_samples[0] == 0.0F);
+    CHECK(cl_engine_runtime_audio_resume(runtime, voice));
+    CHECK(cl_engine_runtime_audio_voice_active(runtime, voice));
     float samples[4] = {9, 9, 9, 9};
     CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 4) == CLAY_OK);
     CHECK(samples[0] == doctest::Approx(127.0F / 128.0F));

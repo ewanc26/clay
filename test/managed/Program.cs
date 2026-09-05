@@ -93,6 +93,10 @@ try
     uint voice = runtime.PlayAudio(clip);
     Require(runtime.IsAudioPlaying(voice),
         "Managed audio voice state did not cross the native ABI");
+    Require(runtime.PauseAudio(voice) && !runtime.IsAudioPlaying(voice),
+        "Managed audio pause did not cross the native ABI");
+    Require(runtime.ResumeAudio(voice) && runtime.IsAudioPlaying(voice),
+        "Managed audio resume did not cross the native ABI");
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0] - (127f / 128f)) < 0.001f

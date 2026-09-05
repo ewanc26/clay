@@ -497,6 +497,16 @@ extern "C" bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
     return runtime && voice_id != 0 && runtime->impl.audio_stop(voice_id);
 }
 
+extern "C" bool cl_engine_runtime_audio_pause(cl_engine_runtime *runtime,
+                                               uint32_t voice_id) {
+    return runtime && voice_id != 0 && runtime->impl.audio_pause(voice_id);
+}
+
+extern "C" bool cl_engine_runtime_audio_resume(cl_engine_runtime *runtime,
+                                                uint32_t voice_id) {
+    return runtime && voice_id != 0 && runtime->impl.audio_resume(voice_id);
+}
+
 extern "C" bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);

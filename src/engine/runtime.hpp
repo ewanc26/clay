@@ -85,6 +85,8 @@ class Runtime {
     AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                             float gain);
     bool audio_stop(AudioVoiceId voice_id);
+    bool audio_pause(AudioVoiceId voice_id);
+    bool audio_resume(AudioVoiceId voice_id);
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }

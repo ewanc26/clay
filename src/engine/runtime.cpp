@@ -194,6 +194,14 @@ bool Runtime::audio_stop(AudioVoiceId voice_id) {
     return audio_.stop(voice_id);
 }
 
+bool Runtime::audio_pause(AudioVoiceId voice_id) {
+    return audio_.pause(voice_id);
+}
+
+bool Runtime::audio_resume(AudioVoiceId voice_id) {
+    return audio_.resume(voice_id);
+}
+
 bool Runtime::audio_mix_stereo(std::span<float> output) {
     return audio_.mix_stereo(output);
 }

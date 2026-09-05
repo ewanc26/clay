@@ -84,7 +84,7 @@ class AudioMixer {
 
         const AudioVoiceId id = next_voice_id_++;
         voices_.push_back(
-            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, true});
+            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, false, true});
         return id;
     }
 
@@ -97,10 +97,32 @@ class AudioMixer {
         return voices_.size() != before;
     }
 
+    bool pause(AudioVoiceId id) {
+        std::lock_guard lock(mutex_);
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.paused = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool resume(AudioVoiceId id) {
+        std::lock_guard lock(mutex_);
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.paused = false;
+                return true;
+            }
+        }
+        return false;
+    }
+
     [[nodiscard]] bool voice_active(AudioVoiceId id) const noexcept {
         std::lock_guard lock(mutex_);
         for (const Voice &voice : voices_) {
-            if (voice.id == id) return voice.active;
+            if (voice.id == id) return voice.active && !voice.paused;
         }
         return false;
     }
@@ -181,6 +203,7 @@ class AudioMixer {
             }
 
             const AudioClip &clip = entry->clip;
+            if (voice.paused) continue;
             const std::size_t clip_frames = clip.frame_count();
             const float bus_gain_value = voice.bus == AudioBus::Sfx
                                              ? sfx_gain_
@@ -233,6 +256,7 @@ class AudioMixer {
         AudioBus bus;
         float gain;
         bool loop;
+        bool paused;
         bool active;
     };
 
