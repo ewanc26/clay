@@ -125,6 +125,7 @@ extern "C" CLAY_GDE_EXPORT GDExtensionBool clay_gdextension_init(
         api = {};
     }
 
+
     r_initialization->minimum_initialization_level =
         GDEXTENSION_INITIALIZATION_SCENE;
     r_initialization->userdata = nullptr;

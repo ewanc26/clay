@@ -13,6 +13,5 @@ contract; no godot-cpp dependency is required.
 
 `project.godot` and `main.tscn` form a tiny headless smoke project. With the
 installed library staged in `bin/`, run `godot --headless --path . --quit`
-from this directory; successful startup prints the bootstrap smoke message and
-exits cleanly. Native class instantiation remains tracked in the integration
-issue until it is validated across Godot builds.
+from this directory; successful startup instantiates `ClayRuntimeNode`, prints
+its native class name, and exits cleanly.
