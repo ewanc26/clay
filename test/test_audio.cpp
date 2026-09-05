@@ -193,6 +193,29 @@ TEST_CASE("audio mixer updates active voice gain") {
                                      std::numeric_limits<float>::quiet_NaN()));
 }
 
+TEST_CASE("audio mixer fades a voice over mixer frames") {
+    AudioMixer mixer;
+    auto clip = mixer.add_clip(AudioClip{48000, 1, {1.0F, 1.0F, 1.0F}});
+    REQUIRE(clip.has_value());
+    auto voice = mixer.play(*clip);
+    REQUIRE(voice.has_value());
+    REQUIRE(mixer.fade_voice(*voice, 0.0F, 2));
+
+    std::array<float, 4> output{};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(1.0F));
+    CHECK(output[1] == doctest::Approx(1.0F));
+    CHECK(output[2] == doctest::Approx(0.5F));
+    CHECK(output[3] == doctest::Approx(0.5F));
+    CHECK(mixer.voice_gain(*voice) == doctest::Approx(0.0F));
+    CHECK(mixer.voice_count() == 1);
+
+    output = {};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.0F));
+    CHECK(mixer.voice_count() == 0);
+}
+
 TEST_CASE("audio mixer applies master bus and voice gains") {
     AudioMixer mixer;
     auto clip = mixer.add_clip(AudioClip{48000, 1, {1.0F}});

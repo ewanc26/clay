@@ -118,6 +118,9 @@ try
     Require(runtime.SetAudioGain(voice, 0.5f) &&
             Math.Abs(runtime.GetAudioGain(voice) - 0.5f) < 0.001f,
         "Managed audio gain did not cross the native ABI");
+    Require(runtime.FadeAudio(voice, 0.25f, 0) &&
+            Math.Abs(runtime.GetAudioGain(voice) - 0.25f) < 0.001f,
+        "Managed audio fade did not cross the native ABI");
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0]) < 0.001f
