@@ -122,7 +122,9 @@ its cursor and removes it from the playing state until resumed. The mixer
 performs mono expansion, looping, bus/master gain, per-voice stereo pan, and
 output clamping. `SetAudioPan` accepts -1 for left, 0 for center, and 1 for
 right; `GetAudioPan` reads the current per-voice value. `SetAudioGain` and
-`GetAudioGain` allow hosts to implement deterministic fades and crossfades.
+`GetAudioGain` adjust a voice immediately, while `FadeAudio` interpolates to a
+target gain over a specified number of mixer frames for deterministic fades
+and crossfades.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
