@@ -216,6 +216,31 @@ TEST_CASE("audio mixer fades a voice over mixer frames") {
     CHECK(mixer.voice_count() == 0);
 }
 
+TEST_CASE("audio mixer crossfades music voices") {
+    AudioMixer mixer;
+    auto old_clip = mixer.add_clip(AudioClip{48000, 1, {1.0F, 1.0F, 1.0F,
+                                                        1.0F}});
+    auto new_clip = mixer.add_clip(AudioClip{48000, 1, {0.25F, 0.25F, 0.25F,
+                                                        0.25F}});
+    REQUIRE(old_clip.has_value());
+    REQUIRE(new_clip.has_value());
+    REQUIRE(mixer.play(*old_clip, AudioBus::Music).has_value());
+    auto voice = mixer.crossfade_music(*new_clip, 2);
+    REQUIRE(voice.has_value());
+
+    std::array<float, 6> output{};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(1.0F));
+    CHECK(output[2] == doctest::Approx(0.625F));
+    CHECK(output[4] == doctest::Approx(0.25F));
+    CHECK(mixer.voice_count() == 2);
+
+    output = {};
+    REQUIRE(mixer.mix_stereo(output));
+    CHECK(output[0] == doctest::Approx(0.25F));
+    CHECK(mixer.voice_count() == 0);
+}
+
 TEST_CASE("audio mixer applies master bus and voice gains") {
     AudioMixer mixer;
     auto clip = mixer.add_clip(AudioClip{48000, 1, {1.0F}});

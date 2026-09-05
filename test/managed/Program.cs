@@ -131,6 +131,8 @@ try
     Require(!runtime.StopAudio(voice), "Completed managed audio voice still active");
     uint loopVoice = runtime.PlayAudio(clip, loop: true);
     Require(runtime.IsAudioPlaying(loopVoice), "Managed loop voice did not start");
+    uint musicVoice = runtime.CrossfadeMusic(clip, 0);
+    Require(musicVoice != 0, "Managed music crossfade did not cross the ABI");
     runtime.StopAllAudio();
     Require(!runtime.IsAudioPlaying(loopVoice), "Managed stop-all audio failed");
     Require(runtime.UnloadAudio(clip), "Managed audio clip did not unload");
