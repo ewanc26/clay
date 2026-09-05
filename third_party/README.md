@@ -12,13 +12,14 @@ single-header or fetched at configure time — no lock-in, no build branches.
 | [stb_image_write](https://github.com/nothings/stb) | PNG encode (`--dump`, screenshots) | `src/engine/imageio.cpp` | public domain / MIT |
 | [doctest](https://github.com/doctest/doctest) | C++ unit tests | `test/*.cpp` | MIT |
 | [miniaudio 0.11.21](https://miniaud.io/) | optional audio device and WAV/FLAC/MP3 decoding | `src/engine/audio/audio_device.cpp` | public domain / MIT-0 |
+| [stb_vorbis](https://github.com/nothings/stb) | optional Ogg Vorbis decoding | fetched at configure time when `CLAY_BUILD_AUDIO_VORBIS=ON` | public domain / MIT |
 
 ## Vendored, single-file
 
 `third_party/stb/stb_image.h`, `third_party/stb/stb_image_write.h`,
 `third_party/doctest/doctest.h`, and `third_party/miniaudio.h` are vendored
-verbatim so the build never
-needs network beyond CMake's optional GLFW fetch.
+verbatim. Ogg Vorbis support fetches the pinned `stb_vorbis.c` source at
+configure time; set `CLAY_BUILD_AUDIO_VORBIS=OFF` for an entirely local build.
 
 ## GLFW
 

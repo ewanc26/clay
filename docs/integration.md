@@ -133,7 +133,9 @@ disconnecting it emits releases for any buttons that were held.
 Standalone C++ hosts that want Clay to own the platform playback device can
 construct `clay::AudioDevice device(runtime.audio())`, call `open()` and then
 `start()`, and stop it before destruction. This backend is built by default
-and can be disabled with `-DCLAY_BUILD_AUDIO_DEVICE=OFF`; C ABI and Godot hosts
+and can be disabled with `-DCLAY_BUILD_AUDIO_DEVICE=OFF`. Ogg Vorbis decoding is
+enabled by default through the pinned public-domain `stb_vorbis.c` source and
+can be disabled with `-DCLAY_BUILD_AUDIO_VORBIS=OFF`; C ABI and Godot hosts
 can instead pull mixed samples into their own audio callback.
 Developers with an available playback device can smoke-test the real callback
 with `CLAY_TEST_AUDIO_DEVICE=1 ./build/test/test_audio`; the regular test suite

@@ -40,6 +40,8 @@ option(CLAY_BUILD_EXAMPLES "Build standalone host examples" ON)
 option(CLAY_BUILD_SHARED "Build clay_engine as a shared library for host bindings" ON)
 option(CLAY_BUILD_AUDIO_DEVICE
        "Build the optional miniaudio playback device backend" ON)
+option(CLAY_BUILD_AUDIO_VORBIS
+       "Enable Ogg Vorbis decoding through the pinned stb_vorbis source" ON)
 option(CLAY_INSTALL_GODOT_NATIVE
        "Install the shared Clay library into the Godot native layout" ON)
 
@@ -58,6 +60,21 @@ add_library(clay_third_party INTERFACE)
 target_include_directories(
   clay_third_party SYSTEM INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>)
+
+if(CLAY_BUILD_AUDIO_VORBIS)
+  include(FetchContent)
+  FetchContent_Declare(stb_vorbis
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG 2c980bb59875b0d32144a71867fbdebb2f77cd20
+    GIT_SHALLOW FALSE)
+  FetchContent_GetProperties(stb_vorbis)
+  if(NOT stb_vorbis_POPULATED)
+    FetchContent_Populate(stb_vorbis)
+  endif()
+  target_include_directories(clay_third_party SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${stb_vorbis_SOURCE_DIR}>)
+  target_compile_definitions(clay_third_party INTERFACE CLAY_HAS_STB_VORBIS=1)
+endif()
 
 option(CLAY_USE_SYSTEM_GLFW
        "Prefer the system glfw3 instead of fetching and building one"
