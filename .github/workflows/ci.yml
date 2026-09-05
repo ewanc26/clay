@@ -73,7 +73,8 @@ jobs:
         run: |
           cmake -S . -B build-static \
             -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF \
-            -DCLAY_BUILD_EXAMPLES=OFF -DCLAY_BUILD_SHARED=OFF
+            -DCLAY_BUILD_EXAMPLES=OFF -DCLAY_BUILD_SHARED=OFF \
+            -DCLAY_BUILD_GDEXTENSION=ON
           cmake --build build-static --config Debug -j
           cmake --install build-static --config Debug --prefix "$PWD/build/static-sdk"
           cmake -S test/package-consumer -B build/static-package-consumer \
