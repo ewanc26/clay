@@ -132,15 +132,17 @@ bool Runtime::load_scene_file(const std::string &path) {
 
 void Runtime::unload_scene() noexcept {
     if (render_system_ == scene_system_.get())
-        render_system_ = scene_restore_valid_ ? scene_restore_render_system_
-                                              : nullptr;
+        render_system_ =
+            scene_restore_valid_ ? scene_restore_render_system_ : nullptr;
     scene_system_.reset();
     scene_.reset();
     scene_restore_render_system_ = nullptr;
     scene_restore_valid_ = false;
 }
 
-bool Runtime::has_scene() const noexcept { return scene_ != nullptr; }
+bool Runtime::has_scene() const noexcept {
+    return scene_ != nullptr;
+}
 
 cl_err Runtime::save_recording(const std::string &path) const {
     return cl_input_log_save(const_cast<cl_input_log *>(&input_log_),
@@ -180,7 +182,9 @@ cl_err Runtime::audio_load_file(const std::string &path, AudioClipId *clip_id) {
         return CLAY_ERR_PARSE;
     struct DecoderGuard {
         ma_decoder &decoder;
-        ~DecoderGuard() { ma_decoder_uninit(&decoder); }
+        ~DecoderGuard() {
+            ma_decoder_uninit(&decoder);
+        }
     } decoder_guard{decoder};
 
     AudioClip clip{audio_.sample_rate(), 2, {}};
@@ -193,9 +197,9 @@ cl_err Runtime::audio_load_file(const std::string &path, AudioClipId *clip_id) {
         if (result != MA_SUCCESS && result != MA_AT_END) {
             return CLAY_ERR_PARSE;
         }
-        clip.samples.insert(
-            clip.samples.end(), chunk.begin(),
-            chunk.begin() + static_cast<std::ptrdiff_t>(frames_read * 2));
+        clip.samples.insert(clip.samples.end(), chunk.begin(),
+                            chunk.begin() +
+                                static_cast<std::ptrdiff_t>(frames_read * 2));
         if (result == MA_AT_END || frames_read < kFramesPerRead) break;
     }
     if (!clip.valid()) return CLAY_ERR_PARSE;
@@ -210,9 +214,30 @@ bool Runtime::audio_unload_clip(AudioClipId clip_id) {
     return audio_.remove_clip(clip_id);
 }
 
+bool Runtime::audio_load_stream(const std::string &path,
+                                AudioStreamId *stream_id) {
+    if (path.empty() || stream_id == nullptr) return false;
+    auto stream = std::make_unique<AudioStream>();
+    if (!stream->open(path, audio_.sample_rate())) return false;
+    auto id = audio_.add_stream(std::move(stream));
+    if (!id.has_value()) return false;
+    *stream_id = *id;
+    return true;
+}
+
+bool Runtime::audio_unload_stream(AudioStreamId stream_id) {
+    return audio_.remove_stream(stream_id);
+}
+
 AudioVoiceId Runtime::audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                                  float gain) {
     auto voice = audio_.play(clip_id, bus, loop, gain);
+    return voice.value_or(0);
+}
+
+AudioVoiceId Runtime::audio_play_stream(AudioStreamId stream_id, AudioBus bus,
+                                        bool loop, float gain) {
+    auto voice = audio_.play_stream(stream_id, bus, loop, gain);
     return voice.value_or(0);
 }
 

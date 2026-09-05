@@ -177,6 +177,7 @@ set(CLAY_ENGINE_SOURCES
   src/engine/runtime.cpp
   src/engine/imageio.cpp
   src/engine/engine_c.cpp
+  src/engine/audio/audio_stream.cpp
 )
 if(CLAY_BUILD_AUDIO_DEVICE)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/audio/audio_device.cpp)

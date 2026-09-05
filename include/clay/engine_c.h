@@ -148,11 +148,20 @@ CLAY_API cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
 CLAY_API cl_err cl_engine_runtime_audio_load_file(cl_engine_runtime *runtime,
                                                  const char *path,
                                                  uint32_t *clip_id);
+/* Opens a decoder-backed stream without retaining the decoded PCM in the
+ * mixer. Streams are intended for long-form music. */
+CLAY_API cl_err cl_engine_runtime_audio_load_stream(
+    cl_engine_runtime *runtime, const char *path, uint32_t *stream_id);
 CLAY_API bool cl_engine_runtime_audio_unload_clip(cl_engine_runtime *runtime,
                                                   uint32_t clip_id);
+CLAY_API bool cl_engine_runtime_audio_unload_stream(cl_engine_runtime *runtime,
+                                                    uint32_t stream_id);
 CLAY_API uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                uint32_t clip_id, int bus,
                                                bool loop, float gain);
+CLAY_API uint32_t cl_engine_runtime_audio_play_stream(
+    cl_engine_runtime *runtime, uint32_t stream_id, int bus, bool loop,
+    float gain);
 CLAY_API bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
                                            uint32_t voice_id);
 CLAY_API void cl_engine_runtime_audio_stop_all(cl_engine_runtime *runtime);
@@ -186,6 +195,8 @@ CLAY_API bool cl_engine_runtime_audio_fade_voice(
 /* Starts a music voice and fades existing music voices out together. */
 CLAY_API uint32_t cl_engine_runtime_audio_crossfade_music(
     cl_engine_runtime *runtime, uint32_t clip_id, size_t duration_frames);
+CLAY_API uint32_t cl_engine_runtime_audio_crossfade_music_stream(
+    cl_engine_runtime *runtime, uint32_t stream_id, size_t duration_frames);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_paused(
@@ -193,6 +204,8 @@ CLAY_API bool cl_engine_runtime_audio_voice_paused(
 /* Returns decoded frames, or zero when clip_id is not loaded. */
 CLAY_API size_t cl_engine_runtime_audio_clip_frame_count(
     const cl_engine_runtime *runtime, uint32_t clip_id);
+CLAY_API size_t cl_engine_runtime_audio_stream_frame_count(
+    const cl_engine_runtime *runtime, uint32_t stream_id);
 CLAY_API cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
                                                   float *samples,
                                                   size_t sample_count);

@@ -18,8 +18,7 @@ static std::vector<unsigned char> decode_base64(const std::string &text) {
     std::array<int, 4> group{};
     size_t group_size = 0;
     for (unsigned char c : text) {
-        if (c == '\n' || c == '\r' || c == ' ' || c == '\t')
-            continue;
+        if (c == '\n' || c == '\r' || c == ' ' || c == '\t') continue;
         if (c == '=') {
             group[group_size++] = 64;
         } else {
@@ -28,14 +27,14 @@ static std::vector<unsigned char> decode_base64(const std::string &text) {
             group[group_size++] = static_cast<int>(found - alphabet);
         }
         if (group_size == group.size()) {
-            output.push_back(static_cast<unsigned char>((group[0] << 2) |
-                                                        (group[1] >> 4)));
+            output.push_back(
+                static_cast<unsigned char>((group[0] << 2) | (group[1] >> 4)));
             if (group[2] != 64)
-                output.push_back(static_cast<unsigned char>(
-                    (group[1] << 4) | (group[2] >> 2)));
+                output.push_back(static_cast<unsigned char>((group[1] << 4) |
+                                                            (group[2] >> 2)));
             if (group[3] != 64)
-                output.push_back(static_cast<unsigned char>(
-                    (group[2] << 6) | group[3]));
+                output.push_back(
+                    static_cast<unsigned char>((group[2] << 6) | group[3]));
             group_size = 0;
         }
     }
@@ -60,8 +59,8 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
                            std::istreambuf_iterator<char>());
     const auto flac = decode_base64(text);
     REQUIRE(flac.size() > 100);
-    const auto path = std::filesystem::temp_directory_path() /
-                      "clay-engine-c-api-flac.flac";
+    const auto path =
+        std::filesystem::temp_directory_path() / "clay-engine-c-api-flac.flac";
     std::ofstream output(path, std::ios::binary);
     REQUIRE(output);
     output.write(reinterpret_cast<const char *>(flac.data()),
@@ -71,9 +70,8 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     REQUIRE(runtime != nullptr);
     uint32_t clip = 0;
     CHECK(cl_engine_runtime_audio_load_file(
-              runtime, (path.parent_path() / "clay-no-such-file.flac")
-                           .string()
-                           .c_str(),
+              runtime,
+              (path.parent_path() / "clay-no-such-file.flac").string().c_str(),
               &clip) == CLAY_ERR_IO);
     const auto malformed_path = path.parent_path() / "clay-malformed-audio.bin";
     {
@@ -94,10 +92,27 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
     REQUIRE(voice != 0);
     CHECK(cl_engine_runtime_audio_voice_active(runtime, voice));
     float samples[2048] = {};
-    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 2048) == CLAY_OK);
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 2048) ==
+          CLAY_OK);
     bool nonzero = false;
     for (float sample : samples) nonzero |= sample != 0.0F;
     CHECK(nonzero);
+    uint32_t stream = 0;
+    CHECK(cl_engine_runtime_audio_load_stream(runtime, path.string().c_str(),
+                                              &stream) == CLAY_OK);
+    REQUIRE(stream != 0);
+    CHECK(cl_engine_runtime_audio_stream_frame_count(runtime, stream) > 0);
+    const uint32_t stream_voice =
+        cl_engine_runtime_audio_play_stream(runtime, stream, 1, true, 1.0F);
+    REQUIRE(stream_voice != 0);
+    float stream_samples[2048] = {};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, stream_samples, 2048) ==
+          CLAY_OK);
+    nonzero = false;
+    for (float sample : stream_samples) nonzero |= sample != 0.0F;
+    CHECK(nonzero);
+    CHECK(cl_engine_runtime_audio_unload_stream(runtime, stream));
+    CHECK(!cl_engine_runtime_audio_voice_active(runtime, stream_voice));
     CHECK(cl_engine_runtime_audio_unload_clip(runtime, clip));
     CHECK(cl_engine_runtime_audio_clip_frame_count(runtime, clip) == 0);
     CHECK(!cl_engine_runtime_audio_voice_active(runtime, voice));
@@ -114,8 +129,8 @@ TEST_CASE("C ABI decodes a generic MP3 audio file") {
                            std::istreambuf_iterator<char>());
     const auto mp3 = decode_base64(text);
     REQUIRE(mp3.size() > 100);
-    const auto path = std::filesystem::temp_directory_path() /
-                      "clay-engine-c-api-mp3.mp3";
+    const auto path =
+        std::filesystem::temp_directory_path() / "clay-engine-c-api-mp3.mp3";
     std::ofstream output(path, std::ios::binary);
     REQUIRE(output);
     output.write(reinterpret_cast<const char *>(mp3.data()),
@@ -151,8 +166,8 @@ TEST_CASE("C ABI decodes a generic Ogg Vorbis audio file") {
                            std::istreambuf_iterator<char>());
     const auto ogg = decode_base64(text);
     REQUIRE(ogg.size() > 100);
-    const auto path = std::filesystem::temp_directory_path() /
-                      "clay-engine-c-api-ogg.ogg";
+    const auto path =
+        std::filesystem::temp_directory_path() / "clay-engine-c-api-ogg.ogg";
     std::ofstream output(path, std::ios::binary);
     REQUIRE(output);
     output.write(reinterpret_cast<const char *>(ogg.data()),
@@ -200,18 +215,23 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 1);
     REQUIRE(runtime != nullptr);
     CHECK(cl_engine_runtime_audio_sample_rate(runtime) == 48000);
-    CHECK(cl_engine_runtime_audio_master_gain(runtime) == doctest::Approx(1.0F));
-    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 0) == doctest::Approx(1.0F));
+    CHECK(cl_engine_runtime_audio_master_gain(runtime) ==
+          doctest::Approx(1.0F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 0) ==
+          doctest::Approx(1.0F));
     cl_engine_runtime_audio_set_master_gain(runtime, 0.5F);
     cl_engine_runtime_audio_set_bus_gain(runtime, 1, 0.25F);
-    CHECK(cl_engine_runtime_audio_master_gain(runtime) == doctest::Approx(0.5F));
-    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 1) == doctest::Approx(0.25F));
-    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 9) == doctest::Approx(0.0F));
+    CHECK(cl_engine_runtime_audio_master_gain(runtime) ==
+          doctest::Approx(0.5F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 1) ==
+          doctest::Approx(0.25F));
+    CHECK(cl_engine_runtime_audio_bus_gain(runtime, 9) ==
+          doctest::Approx(0.0F));
     cl_engine_runtime_audio_set_master_gain(runtime, 1.0F);
     cl_engine_runtime_audio_set_bus_gain(runtime, 1, 1.0F);
     uint32_t clip = 0;
-    CHECK(cl_engine_runtime_audio_load_wav(runtime, path.string().c_str(), &clip) ==
-          CLAY_OK);
+    CHECK(cl_engine_runtime_audio_load_wav(runtime, path.string().c_str(),
+                                           &clip) == CLAY_OK);
     REQUIRE(clip != 0);
     uint32_t voice = cl_engine_runtime_audio_play(runtime, clip, 0, false, 1);
     REQUIRE(voice != 0);
@@ -247,9 +267,9 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 3) ==
           CLAY_ERR_INVALID_ARG);
     CHECK(cl_engine_runtime_audio_load_wav(
-              runtime, (path.parent_path() / "clay-no-such-file.wav").string().c_str(),
-              &clip) ==
-          CLAY_ERR_IO);
+              runtime,
+              (path.parent_path() / "clay-no-such-file.wav").string().c_str(),
+              &clip) == CLAY_ERR_IO);
     cl_engine_runtime_destroy(runtime);
     std::filesystem::remove(path);
 }
@@ -281,8 +301,8 @@ TEST_CASE("C ABI owns an authored 3D scene render system") {
 }
 
 TEST_CASE("C ABI loads an authored scene from a file") {
-    const auto path = std::filesystem::temp_directory_path() /
-                      "clay-engine-c-api-scene.clay";
+    const auto path =
+        std::filesystem::temp_directory_path() / "clay-engine-c-api-scene.clay";
     const std::string scene =
         R"({"version":1,"settings":{"render":{"width":20,"height":12}},"scene":[]})";
     {

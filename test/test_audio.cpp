@@ -11,7 +11,10 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <limits>
+#include <memory>
 #include <vector>
 
 using namespace clay;
@@ -292,6 +295,37 @@ TEST_CASE("audio mixer spatializes a voice against the listener") {
     REQUIRE(mixer.mix_stereo(output));
     CHECK(output[0] == doctest::Approx(0.0F));
     CHECK(output[1] == doctest::Approx(0.0F));
+}
+
+TEST_CASE("audio mixer streams decoder frames and loops at end") {
+    const auto path =
+        std::filesystem::temp_directory_path() / "clay-audio-stream-test.wav";
+    const auto wav = make_wav(1, 1, 48000, 16, {0x00, 0x40, 0x00, 0xC0});
+    {
+        std::ofstream output(path, std::ios::binary);
+        REQUIRE(output);
+        output.write(reinterpret_cast<const char *>(wav.data()),
+                     static_cast<std::streamsize>(wav.size()));
+    }
+
+    auto stream = std::make_unique<AudioStream>();
+    REQUIRE(stream->open(path.string(), 48000));
+    CHECK(stream->frame_count() == 2);
+
+    {
+        AudioMixer mixer;
+        auto stream_id = mixer.add_stream(std::move(stream));
+        REQUIRE(stream_id.has_value());
+        const auto voice = mixer.play_stream(*stream_id, AudioBus::Music, true);
+        REQUIRE(voice.has_value());
+        std::array<float, 4> samples{};
+        REQUIRE(mixer.mix_stereo(samples));
+        CHECK(samples[0] == doctest::Approx(0.5F));
+        CHECK(samples[2] == doctest::Approx(-0.5F));
+        CHECK(mixer.stream_frame_count(*stream_id) == 2);
+    }
+
+    std::filesystem::remove(path);
 }
 
 TEST_CASE("audio mixer loops and stops voices") {

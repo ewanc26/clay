@@ -214,7 +214,17 @@ public sealed class ClayRuntime : IDisposable
         return clip;
     }
 
+    public uint LoadAudioStream(string path)
+    {
+        if (path == null) throw new ArgumentNullException(nameof(path));
+        Check(Native.AudioLoadStream(handle, path, out uint stream));
+        return stream;
+    }
+
     public bool UnloadAudio(uint clip) => Native.AudioUnloadClip(handle, clip);
+
+    public bool UnloadAudioStream(uint stream) =>
+        Native.AudioUnloadStream(handle, stream);
 
     public uint PlayAudio(uint clip, ClayAudioBus bus = ClayAudioBus.Sfx,
                           bool loop = false, float gain = 1)
@@ -222,6 +232,16 @@ public sealed class ClayRuntime : IDisposable
         uint voice = Native.AudioPlay(handle, clip, (int)bus, loop, gain);
         if (voice == 0)
             throw new InvalidOperationException("Clay audio playback failed.");
+        return voice;
+    }
+
+    public uint PlayAudioStream(uint stream,
+                                ClayAudioBus bus = ClayAudioBus.Music,
+                                bool loop = true, float gain = 1)
+    {
+        uint voice = Native.AudioPlayStream(handle, stream, (int)bus, loop, gain);
+        if (voice == 0)
+            throw new InvalidOperationException("Clay audio stream playback failed.");
         return voice;
     }
 
@@ -259,12 +279,18 @@ public sealed class ClayRuntime : IDisposable
     public uint CrossfadeMusic(uint clip, nuint durationFrames) =>
         Native.AudioCrossfadeMusic(handle, clip, durationFrames);
 
+    public uint CrossfadeMusicStream(uint stream, nuint durationFrames) =>
+        Native.AudioCrossfadeMusicStream(handle, stream, durationFrames);
+
     public bool IsAudioPlaying(uint voice) => Native.AudioVoiceActive(handle, voice);
 
     public bool IsAudioPaused(uint voice) => Native.AudioVoicePaused(handle, voice);
 
     public nuint GetAudioClipFrames(uint clip) =>
         Native.AudioClipFrameCount(handle, clip);
+
+    public nuint GetAudioStreamFrames(uint stream) =>
+        Native.AudioStreamFrameCount(handle, stream);
 
     public uint AudioSampleRate => Native.AudioSampleRate(handle);
 
@@ -419,14 +445,26 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_load_file")]
         public static extern int AudioLoadFile(RuntimeHandle runtime, string path,
                                                 out uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_load_stream")]
+        public static extern int AudioLoadStream(RuntimeHandle runtime, string path,
+                                                  out uint stream);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_play")]
         public static extern uint AudioPlay(RuntimeHandle runtime, uint clip,
                                              int bus,
                                              [MarshalAs(UnmanagedType.I1)] bool loop,
                                              float gain);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_play_stream")]
+        public static extern uint AudioPlayStream(RuntimeHandle runtime,
+                                                   uint stream, int bus,
+                                                   [MarshalAs(UnmanagedType.I1)] bool loop,
+                                                   float gain);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_unload_clip")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioUnloadClip(RuntimeHandle runtime, uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_unload_stream")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioUnloadStream(RuntimeHandle runtime,
+                                                     uint stream);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
@@ -472,6 +510,10 @@ public sealed class ClayRuntime : IDisposable
         public static extern uint AudioCrossfadeMusic(RuntimeHandle runtime,
                                                        uint clip,
                                                        nuint durationFrames);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_crossfade_music_stream")]
+        public static extern uint AudioCrossfadeMusicStream(RuntimeHandle runtime,
+                                                             uint stream,
+                                                             nuint durationFrames);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_active")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioVoiceActive(RuntimeHandle runtime, uint voice);
@@ -480,6 +522,9 @@ public sealed class ClayRuntime : IDisposable
         public static extern bool AudioVoicePaused(RuntimeHandle runtime, uint voice);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_clip_frame_count")]
         public static extern nuint AudioClipFrameCount(RuntimeHandle runtime, uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stream_frame_count")]
+        public static extern nuint AudioStreamFrameCount(RuntimeHandle runtime,
+                                                          uint stream);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_sample_rate")]
         public static extern uint AudioSampleRate(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_device_open")]

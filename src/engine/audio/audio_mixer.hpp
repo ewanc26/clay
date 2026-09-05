@@ -1,6 +1,8 @@
 #ifndef CLAY_ENGINE_AUDIO_AUDIO_MIXER_HPP
 #define CLAY_ENGINE_AUDIO_AUDIO_MIXER_HPP
 
+#include "audio_stream.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -19,6 +21,7 @@ enum class AudioBus : std::uint8_t {
 };
 
 using AudioClipId = std::uint32_t;
+using AudioStreamId = std::uint32_t;
 using AudioVoiceId = std::uint32_t;
 
 struct AudioClip {
@@ -61,6 +64,28 @@ class AudioMixer {
         return id;
     }
 
+    [[nodiscard]] std::optional<AudioStreamId>
+    add_stream(std::unique_ptr<AudioStream> stream) {
+        std::lock_guard lock(mutex_);
+        if (!stream || !stream->is_open()) return std::nullopt;
+        const AudioStreamId id = next_stream_id_++;
+        streams_.push_back(StreamEntry{id, std::move(stream)});
+        return id;
+    }
+
+    bool remove_stream(AudioStreamId id) {
+        std::lock_guard lock(mutex_);
+        const auto before = streams_.size();
+        std::erase_if(streams_, [id](const StreamEntry &entry) {
+            return entry.id == id;
+        });
+        if (streams_.size() == before) return false;
+        std::erase_if(voices_, [id](const Voice &voice) {
+            return voice.stream_id == id;
+        });
+        return true;
+    }
+
     bool remove_clip(AudioClipId id) {
         std::lock_guard lock(mutex_);
         const auto before = clips_.size();
@@ -85,9 +110,21 @@ class AudioMixer {
         }
 
         const AudioVoiceId id = next_voice_id_++;
-        voices_.push_back(Voice{id, clip_id, 0, bus, clamp_gain(gain), loop,
+        voices_.push_back(Voice{id, clip_id, 0, 0, bus, clamp_gain(gain), loop,
                                 0.0F, clamp_gain(gain), 0.0F, 0, false, false,
                                 true, false, 0.0F, 0.0F, 1.0F});
+        return id;
+    }
+
+    [[nodiscard]] std::optional<AudioVoiceId>
+    play_stream(AudioStreamId stream_id, AudioBus bus = AudioBus::Music,
+                bool loop = true, float gain = 1.0F) {
+        std::lock_guard lock(mutex_);
+        if (find_stream(stream_id) == nullptr) return std::nullopt;
+        const AudioVoiceId id = next_voice_id_++;
+        voices_.push_back(Voice{id, 0, stream_id, 0, bus, clamp_gain(gain),
+                                loop, 0.0F, clamp_gain(gain), 0.0F, 0, false,
+                                false, true, false, 0.0F, 0.0F, 1.0F});
         return id;
     }
 
@@ -116,9 +153,41 @@ class AudioMixer {
         const float fade_step =
             duration_frames == 0 ? 0.0F
                                  : 1.0F / static_cast<float>(duration_frames);
-        voices_.push_back(Voice{id, clip_id, 0, AudioBus::Music, initial_gain,
-                                false, 0.0F, 1.0F, fade_step, duration_frames,
-                                false, false, true, false, 0.0F, 0.0F, 1.0F});
+        voices_.push_back(Voice{id, clip_id, 0, 0, AudioBus::Music,
+                                initial_gain, false, 0.0F, 1.0F, fade_step,
+                                duration_frames, false, false, true, false,
+                                0.0F, 0.0F, 1.0F});
+        return id;
+    }
+
+    [[nodiscard]] std::optional<AudioVoiceId>
+    crossfade_music_stream(AudioStreamId stream_id,
+                           std::size_t duration_frames) {
+        std::lock_guard lock(mutex_);
+        if (find_stream(stream_id) == nullptr) return std::nullopt;
+        for (Voice &voice : voices_) {
+            if (!voice.active || voice.bus != AudioBus::Music) continue;
+            voice.fade_target = 0.0F;
+            voice.fade_remaining = duration_frames;
+            voice.fade_stop_when_done = true;
+            voice.fade_step =
+                duration_frames == 0
+                    ? 0.0F
+                    : -voice.gain / static_cast<float>(duration_frames);
+            if (duration_frames == 0) {
+                voice.gain = 0.0F;
+                voice.active = false;
+            }
+        }
+        const AudioVoiceId id = next_voice_id_++;
+        const float initial_gain = duration_frames == 0 ? 1.0F : 0.0F;
+        const float fade_step =
+            duration_frames == 0 ? 0.0F
+                                 : 1.0F / static_cast<float>(duration_frames);
+        voices_.push_back(Voice{id, 0, stream_id, 0, AudioBus::Music,
+                                initial_gain, true, 0.0F, 1.0F, fade_step,
+                                duration_frames, false, false, true, false,
+                                0.0F, 0.0F, 1.0F});
         return id;
     }
 
@@ -277,6 +346,13 @@ class AudioMixer {
         return 0;
     }
 
+    [[nodiscard]] std::size_t
+    stream_frame_count(AudioStreamId id) const noexcept {
+        std::lock_guard lock(mutex_);
+        const StreamEntry *entry = find_stream(id);
+        return entry == nullptr ? 0 : entry->stream->frame_count();
+    }
+
     void stop_all() noexcept {
         std::lock_guard lock(mutex_);
         voices_.clear();
@@ -321,6 +397,11 @@ class AudioMixer {
         return clips_.size();
     }
 
+    [[nodiscard]] std::size_t stream_count() const noexcept {
+        std::lock_guard lock(mutex_);
+        return streams_.size();
+    }
+
     [[nodiscard]] std::size_t voice_count() const noexcept {
         std::lock_guard lock(mutex_);
         return voices_.size();
@@ -338,15 +419,20 @@ class AudioMixer {
 
         const std::size_t output_frames = output.size() / 2;
         for (Voice &voice : voices_) {
-            const ClipEntry *entry = find_clip(voice.clip_id);
-            if (entry == nullptr) {
+            const ClipEntry *clip_entry =
+                voice.clip_id == 0 ? nullptr : find_clip(voice.clip_id);
+            StreamEntry *stream_entry =
+                voice.stream_id == 0 ? nullptr : find_stream(voice.stream_id);
+            if (clip_entry == nullptr && stream_entry == nullptr) {
                 voice.active = false;
                 continue;
             }
 
-            const AudioClip &clip = entry->clip;
+            const AudioClip *clip =
+                clip_entry == nullptr ? nullptr : &clip_entry->clip;
             if (voice.paused) continue;
-            const std::size_t clip_frames = clip.frame_count();
+            const std::size_t clip_frames =
+                clip == nullptr ? 0 : clip->frame_count();
             const float bus_gain_value =
                 voice.bus == AudioBus::Sfx ? sfx_gain_ : music_gain_;
             const float left_pan_gain =
@@ -369,26 +455,43 @@ class AudioMixer {
                 spatial_pan < 0.0F ? 1.0F + spatial_pan : 1.0F;
 
             for (std::size_t frame = 0; frame < output_frames; ++frame) {
-                if (voice.cursor >= clip_frames) {
-                    if (voice.loop) {
-                        voice.cursor = 0;
-                    } else {
+                float left = 0.0F;
+                float right = 0.0F;
+                if (clip != nullptr) {
+                    if (voice.cursor >= clip_frames) {
+                        if (voice.loop) {
+                            voice.cursor = 0;
+                        } else {
+                            voice.active = false;
+                            break;
+                        }
+                    }
+                    const std::size_t index = voice.cursor * clip->channels;
+                    left = clip->samples[index];
+                    right =
+                        clip->channels == 1 ? left : clip->samples[index + 1];
+                } else {
+                    float stream_sample[2]{};
+                    std::span<float> frame_samples(stream_sample, 2);
+                    std::size_t frames_read =
+                        stream_entry->stream->read(frame_samples);
+                    if (frames_read == 0 && voice.loop &&
+                        stream_entry->stream->rewind())
+                        frames_read = stream_entry->stream->read(frame_samples);
+                    if (frames_read == 0) {
                         voice.active = false;
                         break;
                     }
+                    left = stream_sample[0];
+                    right = stream_sample[1];
                 }
-
-                const std::size_t index = voice.cursor * clip.channels;
-                const float left = clip.samples[index];
-                const float right =
-                    clip.channels == 1 ? left : clip.samples[index + 1];
                 const float gain =
                     master_gain_ * bus_gain_value * voice.gain * spatial_gain;
                 output[frame * 2] += left * gain * left_pan_gain * spatial_left;
                 output[frame * 2 + 1] +=
                     right * gain * right_pan_gain * spatial_right;
 
-                ++voice.cursor;
+                if (clip != nullptr) ++voice.cursor;
                 if (voice.fade_remaining > 0) {
                     --voice.fade_remaining;
                     if (voice.fade_remaining == 0) {
@@ -399,7 +502,8 @@ class AudioMixer {
                     }
                 }
                 if (!voice.active) break;
-                if (!voice.loop && voice.cursor >= clip_frames) {
+                if (clip != nullptr && !voice.loop &&
+                    voice.cursor >= clip_frames) {
                     voice.active = false;
                     break;
                 }
@@ -420,9 +524,15 @@ class AudioMixer {
         AudioClip clip;
     };
 
+    struct StreamEntry {
+        AudioStreamId id;
+        std::unique_ptr<AudioStream> stream;
+    };
+
     struct Voice {
         AudioVoiceId id;
         AudioClipId clip_id;
+        AudioStreamId stream_id;
         std::size_t cursor;
         AudioBus bus;
         float gain;
@@ -452,6 +562,21 @@ class AudioMixer {
         return it == clips_.end() ? nullptr : &*it;
     }
 
+    [[nodiscard]] StreamEntry *find_stream(AudioStreamId id) noexcept {
+        const auto it = std::find_if(
+            streams_.begin(), streams_.end(),
+            [id](const StreamEntry &entry) { return entry.id == id; });
+        return it == streams_.end() ? nullptr : &*it;
+    }
+
+    [[nodiscard]] const StreamEntry *
+    find_stream(AudioStreamId id) const noexcept {
+        const auto it = std::find_if(
+            streams_.begin(), streams_.end(),
+            [id](const StreamEntry &entry) { return entry.id == id; });
+        return it == streams_.end() ? nullptr : &*it;
+    }
+
     std::uint32_t sample_rate_ = 48000;
     float master_gain_ = 1.0F;
     float sfx_gain_ = 1.0F;
@@ -459,8 +584,10 @@ class AudioMixer {
     float listener_x_ = 0.0F;
     float listener_y_ = 0.0F;
     AudioClipId next_clip_id_ = 1;
+    AudioStreamId next_stream_id_ = 1;
     AudioVoiceId next_voice_id_ = 1;
     std::vector<ClipEntry> clips_;
+    std::vector<StreamEntry> streams_;
     std::vector<Voice> voices_;
     mutable std::mutex mutex_;
 };

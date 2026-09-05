@@ -81,9 +81,13 @@ class Runtime {
     cl_err load_recording(const std::string &path);
     cl_err audio_load_wav(const std::string &path, AudioClipId *clip_id);
     cl_err audio_load_file(const std::string &path, AudioClipId *clip_id);
+    bool audio_load_stream(const std::string &path, AudioStreamId *stream_id);
     bool audio_unload_clip(AudioClipId clip_id);
+    bool audio_unload_stream(AudioStreamId stream_id);
     AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                             float gain);
+    AudioVoiceId audio_play_stream(AudioStreamId stream_id, AudioBus bus,
+                                   bool loop, float gain);
     bool audio_stop(AudioVoiceId voice_id);
     bool audio_pause(AudioVoiceId voice_id);
     bool audio_resume(AudioVoiceId voice_id);
@@ -106,6 +110,11 @@ class Runtime {
     AudioVoiceId audio_crossfade_music(AudioClipId clip_id,
                                        std::size_t duration_frames) {
         return audio_.crossfade_music(clip_id, duration_frames).value_or(0);
+    }
+    AudioVoiceId audio_crossfade_music_stream(AudioStreamId stream_id,
+                                              std::size_t duration_frames) {
+        return audio_.crossfade_music_stream(stream_id, duration_frames)
+            .value_or(0);
     }
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);

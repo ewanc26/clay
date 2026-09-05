@@ -551,6 +551,24 @@ extern "C" cl_err cl_engine_runtime_audio_load_file(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" cl_err
+cl_engine_runtime_audio_load_stream(cl_engine_runtime *runtime,
+                                    const char *path, uint32_t *stream_id) {
+    if (!runtime || !path || path[0] == '\0' || !stream_id)
+        return CLAY_ERR_INVALID_ARG;
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return CLAY_ERR_IO;
+    try {
+        return runtime->impl.audio_load_stream(path, stream_id)
+                   ? CLAY_OK
+                   : CLAY_ERR_PARSE;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_PARSE;
+    }
+}
+
 extern "C" uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                  uint32_t clip_id, int bus,
                                                  bool loop, float gain) {
@@ -562,9 +580,31 @@ extern "C" uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" uint32_t
+cl_engine_runtime_audio_play_stream(cl_engine_runtime *runtime,
+                                    uint32_t stream_id, int bus, bool loop,
+                                    float gain) {
+    if (!runtime || stream_id == 0 || !valid_audio_bus(bus) ||
+        !std::isfinite(gain))
+        return 0;
+    try {
+        return runtime->impl.audio_play_stream(stream_id, audio_bus(bus), loop,
+                                               gain);
+    } catch (...) {
+        return 0;
+    }
+}
+
 extern "C" bool cl_engine_runtime_audio_unload_clip(cl_engine_runtime *runtime,
                                                     uint32_t clip_id) {
     return runtime && clip_id != 0 && runtime->impl.audio_unload_clip(clip_id);
+}
+
+extern "C" bool
+cl_engine_runtime_audio_unload_stream(cl_engine_runtime *runtime,
+                                      uint32_t stream_id) {
+    return runtime && stream_id != 0 &&
+           runtime->impl.audio_unload_stream(stream_id);
 }
 
 extern "C" bool cl_engine_runtime_audio_stop(cl_engine_runtime *runtime,
@@ -656,6 +696,17 @@ extern "C" uint32_t cl_engine_runtime_audio_crossfade_music(
     }
 }
 
+extern "C" uint32_t cl_engine_runtime_audio_crossfade_music_stream(
+    cl_engine_runtime *runtime, uint32_t stream_id, size_t duration_frames) {
+    if (!runtime || stream_id == 0) return 0;
+    try {
+        return runtime->impl.audio_crossfade_music_stream(stream_id,
+                                                          duration_frames);
+    } catch (...) {
+        return 0;
+    }
+}
+
 extern "C" bool
 cl_engine_runtime_audio_voice_active(const cl_engine_runtime *runtime,
                                      uint32_t voice_id) {
@@ -675,6 +726,14 @@ cl_engine_runtime_audio_clip_frame_count(const cl_engine_runtime *runtime,
                                          uint32_t clip_id) {
     return runtime && clip_id != 0
                ? runtime->impl.audio_clip_frame_count(clip_id)
+               : 0;
+}
+
+extern "C" size_t
+cl_engine_runtime_audio_stream_frame_count(const cl_engine_runtime *runtime,
+                                           uint32_t stream_id) {
+    return runtime && stream_id != 0
+               ? runtime->impl.audio().stream_frame_count(stream_id)
                : 0;
 }
 
