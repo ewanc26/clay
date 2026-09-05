@@ -158,6 +158,10 @@ CLAY_API bool cl_engine_runtime_audio_set_voice_gain(
     cl_engine_runtime *runtime, uint32_t voice_id, float gain);
 CLAY_API float cl_engine_runtime_audio_voice_gain(
     const cl_engine_runtime *runtime, uint32_t voice_id);
+/* Linearly fades a voice over duration_frames mixer frames. */
+CLAY_API bool cl_engine_runtime_audio_fade_voice(
+    cl_engine_runtime *runtime, uint32_t voice_id, float target_gain,
+    size_t duration_frames);
 CLAY_API bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id);
 CLAY_API bool cl_engine_runtime_audio_voice_paused(

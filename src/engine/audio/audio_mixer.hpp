@@ -87,8 +87,8 @@ class AudioMixer {
 
         const AudioVoiceId id = next_voice_id_++;
         voices_.push_back(
-            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, 0.0F, false,
-                  true});
+            Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, 0.0F,
+                  clamp_gain(gain), 0.0F, 0, false, true});
         return id;
     }
 
@@ -141,6 +141,28 @@ class AudioMixer {
         for (Voice &voice : voices_) {
             if (voice.id == id && voice.active) {
                 voice.gain = clamp_gain(gain);
+                voice.fade_target = voice.gain;
+                voice.fade_step = 0.0F;
+                voice.fade_remaining = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool fade_voice(AudioVoiceId id, float target_gain,
+                    std::size_t duration_frames) noexcept {
+        std::lock_guard lock(mutex_);
+        if (!std::isfinite(target_gain)) return false;
+        for (Voice &voice : voices_) {
+            if (voice.id == id && voice.active) {
+                voice.fade_target = clamp_gain(target_gain);
+                voice.fade_remaining = duration_frames;
+                voice.fade_step = duration_frames == 0
+                                      ? 0.0F
+                                      : (voice.fade_target - voice.gain) /
+                                            static_cast<float>(duration_frames);
+                if (duration_frames == 0) voice.gain = voice.fade_target;
                 return true;
             }
         }
@@ -260,7 +282,6 @@ class AudioMixer {
             const float bus_gain_value = voice.bus == AudioBus::Sfx
                                              ? sfx_gain_
                                              : music_gain_;
-            const float gain = master_gain_ * bus_gain_value * voice.gain;
             const float left_pan_gain =
                 voice.pan > 0.0F ? 1.0F - voice.pan : 1.0F;
             const float right_pan_gain =
@@ -279,10 +300,19 @@ class AudioMixer {
                 const std::size_t index = voice.cursor * clip.channels;
                 const float left = clip.samples[index];
                 const float right = clip.channels == 1 ? left : clip.samples[index + 1];
+                const float gain = master_gain_ * bus_gain_value * voice.gain;
                 output[frame * 2] += left * gain * left_pan_gain;
                 output[frame * 2 + 1] += right * gain * right_pan_gain;
 
                 ++voice.cursor;
+                if (voice.fade_remaining > 0) {
+                    --voice.fade_remaining;
+                    if (voice.fade_remaining == 0) {
+                        voice.gain = voice.fade_target;
+                    } else {
+                        voice.gain += voice.fade_step;
+                    }
+                }
                 if (!voice.loop && voice.cursor >= clip_frames) {
                     voice.active = false;
                     break;
@@ -313,6 +343,9 @@ class AudioMixer {
         float gain;
         bool loop;
         float pan;
+        float fade_target;
+        float fade_step;
+        std::size_t fade_remaining;
         bool paused;
         bool active;
     };

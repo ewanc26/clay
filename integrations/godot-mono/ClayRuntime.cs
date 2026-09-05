@@ -243,6 +243,9 @@ public sealed class ClayRuntime : IDisposable
 
     public float GetAudioGain(uint voice) => Native.AudioVoiceGain(handle, voice);
 
+    public bool FadeAudio(uint voice, float targetGain, nuint durationFrames) =>
+        Native.AudioFadeVoice(handle, voice, targetGain, durationFrames);
+
     public bool IsAudioPlaying(uint voice) => Native.AudioVoiceActive(handle, voice);
 
     public bool IsAudioPaused(uint voice) => Native.AudioVoicePaused(handle, voice);
@@ -423,6 +426,11 @@ public sealed class ClayRuntime : IDisposable
                                                       uint voice, float gain);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_gain")]
         public static extern float AudioVoiceGain(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_fade_voice")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool AudioFadeVoice(RuntimeHandle runtime, uint voice,
+                                                  float targetGain,
+                                                  nuint durationFrames);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_voice_active")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioVoiceActive(RuntimeHandle runtime, uint voice);

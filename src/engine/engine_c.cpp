@@ -542,6 +542,14 @@ extern "C" float cl_engine_runtime_audio_voice_gain(
                : 0.0F;
 }
 
+extern "C" bool cl_engine_runtime_audio_fade_voice(
+    cl_engine_runtime *runtime, uint32_t voice_id, float target_gain,
+    size_t duration_frames) {
+    return runtime && voice_id != 0 && std::isfinite(target_gain) &&
+           runtime->impl.audio_fade_voice(voice_id, target_gain,
+                                          duration_frames);
+}
+
 extern "C" bool cl_engine_runtime_audio_voice_active(
     const cl_engine_runtime *runtime, uint32_t voice_id) {
     return runtime && voice_id != 0 && runtime->impl.audio_voice_active(voice_id);

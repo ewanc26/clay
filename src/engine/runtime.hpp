@@ -99,6 +99,10 @@ class Runtime {
     float audio_voice_gain(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_gain(voice_id);
     }
+    bool audio_fade_voice(AudioVoiceId voice_id, float target_gain,
+                          std::size_t duration_frames) noexcept {
+        return audio_.fade_voice(voice_id, target_gain, duration_frames);
+    }
     bool audio_voice_active(AudioVoiceId voice_id) const noexcept {
         return audio_.voice_active(voice_id);
     }
