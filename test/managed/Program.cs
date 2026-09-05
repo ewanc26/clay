@@ -115,6 +115,9 @@ try
     Require(runtime.SetAudioPan(voice, 1) &&
             Math.Abs(runtime.GetAudioPan(voice) - 1) < 0.001f,
         "Managed audio pan did not cross the native ABI");
+    Require(runtime.SetAudioGain(voice, 0.5f) &&
+            Math.Abs(runtime.GetAudioGain(voice) - 0.5f) < 0.001f,
+        "Managed audio gain did not cross the native ABI");
     float[] audio = { 9, 9, 9, 9 };
     runtime.MixAudio(audio);
     Require(Math.Abs(audio[0]) < 0.001f
