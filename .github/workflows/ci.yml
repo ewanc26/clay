@@ -169,8 +169,24 @@ jobs:
           echo "GODOT_MONO_BIN=$godot" >> "$GITHUB_ENV"
 
       - name: Build Clay shared library
-        run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF
+        run: cmake -S . -B build -DCLAY_BUILD_TESTS=OFF -DCLAY_BUILD_INTERACTIVE=OFF -DCLAY_BUILD_GDEXTENSION=ON
       - name: Compile Clay shared library
         run: cmake --build build --config Debug -j
       - name: Run Godot Mono smoke test
         run: ./scripts/godot_mono_smoke.sh
+
+      - name: Stage GDExtension smoke library
+        shell: bash
+        run: |
+          cmake --install build --config Debug --prefix build/sdk
+          mkdir -p integrations/godot-gdextension/bin
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            cp build/sdk/integrations/godot-gdextension/bin/libclay_gdextension.dylib \
+              integrations/godot-gdextension/bin/
+          else
+            cp build/sdk/integrations/godot-gdextension/bin/libclay_gdextension.so \
+              integrations/godot-gdextension/bin/
+          fi
+
+      - name: Run GDExtension headless smoke test
+        run: "$GODOT_MONO_BIN" --headless --path integrations/godot-gdextension --quit-after 2
