@@ -62,6 +62,8 @@ clay_cpp_test(test_reactions)
 clay_cpp_test(test_runtime)
 clay_cpp_test(test_clay_file)
 clay_cpp_test(test_engine_c_api)
+target_compile_definitions(test_engine_c_api PRIVATE
+  CLAY_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/test/data")
 
 # MSVC does not expose the non-standard M_PI constant by default. The runtime
 # test predates the portable CL_PI constant, so enable Microsoft's compatibility

@@ -206,6 +206,13 @@ public sealed class ClayRuntime : IDisposable
         return clip;
     }
 
+    public uint LoadAudioFile(string path)
+    {
+        if (path == null) throw new ArgumentNullException(nameof(path));
+        Check(Native.AudioLoadFile(handle, path, out uint clip));
+        return clip;
+    }
+
     public bool UnloadAudio(uint clip) => Native.AudioUnloadClip(handle, clip);
 
     public uint PlayAudio(uint clip, ClayAudioBus bus = ClayAudioBus.Sfx,
@@ -351,6 +358,9 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_load_wav")]
         public static extern int AudioLoadWav(RuntimeHandle runtime, string path,
                                                out uint clip);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_load_file")]
+        public static extern int AudioLoadFile(RuntimeHandle runtime, string path,
+                                                out uint clip);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_play")]
         public static extern uint AudioPlay(RuntimeHandle runtime, uint clip,
                                              int bus,

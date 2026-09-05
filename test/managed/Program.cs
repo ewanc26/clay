@@ -83,6 +83,10 @@ File.WriteAllBytes(audioPath, new byte[] {
 });
 try
 {
+    Require(runtime.AudioSampleRate == 48000, "Managed audio rate query failed");
+    uint genericClip = runtime.LoadAudioFile(audioPath);
+    Require(runtime.UnloadAudio(genericClip),
+        "Managed generic audio clip did not unload");
     uint clip = runtime.LoadWav(audioPath);
     uint voice = runtime.PlayAudio(clip);
     float[] audio = { 9, 9, 9, 9 };

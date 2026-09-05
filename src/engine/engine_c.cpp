@@ -462,6 +462,20 @@ extern "C" cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
     }
 }
 
+extern "C" cl_err cl_engine_runtime_audio_load_file(cl_engine_runtime *runtime,
+                                                    const char *path,
+                                                    uint32_t *clip_id) {
+    if (!runtime || !path || path[0] == '\0' || !clip_id)
+        return CLAY_ERR_INVALID_ARG;
+    try {
+        return runtime->impl.audio_load_file(path, clip_id);
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_IO;
+    }
+}
+
 extern "C" uint32_t cl_engine_runtime_audio_play(cl_engine_runtime *runtime,
                                                  uint32_t clip_id, int bus,
                                                  bool loop, float gain) {

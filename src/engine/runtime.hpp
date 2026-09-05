@@ -80,6 +80,7 @@ class Runtime {
     cl_err save_recording(const std::string &path) const;
     cl_err load_recording(const std::string &path);
     cl_err audio_load_wav(const std::string &path, AudioClipId *clip_id);
+    cl_err audio_load_file(const std::string &path, AudioClipId *clip_id);
     bool audio_unload_clip(AudioClipId clip_id);
     AudioVoiceId audio_play(AudioClipId clip_id, AudioBus bus, bool loop,
                             float gain);

@@ -3,11 +3,77 @@
 
 #include <clay/engine_c.h>
 
+#include <array>
 #include <filesystem>
+#include <cstring>
 #include <limits>
 #include <fstream>
 #include <string>
 #include <vector>
+
+static std::vector<unsigned char> decode_base64(const std::string &text) {
+    static constexpr char alphabet[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::vector<unsigned char> output;
+    std::array<int, 4> group{};
+    size_t group_size = 0;
+    for (unsigned char c : text) {
+        if (c == '\n' || c == '\r' || c == ' ' || c == '\t')
+            continue;
+        if (c == '=') {
+            group[group_size++] = 64;
+        } else {
+            const char *found = std::strchr(alphabet, c);
+            if (!found) continue;
+            group[group_size++] = static_cast<int>(found - alphabet);
+        }
+        if (group_size == group.size()) {
+            output.push_back(static_cast<unsigned char>((group[0] << 2) |
+                                                        (group[1] >> 4)));
+            if (group[2] != 64)
+                output.push_back(static_cast<unsigned char>(
+                    (group[1] << 4) | (group[2] >> 2)));
+            if (group[3] != 64)
+                output.push_back(static_cast<unsigned char>(
+                    (group[2] << 6) | group[3]));
+            group_size = 0;
+        }
+    }
+    return output;
+}
+
+TEST_CASE("C ABI decodes a generic FLAC audio file") {
+    std::ifstream encoded(std::string(CLAY_TEST_DATA_DIR) +
+                          "/tiny-flac.flac.b64");
+    REQUIRE(encoded);
+    const std::string text((std::istreambuf_iterator<char>(encoded)),
+                           std::istreambuf_iterator<char>());
+    const auto flac = decode_base64(text);
+    REQUIRE(flac.size() > 100);
+    const auto path = std::filesystem::temp_directory_path() /
+                      "clay-engine-c-api-flac.flac";
+    std::ofstream output(path, std::ios::binary);
+    REQUIRE(output);
+    output.write(reinterpret_cast<const char *>(flac.data()),
+                 static_cast<std::streamsize>(flac.size()));
+    output.close();
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 2);
+    REQUIRE(runtime != nullptr);
+    uint32_t clip = 0;
+    CHECK(cl_engine_runtime_audio_load_file(runtime, path.string().c_str(),
+                                            &clip) == CLAY_OK);
+    REQUIRE(clip != 0);
+    const uint32_t voice =
+        cl_engine_runtime_audio_play(runtime, clip, 0, false, 1.0F);
+    REQUIRE(voice != 0);
+    float samples[32] = {};
+    CHECK(cl_engine_runtime_audio_mix_stereo(runtime, samples, 32) == CLAY_OK);
+    bool nonzero = false;
+    for (float sample : samples) nonzero |= sample != 0.0F;
+    CHECK(nonzero);
+    cl_engine_runtime_destroy(runtime);
+    std::filesystem::remove(path);
+}
 
 static std::vector<unsigned char> tiny_wav() {
     return {'R',  'I',  'F', 'F', 38,   0,    0, 0, 'W',  'A', 'V', 'E',

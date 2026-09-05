@@ -2,6 +2,7 @@
 
 #include "render/raster.hpp"
 #include "render/scene3d.hpp"
+#include "miniaudio.h"
 
 #include <cmath>
 #include <cstring>
@@ -138,6 +139,40 @@ cl_err Runtime::audio_load_wav(const std::string &path, AudioClipId *clip_id) {
     auto clip = decode_wav(bytes);
     if (!clip.has_value()) return CLAY_ERR_PARSE;
     auto id = audio_.add_clip(std::move(*clip));
+    if (!id.has_value()) return CLAY_ERR_INVALID_ARG;
+    *clip_id = *id;
+    return CLAY_OK;
+}
+
+cl_err Runtime::audio_load_file(const std::string &path, AudioClipId *clip_id) {
+    if (path.empty() || clip_id == nullptr) return CLAY_ERR_INVALID_ARG;
+
+    ma_decoder_config config = ma_decoder_config_init(
+        ma_format_f32, 2, static_cast<ma_uint32>(audio_.sample_rate()));
+    ma_decoder decoder{};
+    if (ma_decoder_init_file(path.c_str(), &config, &decoder) != MA_SUCCESS)
+        return CLAY_ERR_IO;
+
+    AudioClip clip{audio_.sample_rate(), 2, {}};
+    constexpr ma_uint64 kFramesPerRead = 4096;
+    std::vector<float> chunk(kFramesPerRead * 2);
+    for (;;) {
+        ma_uint64 frames_read = 0;
+        const ma_result result = ma_decoder_read_pcm_frames(
+            &decoder, chunk.data(), kFramesPerRead, &frames_read);
+        if (result != MA_SUCCESS && result != MA_AT_END) {
+            ma_decoder_uninit(&decoder);
+            return CLAY_ERR_PARSE;
+        }
+        clip.samples.insert(
+            clip.samples.end(), chunk.begin(),
+            chunk.begin() + static_cast<std::ptrdiff_t>(frames_read * 2));
+        if (result == MA_AT_END || frames_read < kFramesPerRead) break;
+    }
+    ma_decoder_uninit(&decoder);
+    if (!clip.valid()) return CLAY_ERR_PARSE;
+
+    auto id = audio_.add_clip(std::move(clip));
     if (!id.has_value()) return CLAY_ERR_INVALID_ARG;
     *clip_id = *id;
     return CLAY_OK;
