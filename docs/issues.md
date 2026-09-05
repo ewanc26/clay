@@ -22,3 +22,9 @@ loading for FLAC, MP3, and Ogg Vorbis, headless mixing, clip unload, optional
 realtime playback, and host sample-rate discovery. Streaming, crossfades, and
 a C-ABI-owned audio
 device lifecycle remain future work. Track these in GitHub issue #15.
+
+## CI workflow execution
+
+Feature-branch push runs are currently created with a failed conclusion but no
+jobs, even though manual dispatch runs execute the matrix. Track the GitHub
+Actions trigger/configuration investigation in issue #49.
