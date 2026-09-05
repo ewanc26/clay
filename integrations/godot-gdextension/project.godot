@@ -1,0 +1,17 @@
+; Minimal headless project used by the Clay GDExtension smoke test.
+config_version=5
+
+[application]
+
+config/name="Clay GDExtension Smoke"
+run/main_scene="res://main.tscn"
+
+[display]
+
+window/size/viewport_width=16
+window/size/viewport_height=16
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

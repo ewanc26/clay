@@ -203,6 +203,9 @@ if(CLAY_BUILD_GDEXTENSION)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
   install(FILES integrations/godot-gdextension/clay.gdextension
     integrations/godot-gdextension/README.md
+    integrations/godot-gdextension/project.godot
+    integrations/godot-gdextension/main.tscn
+    integrations/godot-gdextension/main.gd
     DESTINATION integrations/godot-gdextension)
 endif()
 
