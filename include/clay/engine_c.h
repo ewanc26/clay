@@ -127,6 +127,8 @@ CLAY_API cl_err cl_engine_runtime_save_png(const cl_engine_runtime *runtime,
 
 /* Headless-safe software audio output. Samples are interleaved stereo float32
  * frames at 48 kHz. The caller owns the output buffer. */
+CLAY_API uint32_t cl_engine_runtime_audio_sample_rate(
+    const cl_engine_runtime *runtime);
 CLAY_API cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
                                                 const char *path,
                                                 uint32_t *clip_id);

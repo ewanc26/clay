@@ -247,9 +247,8 @@ extern "C" cl_err cl_engine_runtime_load_scene(cl_engine_runtime *runtime,
     }
 }
 
-extern "C" cl_err
-cl_engine_runtime_load_scene_file(cl_engine_runtime *runtime,
-                                  const char *path) {
+extern "C" cl_err cl_engine_runtime_load_scene_file(cl_engine_runtime *runtime,
+                                                    const char *path) {
     if (!runtime || !path || path[0] == '\0') return CLAY_ERR_INVALID_ARG;
     try {
         std::ifstream input(path, std::ios::binary);
@@ -444,6 +443,11 @@ clay::AudioBus audio_bus(int bus) {
     return bus == 1 ? clay::AudioBus::Music : clay::AudioBus::Sfx;
 }
 } // namespace
+
+extern "C" uint32_t cl_engine_runtime_audio_sample_rate(
+    const cl_engine_runtime *runtime) {
+    return runtime ? runtime->impl.audio_sample_rate() : 0;
+}
 
 extern "C" cl_err cl_engine_runtime_audio_load_wav(cl_engine_runtime *runtime,
                                                    const char *path,

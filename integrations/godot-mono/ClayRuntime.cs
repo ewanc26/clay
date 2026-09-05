@@ -219,6 +219,8 @@ public sealed class ClayRuntime : IDisposable
 
     public bool StopAudio(uint voice) => Native.AudioStop(handle, voice);
 
+    public uint AudioSampleRate => Native.AudioSampleRate(handle);
+
     public void MixAudio(float[] samples)
     {
         if (samples == null) throw new ArgumentNullException(nameof(samples));
@@ -360,6 +362,8 @@ public sealed class ClayRuntime : IDisposable
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_stop")]
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool AudioStop(RuntimeHandle runtime, uint voice);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_sample_rate")]
+        public static extern uint AudioSampleRate(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_audio_mix_stereo")]
         public static extern int AudioMixStereo(RuntimeHandle runtime,
                                                  [In, Out] float[] samples,

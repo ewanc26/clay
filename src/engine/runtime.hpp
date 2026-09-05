@@ -85,6 +85,9 @@ class Runtime {
                             float gain);
     bool audio_stop(AudioVoiceId voice_id);
     bool audio_mix_stereo(std::span<float> output);
+    std::uint32_t audio_sample_rate() const noexcept {
+        return audio_.sample_rate();
+    }
     bool resize(int width, int height);
     void destroy_entity(Entity e); /* publishes world.destroy */
     void flash(Color color, double duration);
