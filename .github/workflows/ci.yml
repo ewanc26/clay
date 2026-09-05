@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON -DCLAY_BUILD_INTERACTIVE=OFF
+        run: cmake -S . -B build -DCLAY_BUILD_TESTS=ON -DCLAY_BUILD_INTERACTIVE=OFF -DCLAY_BUILD_GDEXTENSION=ON
 
       - name: Build
         run: cmake --build build --config Debug -j
@@ -49,6 +49,11 @@ jobs:
           test -f build/sdk/integrations/godot-mono/export_presets.cfg
           test -x build/sdk/integrations/godot-mono/godot_mono_stage_native.sh
           test -f build/sdk/integrations/godot-mono/managed/ClayRuntime.csproj
+          test -f build/sdk/integrations/godot-gdextension/clay.gdextension
+          test -f build/sdk/integrations/godot-gdextension/README.md
+          test -f build/sdk/integrations/godot-gdextension/bin/libclay_gdextension.dylib || \
+            test -f build/sdk/integrations/godot-gdextension/bin/libclay_gdextension.so || \
+            test -f build/sdk/integrations/godot-gdextension/bin/clay_gdextension.dll
           test -f build/sdk/integrations/godot-mono/libclay_engine.dylib || \
             test -f build/sdk/integrations/godot-mono/libclay_engine.so || \
             test -f build/sdk/integrations/godot-mono/clay_engine.dll

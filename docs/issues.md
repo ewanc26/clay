@@ -9,11 +9,11 @@ exported x86_64 player with the native DLL staged beside the executable. The
 Linux and Windows workflows pin the official Godot .NET 4.7.2 editor/templates
 and verify their published SHA-256 digests before use.
 
-The current Mono integration uses a stable C ABI and P/Invoke. It does not
-provide a Godot entry symbol or `.gdextension` manifest, so it cannot be
-consumed as a first-class GDExtension. Decide whether to maintain a separate
-GDExtension adapter if a native Godot extension surface is needed in addition
-to the validated Mono integration.
+The optional `godot-gdextension` package now provides a loadable entry symbol
+and `.gdextension` manifest while reusing the stable C ABI. It intentionally
+registers no Godot classes yet, so exposing a first-class Clay node/resource
+surface, lifecycle ownership, and a Godot headless-frame smoke test remain
+future work in this issue.
 
 ## Audio subsystem
 

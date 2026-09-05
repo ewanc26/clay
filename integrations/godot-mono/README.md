@@ -75,9 +75,10 @@ and RGBA conversion buffers each frame, reallocating only when the render
 surface changes. The wrapper deliberately does not marshal Clay's C++ headers
 or expose native pointers to managed code.
 
-This is the Mono/P/Invoke integration path, not a Godot GDExtension. A
-GDExtension requires a Godot entry symbol and a `.gdextension` manifest in
-addition to a shared library; that adapter is a separate future integration.
+This is the Mono/P/Invoke integration path. The repository also provides a
+minimal native GDExtension bootstrap in `integrations/godot-gdextension/` for
+projects that need a `.gdextension` manifest and native entry symbol; it does
+not yet register a Godot class or resource surface.
 
 The committed `export_presets.cfg` provides reproducible macOS, Windows Desktop
 and Linux/X11 exports. After exporting on macOS, use the bundled helper to stage
@@ -131,6 +132,6 @@ runtime and exported-player smoke scripts set that path for their child
 processes. Windows resolves the staged DLL from the executable directory.
 
 Desktop Mono validation now covers real native loading on macOS, Linux, and
-Windows, including exported players on Linux and Windows. A first-class
-GDExtension remains a separate integration decision rather than a prerequisite
-for the Mono/P/Invoke package.
+Windows, including exported players on Linux and Windows. A full first-class
+Clay node/resource API remains separate from this Mono/P/Invoke package and
+the bootstrap.
