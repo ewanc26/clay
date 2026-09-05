@@ -147,7 +147,7 @@ target_include_directories(clay_core PUBLIC
 set_target_properties(clay_core PROPERTIES C_STANDARD 23 C_STANDARD_REQUIRED ON)
 # When the engine is a shared library it links the static core archive, so the
 # core objects must be position-independent or the Linux/Windows link fails.
-if(CLAY_BUILD_SHARED)
+if(CLAY_BUILD_SHARED OR CLAY_BUILD_GDEXTENSION)
   set_target_properties(clay_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 # On glibc, math functions (sqrtf, cosf, sinf) live in libm, not libc.
@@ -221,6 +221,9 @@ if(CLAY_BUILD_SHARED)
   endif()
 else()
   add_library(clay_engine STATIC ${CLAY_ENGINE_SOURCES})
+endif()
+if(CLAY_BUILD_GDEXTENSION AND NOT CLAY_BUILD_SHARED)
+  set_target_properties(clay_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 target_include_directories(clay_engine PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
