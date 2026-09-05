@@ -70,6 +70,9 @@ class Runtime {
                          Color color, float life);
     Entity spawn_ripple(float x, float y, float radius, Color color);
     bool load_actions(const std::string &text);
+    bool load_actions_file(const std::string &path);
+    bool load_reactions(const std::string &text);
+    bool load_reactions_file(const std::string &path);
     bool load_scene(const std::string &text);
     bool load_scene_file(const std::string &path);
     void unload_scene() noexcept;

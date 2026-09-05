@@ -181,8 +181,7 @@ extern "C" cl_err cl_engine_runtime_load_reactions(cl_engine_runtime *runtime,
                                                    const char *json) {
     if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
     try {
-        return runtime->impl.reactions().load_text(json) ? CLAY_OK
-                                                         : CLAY_ERR_PARSE;
+        return runtime->impl.load_reactions(json) ? CLAY_OK : CLAY_ERR_PARSE;
     } catch (const std::bad_alloc &) {
         return CLAY_ERR_OOM;
     } catch (...) {

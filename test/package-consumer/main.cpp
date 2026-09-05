@@ -31,5 +31,21 @@ int main() {
         return 1;
     runtime.unload_scene();
     std::filesystem::remove(scene_path);
+
+    const auto actions_path = std::filesystem::temp_directory_path() /
+                              "clay-package-consumer-actions.json";
+    const auto reactions_path = std::filesystem::temp_directory_path() /
+                                "clay-package-consumer-reactions.json";
+    {
+        std::ofstream actions(actions_path, std::ios::binary);
+        std::ofstream reactions(reactions_path, std::ios::binary);
+        actions << R"({"actions":{"primary":{"key":"SPACE"}}})";
+        reactions << R"({"rules":[]})";
+    }
+    if (!runtime.load_actions_file(actions_path.string()) ||
+        !runtime.load_reactions_file(reactions_path.string()))
+        return 1;
+    std::filesystem::remove(actions_path);
+    std::filesystem::remove(reactions_path);
     return 0;
 }

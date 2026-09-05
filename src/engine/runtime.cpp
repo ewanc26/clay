@@ -63,6 +63,28 @@ bool Runtime::load_actions(const std::string &text) {
     return true;
 }
 
+bool Runtime::load_actions_file(const std::string &path) {
+    if (path.empty()) return false;
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return false;
+    std::string text((std::istreambuf_iterator<char>(input)),
+                     std::istreambuf_iterator<char>());
+    return !text.empty() && load_actions(text);
+}
+
+bool Runtime::load_reactions(const std::string &text) {
+    return reactions_.load_text(text.c_str());
+}
+
+bool Runtime::load_reactions_file(const std::string &path) {
+    if (path.empty()) return false;
+    std::ifstream input(path, std::ios::binary);
+    if (!input) return false;
+    std::string text((std::istreambuf_iterator<char>(input)),
+                     std::istreambuf_iterator<char>());
+    return !text.empty() && load_reactions(text);
+}
+
 bool Runtime::load_scene(const std::string &text) {
     auto scene = std::make_unique<ClayScene>();
     if (!scene->load(cl_str_c(text.c_str()))) return false;
