@@ -77,6 +77,17 @@ public sealed class ClayRuntime : IDisposable
     public void LoadActions(string json) => Check(
         Native.LoadActions(handle, json ?? throw new ArgumentNullException(nameof(json))));
 
+    public void LoadScene(string json)
+    {
+        Check(Native.LoadScene(handle,
+            json ?? throw new ArgumentNullException(nameof(json))));
+        pixelBuffer = new uint[checked(Width * Height)];
+    }
+
+    public bool HasScene => Native.HasScene(handle);
+
+    public void UnloadScene() => Native.UnloadScene(handle);
+
     public void SaveRecording(string path) => Check(
         Native.SaveRecording(handle, path ?? throw new ArgumentNullException(nameof(path))));
 
@@ -259,6 +270,13 @@ public sealed class ClayRuntime : IDisposable
         public static extern int LoadReactions(RuntimeHandle runtime, string json);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_actions")]
         public static extern int LoadActions(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_scene")]
+        public static extern int LoadScene(RuntimeHandle runtime, string json);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_unload_scene")]
+        public static extern void UnloadScene(RuntimeHandle runtime);
+        [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_has_scene")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool HasScene(RuntimeHandle runtime);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_save_recording")]
         public static extern int SaveRecording(RuntimeHandle runtime, string path);
         [DllImport("clay_engine", EntryPoint = "cl_engine_runtime_load_recording")]
