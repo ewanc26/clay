@@ -79,8 +79,9 @@ Filesystem-backed hosts can use `cl_engine_runtime_load_actions_file` and
 source code; unreadable paths return `CLAY_ERR_IO`.
 Hosts can also load a complete version-1 `.clay` document with
 `cl_engine_runtime_load_scene`; its render settings resolution is applied to
-the runtime, its authored `settings.seed` becomes the runtime seed, and its 3D
-scene becomes the active render system. Query the effective seed with
+the runtime when present, its authored `settings.seed` becomes the runtime
+seed, and its 3D scene becomes the active render system. If the scene omits
+render dimensions, the host size is preserved. Query the effective seed with
 `cl_engine_runtime_seed`. Use
 `cl_engine_runtime_has_scene` and `cl_engine_runtime_unload_scene` to manage
 that owned scene. Hosts with a filesystem path can use

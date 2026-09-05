@@ -61,6 +61,10 @@ renderer itself does not read wall-clock time.
 - `width` and `height`: positive integer dimensions, currently limited to 8192.
 - `clear`: `[r,g,b]` or `[r,g,b,a]`, integer channels from 0 through 255.
 
+When a host loads a scene without `settings.render.width`, `height`, or the
+legacy `resolution` alias, its existing render dimensions are preserved. A
+scene that supplies either form applies the authored dimensions.
+
 The early demo spelling `"resolution": [width, height]` remains accepted as a
 v1 compatibility alias. New files should use `settings.render`.
 
