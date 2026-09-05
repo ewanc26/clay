@@ -102,6 +102,8 @@ TEST_CASE("C ABI decodes a generic FLAC audio file") {
                                               &stream) == CLAY_OK);
     REQUIRE(stream != 0);
     CHECK(cl_engine_runtime_audio_stream_frame_count(runtime, stream) > 0);
+    CHECK(cl_engine_runtime_audio_stream_read_status(runtime, stream) ==
+          CLAY_AUDIO_STREAM_READY);
     const uint32_t stream_voice =
         cl_engine_runtime_audio_play_stream(runtime, stream, 1, true, 1.0F);
     REQUIRE(stream_voice != 0);

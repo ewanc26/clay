@@ -22,6 +22,12 @@ extern "C" {
  * integrations such as Godot Mono; callers must not inspect its contents. */
 typedef struct cl_engine_runtime cl_engine_runtime;
 
+typedef enum cl_audio_stream_read_status {
+    CLAY_AUDIO_STREAM_READY = 0,
+    CLAY_AUDIO_STREAM_END_OF_STREAM = 1,
+    CLAY_AUDIO_STREAM_ERROR = 2,
+} cl_audio_stream_read_status;
+
 /* Increment when the host-facing ABI changes incompatibly. */
 #define CLAY_ENGINE_ABI_VERSION 1u
 /* Minimum arena needed for mandatory runtime initialization. */
@@ -206,11 +212,10 @@ CLAY_API size_t cl_engine_runtime_audio_clip_frame_count(
     const cl_engine_runtime *runtime, uint32_t clip_id);
 CLAY_API size_t cl_engine_runtime_audio_stream_frame_count(
     const cl_engine_runtime *runtime, uint32_t stream_id);
-/* Status of the most recent decoder read: 0 ready, 1 end-of-stream, 2 error.
- * An unknown or unloaded stream reports error. Looping voices rewind before
- * the next read, so callers that need the boundary can inspect this after a
- * mix callback. */
-CLAY_API int cl_engine_runtime_audio_stream_read_status(
+/* An unknown or unloaded stream reports CLAY_AUDIO_STREAM_ERROR. Looping
+ * voices rewind before the next read, so callers that need the boundary can
+ * inspect this after a mix callback. */
+CLAY_API cl_audio_stream_read_status cl_engine_runtime_audio_stream_read_status(
     const cl_engine_runtime *runtime, uint32_t stream_id);
 CLAY_API cl_err cl_engine_runtime_audio_mix_stereo(cl_engine_runtime *runtime,
                                                   float *samples,
