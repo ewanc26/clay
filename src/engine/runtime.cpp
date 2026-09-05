@@ -90,11 +90,14 @@ bool Runtime::load_scene(const std::string &text) {
     auto scene = std::make_unique<ClayScene>();
     if (!scene->load(cl_str_c(text.c_str()))) return false;
 
-    if (!scene_restore_valid_ ||
-        (scene_ && render_system_ != scene_system_.get())) {
-        scene_restore_render_system_ = render_system_;
-        scene_restore_valid_ = true;
-    }
+    RenderSystem *restore_render_system = scene_restore_render_system_;
+    bool set_restore_render_system = !scene_restore_valid_;
+    if (scene_ && render_system_ != scene_system_.get())
+        set_restore_render_system = true;
+    if (set_restore_render_system) restore_render_system = render_system_;
+
+    /* Construct all replacement state before mutating the live scene. */
+    auto system = std::make_unique<Scene3DRenderSystem>(*scene);
 
     if (scene->settings().has_resolution) {
         const auto &resolution = scene->settings().resolution;
@@ -108,7 +111,10 @@ bool Runtime::load_scene(const std::string &text) {
         cl_rng_seed(&rng_, seed_);
     }
 
-    auto system = std::make_unique<Scene3DRenderSystem>(*scene);
+    if (set_restore_render_system) {
+        scene_restore_render_system_ = restore_render_system;
+        scene_restore_valid_ = true;
+    }
     scene_ = std::move(scene);
     scene_system_ = std::move(system);
     render_system_ = scene_system_.get();

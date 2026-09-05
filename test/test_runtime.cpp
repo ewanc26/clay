@@ -335,6 +335,23 @@ TEST_CASE("runtime: unloading a scene restores the host render system") {
     CHECK(rt.render_system() == &blank);
 }
 
+TEST_CASE("runtime: replacing a scene tracks a host renderer override") {
+    class BlankRenderSystem final : public RenderSystem {
+      public:
+        void render(Runtime &, IRenderer &) override {}
+    };
+
+    Runtime rt(64, 64, 99);
+    BlankRenderSystem first;
+    BlankRenderSystem second;
+    rt.set_render_system(&first);
+    REQUIRE(rt.load_scene("{\"version\":1,\"scene\":[]}"));
+    rt.set_render_system(&second);
+    REQUIRE(rt.load_scene("{\"version\":1,\"scene\":[]}"));
+    rt.unload_scene();
+    CHECK(rt.render_system() == &second);
+}
+
 TEST_CASE("runtime: scene graph resolves parent/child world transforms") {
     Runtime rt(320, 240, 42);
     rt.systems().add(std::make_unique<SceneGraphSystem>());
