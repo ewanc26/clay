@@ -224,7 +224,7 @@ TEST_CASE("audio mixer crossfades music voices") {
                                                         0.25F}});
     REQUIRE(old_clip.has_value());
     REQUIRE(new_clip.has_value());
-    REQUIRE(mixer.play(*old_clip, AudioBus::Music).has_value());
+    REQUIRE(mixer.play(*old_clip, AudioBus::Music, true).has_value());
     auto voice = mixer.crossfade_music(*new_clip, 2);
     REQUIRE(voice.has_value());
 
@@ -233,7 +233,7 @@ TEST_CASE("audio mixer crossfades music voices") {
     CHECK(output[0] == doctest::Approx(1.0F));
     CHECK(output[2] == doctest::Approx(0.625F));
     CHECK(output[4] == doctest::Approx(0.25F));
-    CHECK(mixer.voice_count() == 2);
+    CHECK(mixer.voice_count() == 1);
 
     output = {};
     REQUIRE(mixer.mix_stereo(output));
