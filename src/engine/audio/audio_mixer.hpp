@@ -88,7 +88,7 @@ class AudioMixer {
         const AudioVoiceId id = next_voice_id_++;
         voices_.push_back(
             Voice{id, clip_id, 0, bus, clamp_gain(gain), loop, 0.0F,
-                  clamp_gain(gain), 0.0F, 0, false, true});
+                  clamp_gain(gain), 0.0F, 0, false, false, true});
         return id;
     }
 
@@ -101,11 +101,15 @@ class AudioMixer {
             if (!voice.active || voice.bus != AudioBus::Music) continue;
             voice.fade_target = 0.0F;
             voice.fade_remaining = duration_frames;
+            voice.fade_stop_when_done = true;
             voice.fade_step = duration_frames == 0
                                   ? 0.0F
                                   : -voice.gain /
                                         static_cast<float>(duration_frames);
-            if (duration_frames == 0) voice.gain = 0.0F;
+            if (duration_frames == 0) {
+                voice.gain = 0.0F;
+                voice.active = false;
+            }
         }
 
         const AudioVoiceId id = next_voice_id_++;
@@ -116,7 +120,7 @@ class AudioMixer {
                                           static_cast<float>(duration_frames);
         voices_.push_back(Voice{id, clip_id, 0, AudioBus::Music, initial_gain,
                                 false, 0.0F, 1.0F, fade_step,
-                                duration_frames, false, true});
+                                duration_frames, false, false, true});
         return id;
     }
 
@@ -172,6 +176,7 @@ class AudioMixer {
                 voice.fade_target = voice.gain;
                 voice.fade_step = 0.0F;
                 voice.fade_remaining = 0;
+                voice.fade_stop_when_done = false;
                 return true;
             }
         }
@@ -186,6 +191,7 @@ class AudioMixer {
             if (voice.id == id && voice.active) {
                 voice.fade_target = clamp_gain(target_gain);
                 voice.fade_remaining = duration_frames;
+                voice.fade_stop_when_done = false;
                 voice.fade_step = duration_frames == 0
                                       ? 0.0F
                                       : (voice.fade_target - voice.gain) /
@@ -337,10 +343,12 @@ class AudioMixer {
                     --voice.fade_remaining;
                     if (voice.fade_remaining == 0) {
                         voice.gain = voice.fade_target;
+                        if (voice.fade_stop_when_done) voice.active = false;
                     } else {
                         voice.gain += voice.fade_step;
                     }
                 }
+                if (!voice.active) break;
                 if (!voice.loop && voice.cursor >= clip_frames) {
                     voice.active = false;
                     break;
@@ -375,6 +383,7 @@ class AudioMixer {
         float fade_step;
         std::size_t fade_remaining;
         bool paused;
+        bool fade_stop_when_done;
         bool active;
     };
 
