@@ -126,6 +126,9 @@ right; `GetAudioPan` reads the current per-voice value. `SetAudioGain` and
 target gain over a specified number of mixer frames for deterministic fades
 and crossfades. `CrossfadeMusic` starts a music-bus voice while fading existing
 music voices out over the same number of mixer frames.
+`LoadAudioStream`, `PlayAudioStream`, and `CrossfadeMusicStream` keep long-form
+audio in a decoder-backed source and read frames incrementally during mixing;
+`GetAudioStreamFrames` reports its decoded duration.
 `SetAudioListenerPosition` and `SetAudioPosition` enable deterministic 2D
 spatialization in canvas coordinates. A spatial voice uses linear attenuation
 from full volume at the listener to silence at `maxDistance`, and its

@@ -18,12 +18,12 @@ future work in this issue.
 ## Audio subsystem
 
 The standalone and managed paths now validate WAV loading, generic miniaudio
-loading for FLAC, MP3, and Ogg Vorbis, headless mixing, clip unload, optional
-realtime playback, host sample-rate discovery, deterministic fades, and music
-crossfades. Streaming remains future work; the C ABI now also exposes an
-optional owned playback-device lifecycle that safely reports unavailable when
-the backend or platform device is absent, plus deterministic 2D source/listener
-spatialization. Track streamed music in GitHub issue #15.
+loading for FLAC, MP3, and Ogg Vorbis, decoder-backed streams, headless mixing,
+clip/stream unload, optional realtime playback, host sample-rate discovery,
+deterministic fades, music crossfades, an optional owned playback-device
+lifecycle, and deterministic 2D source/listener spatialization. Remaining work
+is production hardening around stream buffering/underflow policy and broader
+format/device matrix coverage. Track that follow-up in GitHub issue #15.
 
 ## CI workflow execution
 
