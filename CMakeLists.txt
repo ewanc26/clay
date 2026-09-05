@@ -46,6 +46,7 @@ option(CLAY_INSTALL_GODOT_NATIVE
 # ------------------------------------------------------------------ third party
 # Deliberate, minimal dependency set (see third_party/README.md):
 #   - GLFW          windowing + input presentation (bus-tested, from glfw.org)
+#   - miniaudio     optional realtime audio device (public domain / MIT-0)
 #   - stb_image     PNG decode (imageio)
 #   - stb_image_write PNG encode (imageio, framing dumps)
 #   - doctest       C++ unit test harness (the *test/*.cpp executables)

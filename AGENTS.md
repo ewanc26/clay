@@ -15,9 +15,10 @@ every layer of the stack.
 - **Build:** CMake, C23/C++23 strict, `-Wall -Wextra -Wpedantic`. Tests are
   per-file executables run through `ctest`, following the account's other
   native repos (`keepsake/`, `wolfram/`).
-- **Renderer:** a from-scratch software rasterizer (`src/engine/render/`).
-  GLFW is the *only* optional third-party dependency and it is purely a
-  presenter — Clay always renders through its own rasterizer first.
+- **Renderer/audio:** a from-scratch software rasterizer (`src/engine/render/`)
+  and mixer. GLFW is an optional presenter, while miniaudio is an optional
+  realtime playback backend; headless Clay does not require either device
+  layer.
 - **Target:** macOS and Linux desktop. Windows untested (as elsewhere in this
   account). Everything except interactive `clay_player` runs headless.
 

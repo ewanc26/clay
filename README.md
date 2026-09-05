@@ -1,8 +1,9 @@
 # CLAY
 
 A bespoke game engine from scratch: **C23 core, C++23 engine, no middleware.**
-The renderer is our own software rasterizer; the only optional dependency is
-GLFW, and only as a presenter for an already-rendered frame.
+The renderer is our own software rasterizer. GLFW is an optional presenter for
+an already-rendered frame, and miniaudio is an optional realtime playback
+backend; headless builds remain available without either device layer.
 
 Clay is *reactive to everything the player does*. Every raw input event is
 pushed onto a public event bus, recorded into an append-only log, promoted
