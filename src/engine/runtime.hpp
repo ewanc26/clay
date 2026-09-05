@@ -265,6 +265,8 @@ class Runtime {
     ReactionEngine reactions_;
     RendererSW renderer_;
     RenderSystem *render_system_ = nullptr;
+    RenderSystem *scene_restore_render_system_ = nullptr;
+    bool scene_restore_valid_ = false;
     std::unique_ptr<ClayScene> scene_;
     std::unique_ptr<Scene3DRenderSystem> scene_system_;
 

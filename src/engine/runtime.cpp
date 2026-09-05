@@ -90,6 +90,12 @@ bool Runtime::load_scene(const std::string &text) {
     auto scene = std::make_unique<ClayScene>();
     if (!scene->load(cl_str_c(text.c_str()))) return false;
 
+    if (!scene_restore_valid_ ||
+        (scene_ && render_system_ != scene_system_.get())) {
+        scene_restore_render_system_ = render_system_;
+        scene_restore_valid_ = true;
+    }
+
     if (scene->settings().has_resolution) {
         const auto &resolution = scene->settings().resolution;
         if ((resolution[0] != width_ || resolution[1] != height_) &&
@@ -119,9 +125,13 @@ bool Runtime::load_scene_file(const std::string &path) {
 }
 
 void Runtime::unload_scene() noexcept {
-    if (render_system_ == scene_system_.get()) render_system_ = nullptr;
+    if (render_system_ == scene_system_.get())
+        render_system_ = scene_restore_valid_ ? scene_restore_render_system_
+                                              : nullptr;
     scene_system_.reset();
     scene_.reset();
+    scene_restore_render_system_ = nullptr;
+    scene_restore_valid_ = false;
 }
 
 bool Runtime::has_scene() const noexcept { return scene_ != nullptr; }

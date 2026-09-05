@@ -320,6 +320,21 @@ TEST_CASE("runtime: a custom render system replaces the default draw pass") {
            fnv1a64(Runtime(64, 64, 99).framebuffer()));
 }
 
+TEST_CASE("runtime: unloading a scene restores the host render system") {
+    class BlankRenderSystem final : public RenderSystem {
+      public:
+        void render(Runtime &, IRenderer &) override {}
+    };
+
+    Runtime rt(64, 64, 99);
+    BlankRenderSystem blank;
+    rt.set_render_system(&blank);
+    REQUIRE(rt.load_scene("{\"version\":1,\"scene\":[]}"));
+    CHECK(rt.render_system() != &blank);
+    rt.unload_scene();
+    CHECK(rt.render_system() == &blank);
+}
+
 TEST_CASE("runtime: scene graph resolves parent/child world transforms") {
     Runtime rt(320, 240, 42);
     rt.systems().add(std::make_unique<SceneGraphSystem>());
