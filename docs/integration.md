@@ -108,6 +108,9 @@ construct `clay::AudioDevice device(runtime.audio())`, call `open()` and then
 `start()`, and stop it before destruction. This backend is built by default
 and can be disabled with `-DCLAY_BUILD_AUDIO_DEVICE=OFF`; C ABI and Godot hosts
 can instead pull mixed samples into their own audio callback.
+Developers with an available playback device can smoke-test the real callback
+with `CLAY_TEST_AUDIO_DEVICE=1 ./build/test/test_audio`; the regular test suite
+does not require hardware.
 The standalone window is resizable; the demo synchronizes the runtime canvas
 and recreates its presentation texture when the window size changes.
 The GLFW presenter also maps auxiliary mouse buttons and keypad digits to the
