@@ -189,4 +189,4 @@ jobs:
           fi
 
       - name: Run GDExtension headless smoke test
-        run: "$GODOT_MONO_BIN" --headless --path integrations/godot-gdextension --quit-after 2
+        run: ./scripts/godot_gdextension_smoke.sh

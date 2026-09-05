@@ -15,3 +15,5 @@ contract; no godot-cpp dependency is required.
 installed library staged in `bin/`, run `godot --headless --path . --quit`
 from this directory; successful startup instantiates `ClayRuntimeNode`, prints
 its native class name, and exits cleanly.
+The repository helper `scripts/godot_gdextension_smoke.sh` performs the same
+run and fails if Godot falls back to a placeholder node.
