@@ -156,6 +156,10 @@ set(CLAY_ENGINE_SOURCES
 )
 if(CLAY_BUILD_AUDIO_DEVICE)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/audio/audio_device.cpp)
+else()
+  # Keep miniaudio's file decoders available to the headless runtime without
+  # pulling in platform audio device backends.
+  list(APPEND CLAY_ENGINE_SOURCES src/engine/audio/audio_decoder.cpp)
 endif()
 if(CLAY_HAS_GLFW)
   list(APPEND CLAY_ENGINE_SOURCES src/engine/platform/window_glfw.cpp)
