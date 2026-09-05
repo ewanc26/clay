@@ -1,6 +1,7 @@
 #include <clay/engine_c.h>
 
 #include "imageio.hpp"
+#include "render/scene3d.hpp"
 #include "runtime.hpp"
 #include "systems/builtin.hpp"
 
@@ -40,6 +41,8 @@ template <typename Fn> cl_err guarded(Fn &&fn) {
 
 struct cl_engine_runtime {
     clay::Runtime impl;
+    std::unique_ptr<clay::ClayScene> scene;
+    std::unique_ptr<clay::Scene3DRenderSystem> scene_system;
 
     cl_engine_runtime(int width, int height, uint64_t seed, size_t arena_bytes)
         : impl(width, height, seed, arena_bytes) {}
@@ -192,6 +195,42 @@ extern "C" cl_err cl_engine_runtime_load_actions(cl_engine_runtime *runtime,
     } catch (...) {
         return CLAY_ERR_INVALID_ARG;
     }
+}
+
+extern "C" cl_err cl_engine_runtime_load_scene(cl_engine_runtime *runtime,
+                                                const char *json) {
+    if (!runtime || !json) return CLAY_ERR_INVALID_ARG;
+    try {
+        auto scene = std::make_unique<clay::ClayScene>();
+        if (!scene->load(cl_str_c(json))) return CLAY_ERR_PARSE;
+        const auto &resolution = scene->settings().resolution;
+        if (resolution[0] != runtime->impl.width() ||
+            resolution[1] != runtime->impl.height()) {
+            if (!runtime->impl.resize(resolution[0], resolution[1]))
+                return CLAY_ERR_INVALID_ARG;
+        }
+        auto system = std::make_unique<clay::Scene3DRenderSystem>(*scene);
+        runtime->scene = std::move(scene);
+        runtime->scene_system = std::move(system);
+        runtime->impl.set_render_system(runtime->scene_system.get());
+        return CLAY_OK;
+    } catch (const std::bad_alloc &) {
+        return CLAY_ERR_OOM;
+    } catch (...) {
+        return CLAY_ERR_INVALID_ARG;
+    }
+}
+
+extern "C" void cl_engine_runtime_unload_scene(cl_engine_runtime *runtime) {
+    if (!runtime) return;
+    runtime->impl.set_render_system(nullptr);
+    runtime->scene_system.reset();
+    runtime->scene.reset();
+}
+
+extern "C" bool cl_engine_runtime_has_scene(
+    const cl_engine_runtime *runtime) {
+    return runtime && runtime->scene != nullptr;
 }
 
 extern "C" cl_err

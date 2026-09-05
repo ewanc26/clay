@@ -43,6 +43,30 @@ TEST_CASE("C ABI exposes deterministic headless audio") {
     cl_engine_runtime_destroy(runtime);
 }
 
+TEST_CASE("C ABI owns an authored 3D scene render system") {
+    constexpr const char *scene = R"({
+      "version": 1,
+      "settings": {"render": {"width": 32, "height": 24}},
+      "meshes": [{"name": "cube", "primitive": "cube"}],
+      "scene": [{"component": "mesh", "mesh": "cube"}]
+    })";
+    cl_engine_runtime *runtime = cl_engine_runtime_create(8, 8, 9);
+    REQUIRE(runtime != nullptr);
+    CHECK(!cl_engine_runtime_has_scene(runtime));
+    CHECK(cl_engine_runtime_load_scene(runtime, scene) == CLAY_OK);
+    CHECK(cl_engine_runtime_has_scene(runtime));
+    CHECK(cl_engine_runtime_width(runtime) == 32);
+    CHECK(cl_engine_runtime_height(runtime) == 24);
+    CHECK(cl_engine_runtime_step(runtime, 1.0 / 60.0) == CLAY_OK);
+    size_t count = 0;
+    REQUIRE(cl_engine_runtime_pixels(runtime, &count) != nullptr);
+    CHECK(count == 32u * 24u);
+    cl_engine_runtime_unload_scene(runtime);
+    CHECK(!cl_engine_runtime_has_scene(runtime));
+    CHECK(cl_engine_runtime_step(runtime, 1.0 / 60.0) == CLAY_OK);
+    cl_engine_runtime_destroy(runtime);
+}
+
 TEST_CASE("C ABI runtime owns a deterministic rendered frame") {
     const std::filesystem::path temp_dir =
         std::filesystem::temp_directory_path();
