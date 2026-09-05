@@ -31,7 +31,9 @@ typedef struct cl_engine_runtime cl_engine_runtime;
 
 CLAY_API uint32_t cl_engine_runtime_abi_version(void);
 /* Returns a stable human-readable name for a C ABI error code. */
-CLAY_API const char *cl_engine_error_string(cl_err error);
+/* Accepts an integer so diagnostic callers can safely ask about unknown
+ * future/error codes without constructing an invalid cl_err enum value. */
+CLAY_API const char *cl_engine_error_string(int error);
 
 CLAY_API cl_engine_runtime *cl_engine_runtime_create(int width, int height,
                                                       uint64_t seed);

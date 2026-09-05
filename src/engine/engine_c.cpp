@@ -52,8 +52,12 @@ extern "C" uint32_t cl_engine_runtime_abi_version(void) {
     return CLAY_ENGINE_ABI_VERSION;
 }
 
-extern "C" const char *cl_engine_error_string(cl_err error) {
-    return cl_err_str(error);
+extern "C" const char *cl_engine_error_string(int error) {
+    if (error < static_cast<int>(CLAY_OK) ||
+        error > static_cast<int>(CLAY_ERR_OVERFLOW)) {
+        return "unknown";
+    }
+    return cl_err_str(static_cast<cl_err>(error));
 }
 
 extern "C" cl_engine_runtime *cl_engine_runtime_create(int width, int height,

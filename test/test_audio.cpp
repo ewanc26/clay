@@ -2,7 +2,9 @@
 #include <doctest/doctest.h>
 
 #include "audio/audio_decode.hpp"
+#if CLAY_BUILD_AUDIO_DEVICE
 #include "audio/audio_device.hpp"
+#endif
 #include "audio/audio_mixer.hpp"
 
 #include <cstdlib>
@@ -212,6 +214,7 @@ TEST_CASE("audio mixer rejects non-stereo output spans") {
     CHECK(output[2] == 0.0F);
 }
 
+#if CLAY_BUILD_AUDIO_DEVICE
 TEST_CASE("audio device remains safe before opening a platform device") {
     AudioMixer mixer;
     AudioDevice device(mixer);
@@ -228,6 +231,7 @@ TEST_CASE("audio device remains safe before opening a platform device") {
     REQUIRE(device.stop());
     CHECK_FALSE(device.is_started());
 }
+#endif
 
 TEST_CASE("WAV decoder converts signed 16-bit mono PCM") {
     auto wav = make_wav(1, 1, 48000, 16,

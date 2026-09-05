@@ -5,7 +5,15 @@
 #include <string.h>
 
 const char *cl_err_str(cl_err e) {
-    switch (e) {
+    /* C callers can pass any integer through the ABI. Validate before the
+     * switch so sanitizer-instrumented C++ hosts do not observe an invalid
+     * enum value as control flow. */
+    const int code = (int)e;
+    if (code < (int)CLAY_OK || code > (int)CLAY_ERR_OVERFLOW) {
+        return "unknown";
+    }
+
+    switch (code) {
     case CLAY_OK: return "ok";
     case CLAY_ERR_OOM: return "out of arena memory";
     case CLAY_ERR_PARSE: return "parse error";
