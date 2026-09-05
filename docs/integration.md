@@ -70,6 +70,9 @@ the C ABI with `cl_engine_runtime_load_actions`,
 `cl_engine_runtime_load_reactions`, `cl_engine_runtime_spawn_species`, and
 `cl_engine_runtime_spawn_ripple`. Both JSON loaders return `CLAY_ERR_PARSE` for
 invalid JSON; loading an action document replaces existing bindings.
+Filesystem-backed hosts can use `cl_engine_runtime_load_actions_file` and
+`cl_engine_runtime_load_reactions_file` to keep those data files outside host
+source code; unreadable paths return `CLAY_ERR_IO`.
 Hosts can also load a complete version-1 `.clay` document with
 `cl_engine_runtime_load_scene`; its render settings resolution is applied to
 the runtime and its 3D scene becomes the active render system. Use
