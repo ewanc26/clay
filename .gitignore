@@ -15,6 +15,7 @@ out/
 *.clayrec
 
 # Godot/.NET integration output
+integrations/godot-gdextension/.godot/
 integrations/godot-mono/.godot/
 integrations/godot-mono/bin/
 integrations/godot-mono/obj/
