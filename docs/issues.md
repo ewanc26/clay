@@ -10,9 +10,9 @@ Linux and Windows workflows pin the official Godot .NET 4.7.2 editor/templates
 and verify their published SHA-256 digests before use.
 
 The optional `godot-gdextension` package now provides a loadable entry symbol,
-`.gdextension` manifest, a native `ClayRuntimeNode`, and headless smoke coverage
-while reusing the stable C ABI. A richer resource surface and editor lifecycle
-ownership remain future work in this issue.
+`.gdextension` manifest, a native `ClayRuntimeNode` with owned runtime lifecycle,
+and headless smoke coverage while reusing the stable C ABI. A richer resource
+surface and editor lifecycle ownership remain future work in this issue.
 
 ## Audio subsystem
 

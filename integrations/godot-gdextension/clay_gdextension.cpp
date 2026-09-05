@@ -1,5 +1,7 @@
 #include "gdextension_interface_minimal.hpp"
 
+#include <clay/engine_c.h>
+
 namespace {
 
 struct Api {
@@ -15,7 +17,13 @@ struct Api {
 Api api;
 GDExtensionClassLibraryPtr class_library = nullptr;
 
+constexpr std::int32_t kNotificationProcess = 17;
+
 void noop_string_name_destructor(GDExtensionTypePtr) {}
+
+struct ClayRuntimeNode {
+    cl_engine_runtime *runtime{};
+};
 
 GDExtensionObjectPtr create_instance(void *) {
     GDExtensionStringName parent_name{};
@@ -25,8 +33,14 @@ GDExtensionObjectPtr create_instance(void *) {
     if (object == nullptr) {
         return nullptr;
     }
-    auto *instance = api.mem_alloc(sizeof(void *));
+    auto *instance = static_cast<ClayRuntimeNode *>(
+        api.mem_alloc(sizeof(ClayRuntimeNode)));
     if (instance == nullptr) {
+        return nullptr;
+    }
+    instance->runtime = cl_engine_runtime_create(320, 180, 0);
+    if (instance->runtime == nullptr) {
+        api.mem_free(instance);
         return nullptr;
     }
     GDExtensionStringName class_name{};
@@ -38,7 +52,18 @@ GDExtensionObjectPtr create_instance(void *) {
 
 void free_instance(void *, GDExtensionClassInstancePtr instance) {
     if (instance != nullptr) {
+        auto *node = static_cast<ClayRuntimeNode *>(instance);
+        cl_engine_runtime_destroy(node->runtime);
         api.mem_free(instance);
+    }
+}
+
+void notification(GDExtensionClassInstancePtr instance, std::int32_t what,
+                  GDExtensionBool) {
+    if (what != kNotificationProcess || instance == nullptr) return;
+    auto *node = static_cast<ClayRuntimeNode *>(instance);
+    if (node->runtime != nullptr) {
+        (void)cl_engine_runtime_step(node->runtime, 1.0 / 60.0);
     }
 }
 
@@ -63,7 +88,7 @@ void initialize(void *, GDExtensionInitializationLevel level) {
         .property_can_revert_func = nullptr,
         .property_get_revert_func = nullptr,
         .validate_property_func = nullptr,
-        .notification_func = nullptr,
+        .notification_func = notification,
         .to_string_func = nullptr,
         .reference_func = nullptr,
         .unreference_func = nullptr,

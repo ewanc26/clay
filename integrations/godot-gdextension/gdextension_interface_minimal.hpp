@@ -31,6 +31,8 @@ using GDExtensionStringNameNewWithLatin1Chars =
 using GDExtensionClassCreateInstance = GDExtensionObjectPtr (*)(void *);
 using GDExtensionClassFreeInstance =
     void (*)(void *, GDExtensionClassInstancePtr);
+using GDExtensionClassNotification2 =
+    void (*)(GDExtensionClassInstancePtr, std::int32_t, GDExtensionBool);
 
 struct GDExtensionClassCreationInfo2 {
     GDExtensionBool is_virtual;
@@ -43,7 +45,7 @@ struct GDExtensionClassCreationInfo2 {
     void *property_can_revert_func;
     void *property_get_revert_func;
     void *validate_property_func;
-    void *notification_func;
+    GDExtensionClassNotification2 notification_func;
     void *to_string_func;
     void *reference_func;
     void *unreference_func;
@@ -69,7 +71,7 @@ struct GDExtensionClassCreationInfo3 {
     void *property_can_revert_func;
     void *property_get_revert_func;
     void *validate_property_func;
-    void *notification_func;
+    GDExtensionClassNotification2 notification_func;
     void *to_string_func;
     void *reference_func;
     void *unreference_func;
