@@ -67,6 +67,14 @@ if(CLAY_BUILD_GDEXTENSION)
   target_include_directories(test_gdextension PRIVATE
     ${PROJECT_SOURCE_DIR}/integrations/godot-gdextension)
   target_link_libraries(test_gdextension PRIVATE clay_gdextension clay_third_party)
+  if(WIN32 AND CLAY_BUILD_SHARED)
+    add_custom_command(TARGET test_gdextension POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              $<TARGET_FILE:clay_gdextension> $<TARGET_FILE_DIR:test_gdextension>
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              $<TARGET_FILE:clay_engine> $<TARGET_FILE_DIR:test_gdextension>
+      VERBATIM)
+  endif()
   add_test(NAME test_gdextension COMMAND test_gdextension)
 endif()
 target_compile_definitions(test_engine_c_api PRIVATE
