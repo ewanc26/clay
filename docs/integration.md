@@ -131,6 +131,10 @@ spatialization in canvas coordinates. A spatial voice uses linear attenuation
 from full volume at the listener to silence at `maxDistance`, and its
 horizontal offset produces a clamped stereo pan. `ClearAudioPosition` returns
 a voice to its explicit gain/pan settings.
+Standalone C++ hosts can bind a voice to an ECS entity with the
+`AudioSource2D` component and install `AudioSourceSystem`; it follows the
+entity's resolved `WorldTransform2D`, including parent transforms, before the
+next audio mix.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
