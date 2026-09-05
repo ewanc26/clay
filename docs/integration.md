@@ -104,13 +104,14 @@ The headless audio mixer is available through
 `cl_engine_runtime_audio_sample_rate` rather than hard-coding the host rate.
 The default is interleaved stereo float32 at 48 kHz. `ClayRuntime` exposes the
 same operations as `LoadWav`, `LoadAudioFile`, `UnloadAudio`, `PlayAudio`, and
-`MixAudio`, plus `AudioSampleRate`. The strict WAV loader supports PCM and
+`MixAudio`, `PauseAudio`, and `ResumeAudio`, plus `AudioSampleRate`. The strict WAV loader supports PCM and
 IEEE-float clips at the mixer's sample rate; the generic loader uses
 miniaudio's enabled WAV, FLAC, and MP3 decoders and resamples to the mixer
 rate. `cl_engine_runtime_audio_clip_frame_count` and
 `cl_engine_runtime_audio_voice_active` let a host inspect decoded duration and
-playback state without duplicating mixer bookkeeping. The mixer performs mono
-expansion, looping, bus/master gain, and output clamping.
+playback state without duplicating mixer bookkeeping. Pausing a voice preserves
+its cursor and removes it from the playing state until resumed. The mixer
+performs mono expansion, looping, bus/master gain, and output clamping.
 Keyboard, motion, wheel, and focus events are available as dedicated helpers
 in `engine_c.h`, avoiding managed marshaling of the C event struct. The managed
 Godot facade exposes the same behavior through `IsFocused` and `FeedKeyAt`.
