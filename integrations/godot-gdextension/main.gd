@@ -1,4 +1,4 @@
-extends Node
+extends ClayRuntimeNode
 
 func _ready():
 	set_process(true)

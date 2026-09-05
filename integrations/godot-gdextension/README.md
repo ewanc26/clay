@@ -18,5 +18,7 @@ from this directory; successful startup instantiates `ClayRuntimeNode`, prints
 its native class name after one process frame, and exits cleanly. The node
 creates a 320x180 Clay runtime on construction and advances it from Godot's
 process notifications.
+Scripts extending `ClayRuntimeNode` can also call `advance_runtime()` to
+explicitly advance one fixed 1/60-second frame.
 The repository helper `scripts/godot_gdextension_smoke.sh` performs the same
 run and fails if Godot falls back to a placeholder node.

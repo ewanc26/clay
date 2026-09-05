@@ -18,7 +18,7 @@ if ! grep -q 'Clay GDExtension native node loaded: ClayRuntimeNode' "$run_log"; 
     echo "GDExtension smoke test did not instantiate ClayRuntimeNode" >&2
     exit 1
 fi
-if grep -Eq 'Cannot get class|WARNING: Node .*ClayRuntimeNode' "$run_log"; then
+if grep -Eq 'Cannot get class|WARNING: Node .*ClayRuntimeNode|SCRIPT ERROR|Failed to load script|Invalid call' "$run_log"; then
     echo "GDExtension smoke test reported a native class loading error" >&2
     exit 1
 fi

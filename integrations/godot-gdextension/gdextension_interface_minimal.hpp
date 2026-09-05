@@ -9,6 +9,7 @@ using GDExtensionClassLibraryPtr = void *;
 using GDExtensionObjectPtr = void *;
 using GDExtensionClassInstancePtr = void *;
 using GDExtensionTypePtr = void *;
+using GDExtensionConstTypePtr = const void *;
 using GDExtensionInterfaceFunctionPtr = void (*)();
 using GDExtensionInterfaceGetProcAddress =
     GDExtensionInterfaceFunctionPtr (*)(const char *);
@@ -33,6 +34,31 @@ using GDExtensionClassFreeInstance =
     void (*)(void *, GDExtensionClassInstancePtr);
 using GDExtensionClassNotification2 =
     void (*)(GDExtensionClassInstancePtr, std::int32_t, GDExtensionBool);
+using GDExtensionConstVariantPtr = const void *;
+using GDExtensionVariantPtr = void *;
+using GDExtensionClassMethodCall = void (*)(
+    void *, GDExtensionClassInstancePtr, const GDExtensionConstVariantPtr *,
+    std::int64_t, GDExtensionVariantPtr, void *);
+using GDExtensionClassMethodPtrCall = void (*)(
+    void *, GDExtensionClassInstancePtr, const GDExtensionConstTypePtr *,
+    GDExtensionTypePtr);
+using GDExtensionStringNamePtr = GDExtensionStringName *;
+
+struct GDExtensionClassMethodInfo {
+    GDExtensionStringNamePtr name;
+    void *method_userdata;
+    GDExtensionClassMethodCall call_func;
+    GDExtensionClassMethodPtrCall ptrcall_func;
+    std::uint32_t method_flags;
+    GDExtensionBool has_return_value;
+    void *return_value_info;
+    std::uint32_t return_value_metadata;
+    std::uint32_t argument_count;
+    void *arguments_info;
+    void *arguments_metadata;
+    std::uint32_t default_argument_count;
+    void *default_arguments;
+};
 
 struct GDExtensionClassCreationInfo2 {
     GDExtensionBool is_virtual;
@@ -91,6 +117,9 @@ using GDExtensionInterfaceClassdbRegisterExtensionClass2 = void (*)(
 using GDExtensionInterfaceClassdbRegisterExtensionClass3 = void (*)(
     GDExtensionClassLibraryPtr, GDExtensionConstStringNamePtr,
     GDExtensionConstStringNamePtr, const GDExtensionClassCreationInfo3 *);
+using GDExtensionInterfaceClassdbRegisterExtensionClassMethod = void (*)(
+    GDExtensionClassLibraryPtr, GDExtensionConstStringNamePtr,
+    const GDExtensionClassMethodInfo *);
 using GDExtensionInterfaceClassdbConstructObject =
     GDExtensionObjectPtr (*)(GDExtensionConstStringNamePtr);
 using GDExtensionInterfaceObjectSetInstance = void (*)(

@@ -12,6 +12,7 @@ struct Api {
     GDExtensionInterfaceMemFree mem_free{};
     GDExtensionStringNameNewWithLatin1Chars string_name_new{};
     GDExtensionPtrDestructor string_name_destructor{};
+    GDExtensionInterfaceClassdbRegisterExtensionClassMethod register_method{};
 };
 
 Api api;
@@ -67,6 +68,48 @@ void notification(GDExtensionClassInstancePtr instance, std::int32_t what,
     }
 }
 
+void advance_runtime(void *, GDExtensionClassInstancePtr instance,
+                     const GDExtensionConstVariantPtr *, std::int64_t,
+                     GDExtensionVariantPtr, void *) {
+    if (instance == nullptr) return;
+    auto *node = static_cast<ClayRuntimeNode *>(instance);
+    if (node->runtime != nullptr) {
+        (void)cl_engine_runtime_step(node->runtime, 1.0 / 60.0);
+    }
+}
+
+void advance_runtime_ptrcall(void *, GDExtensionClassInstancePtr instance,
+                             const GDExtensionConstTypePtr *,
+                             GDExtensionTypePtr) {
+    advance_runtime(nullptr, instance, nullptr, 0, nullptr, nullptr);
+}
+
+void bind_methods() {
+    if (api.register_method == nullptr) return;
+    GDExtensionStringName class_name{};
+    GDExtensionStringName method_name{};
+    api.string_name_new(&class_name, "ClayRuntimeNode", 0);
+    api.string_name_new(&method_name, "advance_runtime", 0);
+    const GDExtensionClassMethodInfo info{
+        .name = &method_name,
+        .method_userdata = nullptr,
+        .call_func = advance_runtime,
+        .ptrcall_func = advance_runtime_ptrcall,
+        .method_flags = 1,
+        .has_return_value = 0,
+        .return_value_info = nullptr,
+        .return_value_metadata = 0,
+        .argument_count = 0,
+        .arguments_info = nullptr,
+        .arguments_metadata = nullptr,
+        .default_argument_count = 0,
+        .default_arguments = nullptr,
+    };
+    api.register_method(class_library, &class_name, &info);
+    api.string_name_destructor(&method_name);
+    api.string_name_destructor(&class_name);
+}
+
 void initialize(void *, GDExtensionInitializationLevel level) {
     if (level != GDEXTENSION_INITIALIZATION_SCENE ||
         api.register_class == nullptr) {
@@ -102,6 +145,7 @@ void initialize(void *, GDExtensionInitializationLevel level) {
         .class_userdata = nullptr,
     };
     api.register_class(class_library, &class_name, &parent_name, &info);
+    bind_methods();
     api.string_name_destructor(&class_name);
     api.string_name_destructor(&parent_name);
 }
@@ -128,6 +172,8 @@ extern "C" CLAY_GDE_EXPORT GDExtensionBool clay_gdextension_init(
     class_library = p_library;
     api.register_class = get_proc<GDExtensionInterfaceClassdbRegisterExtensionClass3>(
         p_get_proc_address, "classdb_register_extension_class3");
+    api.register_method = get_proc<GDExtensionInterfaceClassdbRegisterExtensionClassMethod>(
+        p_get_proc_address, "classdb_register_extension_class_method");
     api.construct_object = get_proc<GDExtensionInterfaceClassdbConstructObject>(
         p_get_proc_address, "classdb_construct_object");
     api.set_instance = get_proc<GDExtensionInterfaceObjectSetInstance>(
